@@ -54,77 +54,32 @@ public:
     : t_generator (program) {
     std::map<std::string, std::string>::const_iterator iter;
 
-    gen_newstyle_ = true;
-    gen_utf8strings_ = true;
-    gen_dynbase_ = false;
-    gen_slots_ = false;
-    gen_tornado_ = false;
-    gen_zope_interface_ = false;
-    gen_twisted_ = false;
-    gen_dynamic_ = false;
-    coding_ = "";
-    gen_dynbaseclass_ = "";
-    gen_dynbaseclass_exc_ = "";
-    gen_dynbaseclass_frozen_ = "";
-    import_dynbase_ = "";
-    package_prefix_ = "";
-    for( iter = parsed_options.begin(); iter != parsed_options.end(); ++iter) {
-      if( iter->first.compare("new_style") == 0) {
-        pwarning(0, "new_style is enabled by default, so the option will be removed in the near future.\n");
-      } else if( iter->first.compare("old_style") == 0) {
-        gen_newstyle_ = false;
-        pwarning(0, "old_style is deprecated and may be removed in the future.\n");
-      } else if( iter->first.compare("utf8strings") == 0) {
-        pwarning(0, "utf8strings is enabled by default, so the option will be removed in the near future.\n");
-      } else if( iter->first.compare("no_utf8strings") == 0) {
-        gen_utf8strings_ = false;
-      } else if( iter->first.compare("slots") == 0) {
-        gen_slots_ = true;
-      } else if( iter->first.compare("package_prefix") == 0) {
-        package_prefix_ = iter->second;
-      } else if( iter->first.compare("dynamic") == 0) {
-        gen_dynamic_ = true;
-        gen_newstyle_ = false; // dynamic is newstyle
-        if( gen_dynbaseclass_.empty()) {
-          gen_dynbaseclass_ = "TBase";
-        }
-        if( gen_dynbaseclass_frozen_.empty()) {
-          gen_dynbaseclass_frozen_ = "TFrozenBase";
-        }
-        if( gen_dynbaseclass_exc_.empty()) {
-          gen_dynbaseclass_exc_ = "TExceptionBase";
-        }
-        if( import_dynbase_.empty()) {
-          import_dynbase_ = "from thrift.protocol.TBase import TBase, TFrozenBase, TExceptionBase, TTransport\n";
-        }
-      } else if( iter->first.compare("dynbase") == 0) {
-        gen_dynbase_ = true;
-        gen_dynbaseclass_ = (iter->second);
-      } else if( iter->first.compare("dynfrozen") == 0) {
-        gen_dynbaseclass_frozen_ = (iter->second);
-      } else if( iter->first.compare("dynexc") == 0) {
-        gen_dynbaseclass_exc_ = (iter->second);
-      } else if( iter->first.compare("dynimport") == 0) {
-        gen_dynbase_ = true;
-        import_dynbase_ = (iter->second);
-      } else if( iter->first.compare("zope.interface") == 0) {
-        gen_zope_interface_ = true;
-      } else if( iter->first.compare("twisted") == 0) {
-        gen_twisted_ = true;
-        gen_zope_interface_ = true;
-      } else if( iter->first.compare("tornado") == 0) {
-        gen_tornado_ = true;
-      } else if( iter->first.compare("coding") == 0) {
-        coding_ = iter->second;
-      } else {
-        throw "unknown option py:" + iter->first;
-      }
+    iter = parsed_options.find("new_style");
+    gen_newstyle_ = (iter != parsed_options.end());
+
+    iter = parsed_options.find("slots");
+    gen_slots_ = (iter != parsed_options.end());
+
+    iter = parsed_options.find("dynamic");
+    gen_dynamic_ = (iter != parsed_options.end());
+
+
+    if (gen_dynamic_) {
+      gen_newstyle_ = 0; // dynamic is newstyle
+      gen_dynbaseclass_ = "TBase";
+      gen_dynbaseclass_exc_ = "TExceptionBase";
+      import_dynbase_ = "from thrift.protocol.TBase import TBase, TExceptionBase\n";
     }
 
     if (gen_twisted_ && gen_tornado_) {
       throw "at most one of 'twisted' and 'tornado' are allowed";
     }
 
+    iter = parsed_options.find("utf8strings");
+    gen_utf8strings_ = (iter != parsed_options.end());
+
+    iter = parsed_options.find("metrics");
+    gen_metrics_ = (iter != parsed_options.end());
     copy_options_ = option_string;
 
     if (gen_twisted_) {
@@ -309,6 +264,11 @@ private:
    * True if we should generate code for use with Tornado
    */
   bool gen_tornado_;
+
+  /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
 
   /**
    * True if strings should be encoded using utf-8.
@@ -959,7 +919,7 @@ void t_py_generator::generate_py_struct_reader(ostream& out, t_struct* tstruct) 
   indent_down();
 
   indent(out) << "iprot.readStructBegin()" << endl;
-  
+
   if (is_immutable(tstruct)) {
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
       t_field* tfield = *f_iter;
@@ -1361,7 +1321,13 @@ void t_py_generator::generate_service_client(t_service* tservice) {
     vector<t_field*>::const_iterator fld_iter;
     string funname = (*f_iter)->get_name();
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_py_generator.cc
     f_service_ << endl;
+=======
+    if (gen_tornado_ && gen_metrics_) {
+      indent(f_service_) << "@metrics.instrument(\"" << funname << ".client\")" << endl;
+    }
+>>>>>>> deee3b5c9 (Add some instrumentation of the tornado lib):compiler/cpp/src/generate/t_py_generator.cc
     // Open function
     indent(f_service_) << "def " << function_signature(*f_iter, false) << ":" << endl;
     indent_up();
@@ -1910,6 +1876,9 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   if (gen_tornado_) {
+    if  (gen_metrics_) {
+      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+    }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
   } else {
@@ -2770,6 +2739,7 @@ THRIFT_REGISTER_GENERATOR(
     "    no_utf8strings:  Do not Encode/decode strings using utf8 in the generated code. Basically no effect for Python 3.\n"
     "    coding=CODING:   Add file encoding declare in generated file.\n"
     "    slots:           Generate code using slots for instance members.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n"
     "    dynamic:         Generate dynamic code, less code generated but slower.\n"
     "    dynbase=CLS      Derive generated classes from class CLS instead of TBase.\n"
     "    dynfrozen=CLS    Derive generated immutable classes from class CLS instead of TFrozenBase.\n"
