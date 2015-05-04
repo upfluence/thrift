@@ -311,6 +311,11 @@ private:
   bool gen_tornado_;
 
   /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
+
+  /**
    * True if strings should be encoded using utf-8.
    */
   bool gen_utf8strings_;
@@ -956,7 +961,7 @@ void t_py_generator::generate_py_struct_reader(ostream& out, t_struct* tstruct) 
   indent_down();
 
   indent(out) << "iprot.readStructBegin()" << endl;
-  
+
   if (is_immutable(tstruct)) {
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
       t_field* tfield = *f_iter;
@@ -1898,6 +1903,9 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   if (gen_tornado_) {
+    if  (gen_metrics_) {
+      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+    }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
   } else {
@@ -2758,6 +2766,7 @@ THRIFT_REGISTER_GENERATOR(
     "    no_utf8strings:  Do not Encode/decode strings using utf8 in the generated code. Basically no effect for Python 3.\n"
     "    coding=CODING:   Add file encoding declare in generated file.\n"
     "    slots:           Generate code using slots for instance members.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n"
     "    dynamic:         Generate dynamic code, less code generated but slower.\n"
     "    dynbase=CLS      Derive generated classes from class CLS instead of TBase.\n"
     "    dynfrozen=CLS    Derive generated immutable classes from class CLS instead of TFrozenBase.\n"
