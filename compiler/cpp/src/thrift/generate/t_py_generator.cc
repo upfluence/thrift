@@ -120,6 +120,10 @@ public:
       throw "at most one of 'twisted' and 'tornado' are allowed";
     }
 
+
+    iter = parsed_options.find("metrics");
+    gen_metrics_ = (iter != parsed_options.end());
+
     copy_options_ = option_string;
 
     if (gen_twisted_) {
@@ -297,6 +301,11 @@ private:
    * True if we should generate code for use with Tornado
    */
   bool gen_tornado_;
+
+  /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
 
   /**
    * True if strings should be encoded using utf-8.
@@ -1057,6 +1066,9 @@ void t_py_generator::generate_service(t_service* tservice) {
   } else if (gen_tornado_) {
     f_service_ << "from tornado import gen" << endl;
     f_service_ << "from tornado import concurrent" << endl;
+    if (gen_metrics_) {
+      f_service_ << "from thrift import metrics" << endl;
+    }
   }
 
   // Generate the three main parts of the service
@@ -1276,6 +1288,9 @@ void t_py_generator::generate_service_client(t_service* tservice) {
     string funname = (*f_iter)->get_name();
 
     f_service_ << endl;
+    if (gen_tornado_ && gen_metrics_) {
+      indent(f_service_) << "@metrics.instrument(\"" << funname << ".client\")" << endl;
+    }
     // Open function
     indent(f_service_) << "def " << function_signature(*f_iter, false) << ":" << endl;
     indent_up();
@@ -1814,6 +1829,9 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   if (gen_tornado_) {
+    if  (gen_metrics_) {
+      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+    }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
   } else {
@@ -2637,6 +2655,7 @@ THRIFT_REGISTER_GENERATOR(
     "    no_utf8strings:  Do not Encode/decode strings using utf8 in the generated code. Basically no effect for Python 3.\n"
     "    coding=CODING:   Add file encoding declare in generated file.\n"
     "    slots:           Generate code using slots for instance members.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n"
     "    dynamic:         Generate dynamic code, less code generated but slower.\n"
     "    dynbase=CLS      Derive generated classes from class CLS instead of TBase.\n"
     "    dynfrozen=CLS    Derive generated immutable classes from class CLS instead of TFrozenBase.\n"
