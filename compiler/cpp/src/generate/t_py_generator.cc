@@ -62,6 +62,7 @@ public:
     iter = parsed_options.find("dynamic");
     gen_dynamic_ = (iter != parsed_options.end());
 
+
     if (gen_dynamic_) {
       gen_newstyle_ = 0; // dynamic is newstyle
       gen_dynbaseclass_ = "TBase";
@@ -99,6 +100,8 @@ public:
     iter = parsed_options.find("utf8strings");
     gen_utf8strings_ = (iter != parsed_options.end());
 
+    iter = parsed_options.find("metrics");
+    gen_metrics_ = (iter != parsed_options.end());
     copy_options_ = option_string;
 
     if (gen_twisted_) {
@@ -269,6 +272,11 @@ private:
    * True if we should generate code for use with Tornado
    */
   bool gen_tornado_;
+
+  /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
 
   /**
    * True if strings should be encoded using utf-8.
@@ -956,6 +964,9 @@ void t_py_generator::generate_service(t_service* tservice) {
     f_service_ << "from tornado import gen" << endl;
     f_service_ << "from tornado import concurrent" << endl;
     f_service_ << "from thrift.transport import TTransport" << endl;
+    if (gen_metrics_) {
+      f_service_ << "from thrift import metrics" << endl;
+    }
   }
 
   f_service_ << endl;
@@ -1155,6 +1166,9 @@ void t_py_generator::generate_service_client(t_service* tservice) {
     vector<t_field*>::const_iterator fld_iter;
     string funname = (*f_iter)->get_name();
 
+    if (gen_tornado_ && gen_metrics_) {
+      indent(f_service_) << "@metrics.instrument(\"" << funname << ".client\")" << endl;
+    }
     // Open function
     indent(f_service_) << "def " << function_signature(*f_iter, false) << ":" << endl;
     indent_up();
@@ -1616,6 +1630,9 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   if (gen_tornado_) {
+    if  (gen_metrics_) {
+      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+    }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
   } else {
@@ -2426,6 +2443,7 @@ THRIFT_REGISTER_GENERATOR(
     "    tornado:         Generate code for use with Tornado.\n"
     "    utf8strings:     Encode/decode strings using utf8 in the generated code.\n"
     "    slots:           Generate code using slots for instance members.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n"
     "    dynamic:         Generate dynamic code, less code generated but slower.\n"
     "    dynbase=CLS      Derive generated classes from class CLS instead of TBase.\n"
     "    dynexc=CLS       Derive generated exceptions from CLS instead of TExceptionBase.\n"
