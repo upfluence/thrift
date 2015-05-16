@@ -99,6 +99,28 @@ public:
     }
 
     out_dir_base_ = "gen-go";
+    gen_thrift_import_ = default_thrift_import;
+
+    iter = parsed_options.find("package_prefix");
+
+    if (iter != parsed_options.end()) {
+      gen_package_prefix_ = (iter->second);
+    }
+
+    iter = parsed_options.find("thrift_import");
+
+    if (iter != parsed_options.end()) {
+      gen_thrift_import_ = (iter->second);
+    }
+
+    iter = parsed_options.find("metrics");
+    gen_metrics_ = (iter != parsed_options.end());
+
+    iter = parsed_options.find("package");
+
+    if (iter != parsed_options.end()) {
+      package_flag = (iter->second);
+    }
   }
 
   /**
@@ -285,6 +307,11 @@ private:
   std::string gen_thrift_import_;
   bool read_write_private_;
   bool ignore_initialisms_;
+
+  /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
 
   /**
    * File streams
@@ -861,6 +888,7 @@ string t_go_generator::go_package() {
  * Render the beginning of the import statement.
  * If consts include the additional imports.
  */
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
 string t_go_generator::go_imports_begin(bool consts) {
   string extra;
 
@@ -871,6 +899,10 @@ string t_go_generator::go_imports_begin(bool consts) {
       "\t\"errors\"\n";
   }
   return string(
+=======
+string t_go_generator::go_imports_begin() {
+  string r = string(
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
       "import (\n"
       "\t\"bytes\"\n"
       "\t\"context\"\n"
@@ -878,6 +910,11 @@ string t_go_generator::go_imports_begin(bool consts) {
       + extra +
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
+  std::cout << (gen_metrics_ ? "true" : "false") << endl;
+  if (gen_metrics_) {
+    r = r + "\t\"time\"\n";
+  }
+  return r;
 }
 
 /**
@@ -2008,11 +2045,28 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_types_ << indent() << "func (p *" << serviceName << "Client) "
                << function_signature_if(*f_iter, "", true) << " {" << endl;
     indent_up();
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
 
     std::string method = (*f_iter)->get_name();
     std::string argsType = publicize(method + "_args", true);
     std::string argsName = tmp("_args");
     f_types_ << indent() << "var " << argsName << " " << argsType << endl;
+=======
+    /*
+    f_service_ <<
+      indent() << "p.SeqId += 1" << endl;
+    if (!(*f_iter)->is_oneway()) {
+      f_service_ <<
+        indent() << "d := defer.Deferred()" << endl <<
+        indent() << "p.Reqs[p.SeqId] = d" << endl;
+    }
+    */
+    if (gen_metrics_) {
+      f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
+    }
+    f_service_ << indent() << "if err = p.send" << funname << "(";
+    bool first = true;
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
       f_types_ << indent() << argsName << "." << publicize((*fld_iter)->get_name())
@@ -2020,12 +2074,79 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     }
 
     if (!(*f_iter)->is_oneway()) {
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
       std::string resultName = tmp("_result");
       std::string resultType = publicize(method + "_result", true);
       f_types_ << indent() << "var " << resultName << " " << resultType << endl;
       f_types_ << indent() << "if err = p.Client_().Call(ctx, \""
         << method << "\", &" << argsName << ", &" << resultName << "); err != nil {" << endl;
 
+=======
+      f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
+    }
+
+    if (gen_metrics_) {
+      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_service_ << indent() << "thrift.Metrics.Timing(\"" << funname
+                 << ".client\", t1 - t0)" << endl;
+    }
+    f_service_ << indent() << "return" << endl;
+
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "func (p *" << serviceName << "Client) send"
+               << function_signature(*f_iter) << "(err error) {" << endl;
+    indent_up();
+    std::string argsname = publicize((*f_iter)->get_name() + "_args", true);
+    // Serialize the request header
+    f_service_ << indent() << "oprot := p.OutputProtocol" << endl;
+    f_service_ << indent() << "if oprot == nil {" << endl;
+    f_service_ << indent() << "  oprot = p.ProtocolFactory.GetProtocol(p.Transport)" << endl;
+    f_service_ << indent() << "  p.OutputProtocol = oprot" << endl;
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "p.SeqId++" << endl;
+    f_service_ << indent() << "if err = oprot.WriteMessageBegin(\"" << (*f_iter)->get_name()
+               << "\", " << ((*f_iter)->is_oneway() ? "thrift.ONEWAY" : "thrift.CALL")
+               << ", p.SeqId); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "args := " << argsname << "{" << endl;
+
+    for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
+      f_service_ << indent() << publicize((*fld_iter)->get_name())
+                 << " : " << variable_name_to_go_name((*fld_iter)->get_name()) << "," << endl;
+    }
+    f_service_ << indent() << "}" << endl;
+
+    // Write to the stream
+    f_service_ << indent() << "if err = args.Write(oprot); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "if err = oprot.WriteMessageEnd(); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "return oprot.Flush()" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+
+    if (!(*f_iter)->is_oneway()) {
+      std::string resultname = publicize((*f_iter)->get_name() + "_result", true);
+      // Open function
+      f_service_ << endl << indent() << "func (p *" << serviceName << "Client) recv"
+                 << publicize((*f_iter)->get_name()) << "() (";
+
+      if (!(*f_iter)->get_returntype()->is_void()) {
+        f_service_ << "value " << type_to_go_type((*f_iter)->get_returntype()) << ", ";
+      }
+
+      f_service_ << "err error) {" << endl;
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
       indent_up();
       f_types_ << indent() << "return" << endl;
       indent_down();
@@ -2726,8 +2847,18 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_types_ << "var retval " << type_to_go_type(tfunction->get_returntype()) << endl;
   }
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
   f_types_ << indent() << "var err2 error" << endl;
   f_types_ << indent() << "if ";
+=======
+  f_service_ << indent() << "var err2 error" << endl;
+
+  if (gen_metrics_) {
+    f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
+  }
+
+  f_service_ << indent() << "if ";
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
   if (!tfunction->is_oneway()) {
     if (!tfunction->get_returntype()->is_void()) {
@@ -2766,10 +2897,30 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     for (xf_iter = x_fields.begin(); xf_iter != x_fields.end(); ++xf_iter) {
       f_types_ << indent() << "  case " << type_to_go_type(((*xf_iter)->get_type())) << ":"
                  << endl;
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
       f_types_ << indent() << "result." << publicize((*xf_iter)->get_name()) << " = v" << endl;
     }
 
     f_types_ << indent() << "  default:" << endl;
+=======
+
+      if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tfunction->get_name() << ".exceptions."
+                   << type_to_go_type(((*xf_iter)->get_type()))
+                   << "\")" << endl;
+      }
+
+      f_service_ << indent() << "result."
+                 << publicize((*xf_iter)->get_name()) << " = v" << endl;
+    }
+
+    f_service_ << indent() << "  default:" << endl;
+    if (gen_metrics_) {
+      f_service_ << indent() << "thrift.Metrics.Incr(\""
+                 << tfunction->get_name() << ".success\")" << endl;
+    }
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
   }
 
   if (!tfunction->is_oneway()) {
@@ -2805,7 +2956,16 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     } else {
       f_types_ << endl;
     }
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
+=======
+    if (gen_metrics_) {
+      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_service_ << indent() << "thrift.Metrics.Timing(\""
+                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+    }
+    f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
                << endl;
     f_types_ << indent() << "  err = err2" << endl;
@@ -2864,8 +3024,16 @@ void t_go_generator::generate_deserialize_field(ostream& out,
   } else if (type->is_base_type() || type->is_enum()) {
 
     if (declare) {
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
       string type_name = inkey ? type_to_go_key_type(tfield->get_type())
                                : type_to_go_type(tfield->get_type());
+=======
+      t_type* actual_type = use_true_type ? tfield->get_type()->get_true_type()
+                                          : tfield->get_type();
+
+      string type_name = inkey ? type_to_go_key_type(actual_type)
+                               : type_to_go_type(actual_type);
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
       out << "var " << tfield->get_name() << " " << type_name << endl;
     }
@@ -3708,9 +3876,15 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
                           "    thrift_import=   Override thrift package import path (default:" + DEFAULT_THRIFT_IMPORT + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
                           "                     Disable automatic spelling correction of initialisms (e.g. \"URL\")\n" \
                           "    read_write_private\n"
                           "                     Make read/write methods private, default is public Read/Write\n")
+=======
+                          "    metrics:         Generate code with endpoint monitoring.\n"
+                          "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
+                          "    package=         Package name (default: inferred from thrift file name)\n")
+>>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
