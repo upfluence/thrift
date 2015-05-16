@@ -89,6 +89,9 @@ public:
       gen_thrift_import_ = (iter->second);
     }
 
+    iter = parsed_options.find("metrics");
+    gen_metrics_ = (iter != parsed_options.end());
+
     iter = parsed_options.find("package");
 
     if (iter != parsed_options.end()) {
@@ -280,6 +283,11 @@ private:
   std::string gen_thrift_import_;
 
   /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
+
+  /**
    * File streams
    */
 
@@ -413,7 +421,7 @@ bool t_go_generator::is_pointer_field(t_field* tfield, bool in_container_value) 
 std::string t_go_generator::camelcase(const std::string& value) const {
   std::string value2(value);
   std::setlocale(LC_ALL, "C"); // set locale to classic
-  
+
   // as long as we are changing things, let's change _ followed by lowercase to capital and fix common initialisms
   for (std::string::size_type i = 1; i < value2.size() - 1; ++i) {
     if (value2[i] == '_'){
@@ -423,11 +431,11 @@ std::string t_go_generator::camelcase(const std::string& value) const {
       std::string word = value2.substr(i,value2.find('_', i));
       std::transform(word.begin(), word.end(), word.begin(), ::toupper);
       if (commonInitialisms.find(word) != commonInitialisms.end()) {
-        value2.replace(i, word.length(), word); 
+        value2.replace(i, word.length(), word);
       }
     }
   }
-  
+
   return value2;
 }
 
@@ -790,11 +798,16 @@ string t_go_generator::go_package() {
  * Render the beginning of the import statement
  */
 string t_go_generator::go_imports_begin() {
-  return string(
+  string r = string(
       "import (\n"
       "\t\"bytes\"\n"
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
+  std::cout << (gen_metrics_ ? "true" : "false") << endl;
+  if (gen_metrics_) {
+    r = r + "\t\"time\"\n";
+  }
+  return r;
 }
 
 /**
@@ -1839,6 +1852,9 @@ void t_go_generator::generate_service_client(t_service* tservice) {
         indent() << "p.Reqs[p.SeqId] = d" << endl;
     }
     */
+    if (gen_metrics_) {
+      f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
+    }
     f_service_ << indent() << "if err = p.send" << funname << "(";
     bool first = true;
 
@@ -1855,10 +1871,15 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_service_ << "); err != nil { return }" << endl;
 
     if (!(*f_iter)->is_oneway()) {
-      f_service_ << indent() << "return p.recv" << funname << "()" << endl;
-    } else {
-      f_service_ << indent() << "return" << endl;
+      f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
     }
+
+    if (gen_metrics_) {
+      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_service_ << indent() << "thrift.Metrics.Timing(\"" << funname
+                 << ".client\", t1 - t0)" << endl;
+    }
+    f_service_ << indent() << "return" << endl;
 
     indent_down();
     f_service_ << indent() << "}" << endl << endl;
@@ -2594,6 +2615,11 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
   }
 
   f_service_ << indent() << "var err2 error" << endl;
+
+  if (gen_metrics_) {
+    f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
+  }
+
   f_service_ << indent() << "if ";
 
   if (!tfunction->is_oneway()) {
@@ -2631,11 +2657,23 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     for (xf_iter = x_fields.begin(); xf_iter != x_fields.end(); ++xf_iter) {
       f_service_ << indent() << "  case " << type_to_go_type(((*xf_iter)->get_type())) << ":"
                  << endl;
+
+      if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tfunction->get_name() << ".exceptions."
+                   << type_to_go_type(((*xf_iter)->get_type()))
+                   << "\")" << endl;
+      }
+
       f_service_ << indent() << "result."
                  << publicize((*xf_iter)->get_name()) << " = v" << endl;
     }
 
     f_service_ << indent() << "  default:" << endl;
+    if (gen_metrics_) {
+      f_service_ << indent() << "thrift.Metrics.Incr(\""
+                 << tfunction->get_name() << ".success\")" << endl;
+    }
   }
 
   if (!tfunction->is_oneway()) {
@@ -2670,6 +2708,11 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_service_ << "}" << endl;
     } else {
       f_service_ << endl;
+    }
+    if (gen_metrics_) {
+      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_service_ << indent() << "thrift.Metrics.Timing(\""
+                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
     }
     f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
@@ -2731,10 +2774,10 @@ void t_go_generator::generate_deserialize_field(ofstream& out,
   } else if (type->is_base_type() || type->is_enum()) {
 
     if (declare) {
-      t_type* actual_type = use_true_type ? tfield->get_type()->get_true_type() 
+      t_type* actual_type = use_true_type ? tfield->get_type()->get_true_type()
                                           : tfield->get_type();
 
-      string type_name = inkey ? type_to_go_key_type(actual_type) 
+      string type_name = inkey ? type_to_go_key_type(actual_type)
                                : type_to_go_type(actual_type);
 
       out << "var " << tfield->get_name() << " " << type_name << endl;
@@ -3544,5 +3587,6 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
+                          "    metrics:         Generate code with endpoint monitoring.\n"
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n")
