@@ -3,8 +3,8 @@ import datetime
 import tornado.gen
 import statsd
 
-if os.environ.fetch("STATSD_URL", None):
-    ip, port = os.environ.fetch("STATSD_URL").split(':')
+if os.environ.get("STATSD_URL", None):
+    ip, port = os.environ.get("STATSD_URL").split(':')
     statsd_client = statsd.Client(ip, int(port))
 else:
     statsd_client = None
@@ -15,9 +15,9 @@ def instrument(name):
         @tornado.gen.coroutine
         def fn_wrapper(*args, **kwargs):
             def send_duration():
-                duration = datetime.datetime.now() - start
+                duration = (datetime.datetime.now() - start).total_seconds()
                 statsd_client.timing("{}.duration".format(name),
-                                     duration.microseconds / 1000)
+                                     int(duration * 1000))
 
             start = datetime.datetime.now()
             ftr_result = fn(*args, **kwargs)
