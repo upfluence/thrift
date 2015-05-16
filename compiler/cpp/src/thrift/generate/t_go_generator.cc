@@ -287,6 +287,11 @@ private:
   bool ignore_initialisms_;
 
   /**
+   * True if metrcis should be enabled.
+   */
+  bool gen_metrics_;
+
+  /**
    * File streams
    */
 
@@ -878,6 +883,11 @@ string t_go_generator::go_imports_begin(bool consts) {
       + extra +
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
+  std::cout << (gen_metrics_ ? "true" : "false") << endl;
+  if (gen_metrics_) {
+    r = r + "\t\"time\"\n";
+  }
+  return r;
 }
 
 /**
@@ -2008,7 +2018,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_types_ << indent() << "func (p *" << serviceName << "Client) "
                << function_signature_if(*f_iter, "", true) << " {" << endl;
     indent_up();
-
     std::string method = (*f_iter)->get_name();
     std::string argsType = publicize(method + "_args", true);
     std::string argsName = tmp("_args");
