@@ -49,7 +49,7 @@ gopath: $(THRIFT) $(THRIFTTEST) \
 	$(THRIFT) $(THRIFTARGS) ErrorTest.thrift
 	$(THRIFT) $(THRIFTARGS) NamesTest.thrift
 	$(THRIFT) $(THRIFTARGS) InitialismsTest.thrift
-	GOPATH=`pwd`/gopath $(GO) get code.google.com/p/gomock/gomock
+	GOPATH=`pwd`/gopath $(GO) get github.com/golang/mock/gomock
 	ln -nfs ../../../thrift gopath/src/thrift
 	ln -nfs ../../tests gopath/src/tests
 	touch gopath
