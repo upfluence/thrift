@@ -23,7 +23,7 @@ def instrument(name):
             ftr_result = fn(*args, **kwargs)
 
             try:
-                result = yield ftr_result
+                result = yield tornado.gen.maybe_future(ftr_result)
             except Exception as e:
                 if statsd_client:
                     statsd_client.incr("{}.exceptions.{}".format(
