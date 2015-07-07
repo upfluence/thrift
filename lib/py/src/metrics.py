@@ -5,7 +5,9 @@ import statsd
 
 if os.environ.get("STATSD_URL", None):
     ip, port = os.environ.get("STATSD_URL").split(':')
-    statsd_client = statsd.Client(ip, int(port))
+    statsd_client = statsd.StatsClient(host=ip, port=int(port),
+                                       prefix=os.environ.get('STATSD_PREFIX',
+                                                             None))
 else:
     statsd_client = None
 
