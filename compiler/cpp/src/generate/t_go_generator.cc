@@ -803,10 +803,11 @@ string t_go_generator::go_imports_begin() {
       "\t\"bytes\"\n"
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
-  std::cout << (gen_metrics_ ? "true" : "false") << endl;
+
   if (gen_metrics_) {
     r = r + "\t\"time\"\n";
   }
+
   return r;
 }
 
@@ -817,12 +818,20 @@ string t_go_generator::go_imports_begin() {
  * This will have to do in lieu of more intelligent import statement construction
  */
 string t_go_generator::go_imports_end() {
-  return string(
+  string r = string(
       ")\n\n"
       "// (needed to ensure safety because of naive import list construction.)\n"
       "var _ = thrift.ZERO\n"
       "var _ = fmt.Printf\n"
-      "var _ = bytes.Equal\n\n");
+      "var _ = bytes.Equal\n");
+
+  if (gen_metrics_) {
+    r = r + "var _ = time.Now()\n";
+  }
+
+  r = r + "\n";
+
+  return r;
 }
 
 /**
