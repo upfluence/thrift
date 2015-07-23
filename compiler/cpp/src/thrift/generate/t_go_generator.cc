@@ -2879,12 +2879,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     for (xf_iter = x_fields.begin(); xf_iter != x_fields.end(); ++xf_iter) {
       f_types_ << indent() << "  case " << type_to_go_type(((*xf_iter)->get_type())) << ":"
                  << endl;
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-      f_types_ << indent() << "result." << publicize((*xf_iter)->get_name()) << " = v" << endl;
-    }
-
-    f_types_ << indent() << "  default:" << endl;
-=======
 
       if (gen_metrics_) {
         f_service_ << indent() << "thrift.Metrics.Incr(\""
@@ -2902,7 +2896,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_service_ << indent() << "thrift.Metrics.Incr(\""
                  << tfunction->get_name() << ".success\")" << endl;
     }
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
   }
 
   if (!tfunction->is_oneway()) {
@@ -2938,16 +2931,12 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     } else {
       f_types_ << endl;
     }
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-    f_types_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
-=======
     if (gen_metrics_) {
       f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_service_ << indent() << "thrift.Metrics.Timing(\""
                  << tfunction->get_name() << ".server\", t1 - t0)" << endl;
     }
     f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
                << endl;
     f_types_ << indent() << "  err = err2" << endl;
@@ -3108,9 +3097,21 @@ void t_go_generator::generate_deserialize_struct(ostream& out,
                                                  string prefix) {
   string eq(declare ? " := " : " = ");
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
   out << indent() << prefix << eq << (pointer_field ? "&" : "");
   generate_go_struct_initializer(out, tstruct);
   out << indent() << "if err := " << prefix << "." << read_method_name_ <<  "(iprot); err != nil {" << endl;
+=======
+  out << indent() << prefix << eq;
+
+  if (pointer_field) {
+    out << new_prefix(type_name(tstruct)) << "()" << endl;
+  } else {
+    generate_go_struct_initializer(out, tstruct);
+  }
+
+  out << indent() << "if err := " << prefix << ".Read(iprot); err != nil {" << endl;
+>>>>>>> 2188d8d81 (Use constructor over handmade structs):compiler/cpp/src/generate/t_go_generator.cc
   out << indent() << "  return thrift.PrependError(fmt.Sprintf(\"%T error reading struct: \", "
       << prefix << "), err)" << endl;
   out << indent() << "}" << endl;
