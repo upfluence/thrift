@@ -1879,7 +1879,10 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
     f_service_ << "); err != nil { return }" << endl;
 
-    if (!(*f_iter)->is_oneway()) {
+
+    if ((*f_iter)->get_returntype()->is_void() && !(*f_iter)->is_oneway()) {
+      f_service_ << indent() << "err = p.recv" << funname << "()" << endl;
+    } else if (!(*f_iter)->is_oneway()) {
       f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
     }
 
