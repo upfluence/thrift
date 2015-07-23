@@ -2880,8 +2880,14 @@ void t_go_generator::generate_deserialize_struct(ofstream& out,
                                                  string prefix) {
   string eq(declare ? " := " : " = ");
 
-  out << indent() << prefix << eq << (pointer_field ? "&" : "");
-  generate_go_struct_initializer(out, tstruct);
+  out << indent() << prefix << eq;
+
+  if (pointer_field) {
+    out << new_prefix(type_name(tstruct)) << "()" << endl;
+  } else {
+    generate_go_struct_initializer(out, tstruct);
+  }
+
   out << indent() << "if err := " << prefix << ".Read(iprot); err != nil {" << endl;
   out << indent() << "  return thrift.PrependError(fmt.Sprintf(\"%T error reading struct: \", "
       << prefix << "), err)" << endl;
