@@ -2099,7 +2099,12 @@ void t_go_generator::generate_service_client(t_service* tservice) {
                << " = " << variable_name_to_go_name((*fld_iter)->get_name()) << endl;
     }
 
-    if (!(*f_iter)->is_oneway()) {
+    f_service_ << "); err != nil { return }" << endl;
+
+
+    if ((*f_iter)->get_returntype()->is_void() && !(*f_iter)->is_oneway()) {
+      f_service_ << indent() << "err = p.recv" << funname << "()" << endl;
+    } else if (!(*f_iter)->is_oneway()) {
       f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
     }
 
@@ -3016,16 +3021,11 @@ void t_go_generator::generate_deserialize_field(ostream& out,
   } else if (type->is_base_type() || type->is_enum()) {
 
     if (declare) {
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-      string type_name = inkey ? type_to_go_key_type(tfield->get_type())
-                               : type_to_go_type(tfield->get_type());
-=======
       t_type* actual_type = use_true_type ? tfield->get_type()->get_true_type()
                                           : tfield->get_type();
 
       string type_name = inkey ? type_to_go_key_type(actual_type)
                                : type_to_go_type(actual_type);
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
       out << "var " << tfield->get_name() << " " << type_name << endl;
     }
