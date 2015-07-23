@@ -888,7 +888,6 @@ string t_go_generator::go_package() {
  * Render the beginning of the import statement.
  * If consts include the additional imports.
  */
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
 string t_go_generator::go_imports_begin(bool consts) {
   string extra;
 
@@ -899,10 +898,6 @@ string t_go_generator::go_imports_begin(bool consts) {
       "\t\"errors\"\n";
   }
   return string(
-=======
-string t_go_generator::go_imports_begin() {
-  string r = string(
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
       "import (\n"
       "\t\"bytes\"\n"
       "\t\"context\"\n"
@@ -910,10 +905,11 @@ string t_go_generator::go_imports_begin() {
       + extra +
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
-  std::cout << (gen_metrics_ ? "true" : "false") << endl;
+
   if (gen_metrics_) {
     r = r + "\t\"time\"\n";
   }
+
   return r;
 }
 
@@ -924,7 +920,7 @@ string t_go_generator::go_imports_begin() {
  * This will have to do in lieu of more intelligent import statement construction
  */
 string t_go_generator::go_imports_end() {
-  return string(
+  string r = string(
       ")\n\n"
       "// (needed to ensure safety because of naive import list construction.)\n"
       "var _ = thrift.ZERO\n"
@@ -932,6 +928,14 @@ string t_go_generator::go_imports_end() {
       "var _ = context.Background\n"
       "var _ = reflect.DeepEqual\n"
       "var _ = bytes.Equal\n\n");
+
+  if (gen_metrics_) {
+    r = r + "var _ = time.Now()\n";
+  }
+
+  r = r + "\n";
+
+  return r;
 }
 
 /**
@@ -2045,13 +2049,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_types_ << indent() << "func (p *" << serviceName << "Client) "
                << function_signature_if(*f_iter, "", true) << " {" << endl;
     indent_up();
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-
-    std::string method = (*f_iter)->get_name();
-    std::string argsType = publicize(method + "_args", true);
-    std::string argsName = tmp("_args");
-    f_types_ << indent() << "var " << argsName << " " << argsType << endl;
-=======
     /*
     f_service_ <<
       indent() << "p.SeqId += 1" << endl;
@@ -2066,7 +2063,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     }
     f_service_ << indent() << "if err = p.send" << funname << "(";
     bool first = true;
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
       f_types_ << indent() << argsName << "." << publicize((*fld_iter)->get_name())
@@ -2074,14 +2070,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     }
 
     if (!(*f_iter)->is_oneway()) {
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-      std::string resultName = tmp("_result");
-      std::string resultType = publicize(method + "_result", true);
-      f_types_ << indent() << "var " << resultName << " " << resultType << endl;
-      f_types_ << indent() << "if err = p.Client_().Call(ctx, \""
-        << method << "\", &" << argsName << ", &" << resultName << "); err != nil {" << endl;
-
-=======
       f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
     }
 
@@ -2146,7 +2134,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       }
 
       f_service_ << "err error) {" << endl;
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
       indent_up();
       f_types_ << indent() << "return" << endl;
       indent_down();
@@ -2847,10 +2834,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_types_ << "var retval " << type_to_go_type(tfunction->get_returntype()) << endl;
   }
 
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
-  f_types_ << indent() << "var err2 error" << endl;
-  f_types_ << indent() << "if ";
-=======
   f_service_ << indent() << "var err2 error" << endl;
 
   if (gen_metrics_) {
@@ -2858,7 +2841,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
   }
 
   f_service_ << indent() << "if ";
->>>>>>> 6be47aaea (Add some metrics into the go generated code):compiler/cpp/src/generate/t_go_generator.cc
 
   if (!tfunction->is_oneway()) {
     if (!tfunction->get_returntype()->is_void()) {
