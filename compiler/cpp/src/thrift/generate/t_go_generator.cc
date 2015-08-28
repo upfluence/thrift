@@ -2829,7 +2829,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (gen_metrics_) {
       f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_types_ << indent() << "thrift.Metrics.Timing(\""
-                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+               << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+      f_types_ << endl;
     }
     f_types_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
@@ -2851,6 +2852,14 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_types_ << indent() << "}" << endl;
     f_types_ << indent() << "return true, err" << endl;
   } else {
+    if (gen_metrics_) {
+      f_types_ << endl;
+      f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_types_ << indent() << "thrift.Metrics.Timing(\""
+                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+      f_types_ << endl;
+    }
+
     f_types_ << endl;
     f_types_ << indent() << "return true, nil" << endl;
   }
