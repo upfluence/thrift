@@ -42,6 +42,7 @@ type TSimpleServer struct {
 	outputTransportFactory TTransportFactory
 	inputProtocolFactory   TProtocolFactory
 	outputProtocolFactory  TProtocolFactory
+	errorLogger            *func(error)
 }
 
 func NewTSimpleServer2(processor TProcessor, serverTransport TServerTransport) *TSimpleServer {
@@ -95,6 +96,10 @@ func NewTSimpleServerFactory6(processorFactory TProcessorFactory, serverTranspor
 		inputProtocolFactory:   inputProtocolFactory,
 		outputProtocolFactory:  outputProtocolFactory,
 	}
+}
+
+func (p *TSimpleServer) SetErrorLogger(fn func(error)) {
+	p.errorLogger = &fn
 }
 
 func (p *TSimpleServer) ProcessorFactory() TProcessorFactory {
@@ -195,7 +200,15 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
 	defer func() {
 		if e := recover(); e != nil {
-			log.Printf("panic in processor: %s: %s", e, debug.Stack())
+			if p.errorLogger != nil {
+				if err, ok := e.(error); ok {
+					(*p.errorLogger)(err)
+				} else {
+					log.Printf("panic in processor: %s: %s", e, debug.Stack())
+				}
+			} else {
+				log.Printf("panic in processor: %s: %s", e, debug.Stack())
+			}
 		}
 	}()
 
