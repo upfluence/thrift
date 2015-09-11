@@ -42,6 +42,7 @@ type TSimpleServer struct {
 	outputTransportFactory TTransportFactory
 	inputProtocolFactory   TProtocolFactory
 	outputProtocolFactory  TProtocolFactory
+	errorLogger            *func(error)
 }
 
 func NewTSimpleServer2(processor TProcessor, serverTransport TServerTransport) *TSimpleServer {
@@ -95,6 +96,10 @@ func NewTSimpleServerFactory6(processorFactory TProcessorFactory, serverTranspor
 		inputProtocolFactory:   inputProtocolFactory,
 		outputProtocolFactory:  outputProtocolFactory,
 	}
+}
+
+func (p *TSimpleServer) SetErrorLogger(fn func(error)) {
+	p.errorLogger = &fn
 }
 
 func (p *TSimpleServer) ProcessorFactory() TProcessorFactory {
@@ -152,10 +157,29 @@ func (p *TSimpleServer) AcceptLoop() error {
 	for {
 		closed, err := p.innerAccept()
 		if err != nil {
+			if p.errorLogger != nil {
+				(*p.errorLogger)(err)
+			} else {
+				log.Println("error accepting request:", err)
+			}
+
+			select {
+			case <-p.quit:
+				return nil
+			default:
+			}
 			return err
 		}
-		if closed != 0 {
-			return nil
+		if client != nil {
+			go func() {
+				if err := p.processRequests(client); err != nil {
+					if p.errorLogger != nil {
+						(*p.errorLogger)(err)
+					} else {
+						log.Println("error processing request:", err)
+					}
+				}
+			}()
 		}
 	}
 }
@@ -195,7 +219,15 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
 	defer func() {
 		if e := recover(); e != nil {
-			log.Printf("panic in processor: %s: %s", e, debug.Stack())
+			if p.errorLogger != nil {
+				if err, ok := e.(error); ok {
+					(*p.errorLogger)(err)
+				} else {
+					log.Printf("panic in processor: %s: %s", e, debug.Stack())
+				}
+			} else {
+				log.Printf("panic in processor: %s: %s", e, debug.Stack())
+			}
 		}
 	}()
 
@@ -214,6 +246,14 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 		if err, ok := err.(TTransportException); ok && err.TypeId() == END_OF_FILE {
 			return nil
 		} else if err != nil {
+<<<<<<< HEAD
+=======
+			if p.errorLogger != nil {
+				(*p.errorLogger)(err)
+			} else {
+				log.Println("error processing request:", err)
+			}
+>>>>>>> 711bc2784 (Add an error logger in the simple server)
 			return err
 		}
 		if err, ok := err.(TApplicationException); ok && err.TypeId() == UNKNOWN_METHOD {
