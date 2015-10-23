@@ -32,4 +32,5 @@ type TServer interface {
 	// Stops the server. This is optional on a per-implementation basis. Not
 	// all servers are required to be cleanly stoppable.
 	Stop() error
+	SetErrorLogger(func(error))
 }
