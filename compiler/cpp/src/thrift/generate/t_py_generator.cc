@@ -1904,7 +1904,7 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   // Open function
   if (gen_tornado_) {
     if  (gen_metrics_) {
-      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+      f_service_ << indent() << "@metrics.instrument(\"" << tservice->get_name() << "." << tfunction->get_name() << ".server\")" << endl;
     }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
