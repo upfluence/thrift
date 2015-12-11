@@ -1983,7 +1983,8 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
     if (gen_metrics_) {
       f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
-      f_types_ << indent() << "thrift.Metrics.Timing(\"" << funname
+      f_types_ << indent() << "thrift.Metrics.Timing(\""
+                 << tservice->get_name() << "." << (*fld_iter)->get_name()
                  << ".client\", t1 - t0)" << endl;
     }
     f_types_ << indent() << "return" << endl;
@@ -2776,10 +2777,10 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     for (xf_iter = x_fields.begin(); xf_iter != x_fields.end(); ++xf_iter) {
       f_types_ << indent() << "  case " << type_to_go_type(((*xf_iter)->get_type())) << ":"
                  << endl;
-<<<<<<< b3caf0ae31d18c5173205fb46a1318f9560763eb:compiler/cpp/src/thrift/generate/t_go_generator.cc
       if (gen_metrics_) {
         f_types_ << indent() << "thrift.Metrics.Incr(\""
-                   << tfunction->get_name() << ".exceptions."
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".exceptions."
                    << type_to_go_type(((*xf_iter)->get_type()))
                    << "\")" << endl;
       }
@@ -2788,8 +2789,9 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
 
     f_types_ << indent() << "  default:" << endl;
     if (gen_metrics_) {
-      f_types_ << indent() << "thrift.Metrics.Incr(\""
-                 << tfunction->get_name() << ".success\")" << endl;
+      f_typees_ << indent() << "thrift.Metrics.Incr(\""
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".success\")" << endl;
     }
   }
 
@@ -2829,7 +2831,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (gen_metrics_) {
       f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_types_ << indent() << "thrift.Metrics.Timing(\""
-               << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".server\", t1 - t0)" << endl;
       f_types_ << endl;
     }
     f_types_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
@@ -2856,7 +2859,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_types_ << endl;
       f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_types_ << indent() << "thrift.Metrics.Timing(\""
-                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".server\", t1 - t0)" << endl;
       f_types_ << endl;
     }
 
