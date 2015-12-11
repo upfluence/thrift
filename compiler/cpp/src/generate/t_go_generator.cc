@@ -1888,7 +1888,8 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
     if (gen_metrics_) {
       f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
-      f_service_ << indent() << "thrift.Metrics.Timing(\"" << funname
+      f_service_ << indent() << "thrift.Metrics.Timing(\""
+                 << tservice->get_name() << "." << (*f_iter)->get_name()
                  << ".client\", t1 - t0)" << endl;
     }
     f_service_ << indent() << "return" << endl;
@@ -2672,7 +2673,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
 
       if (gen_metrics_) {
         f_service_ << indent() << "thrift.Metrics.Incr(\""
-                   << tfunction->get_name() << ".exceptions."
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".exceptions."
                    << type_to_go_type(((*xf_iter)->get_type()))
                    << "\")" << endl;
       }
@@ -2684,7 +2686,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_service_ << indent() << "  default:" << endl;
     if (gen_metrics_) {
       f_service_ << indent() << "thrift.Metrics.Incr(\""
-                 << tfunction->get_name() << ".success\")" << endl;
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".success\")" << endl;
     }
   }
 
@@ -2725,7 +2728,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_service_ << endl;
       f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".server\", t1 - t0)" << endl;
       f_service_ << endl;
     }
     f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
@@ -2752,7 +2756,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_service_ << endl;
       f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tfunction->get_name() << ".server\", t1 - t0)" << endl;
+                 << tservice->get_name() << "." << tfunction->get_name()
+                 << ".server\", t1 - t0)" << endl;
       f_service_ << endl;
     }
     f_service_ << endl;
