@@ -1325,7 +1325,7 @@ void t_py_generator::generate_service_client(t_service* tservice) {
     f_service_ << endl;
 =======
     if (gen_tornado_ && gen_metrics_) {
-      indent(f_service_) << "@metrics.instrument(\"" << funname << ".client\")" << endl;
+      indent(f_service_) << "@metrics.instrument(\"" << tservice->get_name() << "." << funname << ".client\")" << endl;
     }
 >>>>>>> deee3b5c9 (Add some instrumentation of the tornado lib):compiler/cpp/src/generate/t_py_generator.cc
     // Open function
@@ -1877,7 +1877,7 @@ void t_py_generator::generate_process_function(t_service* tservice, t_function* 
   // Open function
   if (gen_tornado_) {
     if  (gen_metrics_) {
-      f_service_ << indent() << "@metrics.instrument(\"" << tfunction->get_name() << ".server\")" << endl;
+      f_service_ << indent() << "@metrics.instrument(\"" << tservice->get_name() << "." << tfunction->get_name() << ".server\")" << endl;
     }
     f_service_ << indent() << "@gen.coroutine" << endl << indent() << "def process_"
                << tfunction->get_name() << "(self, seqid, iprot, oprot):" << endl;
