@@ -1889,9 +1889,21 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     if (gen_metrics_) {
       f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tservice->get_name() << "." << (*f_iter)->get_name()
+                 << tservice->get_name() << "." << funname
                  << ".client\", t1 - t0)" << endl;
+
+      f_service_ << indent() << "if err == nil {" << endl;
+      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
+                 << tservice->get_name() << "." << funname
+                 << ".client.success\")" << endl;
+      f_service_ << indent() << "} else {" << endl;
+      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
+                 << tservice->get_name() << "." << funname
+                 << ".client.exceptions.application_error\")" << endl;
+      f_service_ << indent() << "}" << endl;
     }
+
+
     f_service_ << indent() << "return" << endl;
 
     indent_down();
@@ -2674,7 +2686,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       if (gen_metrics_) {
         f_service_ << indent() << "thrift.Metrics.Incr(\""
                    << tservice->get_name() << "." << tfunction->get_name()
-                   << ".exceptions."
+                   << ".server.exceptions."
                    << type_to_go_type(((*xf_iter)->get_type()))
                    << "\")" << endl;
       }
@@ -2687,7 +2699,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (gen_metrics_) {
       f_service_ << indent() << "thrift.Metrics.Incr(\""
                  << tservice->get_name() << "." << tfunction->get_name()
-                 << ".success\")" << endl;
+                 << ".server.success\")" << endl;
     }
   }
 
@@ -2700,6 +2712,13 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_service_ << indent() << "  x.Write(oprot)" << endl;
     f_service_ << indent() << "  oprot.WriteMessageEnd()" << endl;
     f_service_ << indent() << "  oprot.Flush()" << endl;
+
+    if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".server.exceptions.application_error"
+                   << "\")" << endl;
+    }
   }
 
   f_service_ << indent() << "  return true, err2" << endl;
@@ -2714,6 +2733,13 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (!tfunction->get_returntype()->is_void()) {
       f_service_ << " else {" << endl; // make sure we set Success retval only on success
       indent_up();
+
+      if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".server.success\")" << endl;
+      }
+
       f_service_ << indent() << "result.Success = ";
       if (need_reference) {
         f_service_ << "&";
