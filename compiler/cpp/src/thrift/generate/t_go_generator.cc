@@ -1982,12 +1982,34 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     }
 
     if (gen_metrics_) {
+<<<<<<< 1c5ee9a226e3f3e5bb105e8f9a057b38f5fc6c24:compiler/cpp/src/thrift/generate/t_go_generator.cc
       f_types_ << indent() << "t1 := time.Now().UnixNano()" << endl;
       f_types_ << indent() << "thrift.Metrics.Timing(\""
                  << tservice->get_name() << "." << (*fld_iter)->get_name()
+=======
+      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
+      f_service_ << indent() << "thrift.Metrics.Timing(\""
+                 << tservice->get_name() << "." << funname
+>>>>>>> Add some metrics to the golang compiler:compiler/cpp/src/generate/t_go_generator.cc
                  << ".client\", t1 - t0)" << endl;
+
+      f_service_ << indent() << "if err == nil {" << endl;
+      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
+                 << tservice->get_name() << "." << funname
+                 << ".client.success\")" << endl;
+      f_service_ << indent() << "} else {" << endl;
+      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
+                 << tservice->get_name() << "." << funname
+                 << ".client.exceptions.application_error\")" << endl;
+      f_service_ << indent() << "}" << endl;
     }
+<<<<<<< 1c5ee9a226e3f3e5bb105e8f9a057b38f5fc6c24:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << indent() << "return" << endl;
+=======
+
+
+    f_service_ << indent() << "return" << endl;
+>>>>>>> Add some metrics to the golang compiler:compiler/cpp/src/generate/t_go_generator.cc
 
     indent_down();
     f_types_ << indent() << "}" << endl << endl;
@@ -2780,7 +2802,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       if (gen_metrics_) {
         f_types_ << indent() << "thrift.Metrics.Incr(\""
                    << tservice->get_name() << "." << tfunction->get_name()
-                   << ".exceptions."
+                   << ".server.exceptions."
                    << type_to_go_type(((*xf_iter)->get_type()))
                    << "\")" << endl;
       }
@@ -2791,7 +2813,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (gen_metrics_) {
       f_typees_ << indent() << "thrift.Metrics.Incr(\""
                  << tservice->get_name() << "." << tfunction->get_name()
-                 << ".success\")" << endl;
+                 << ".server.success\")" << endl;
     }
   }
 
@@ -2801,9 +2823,22 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
                << ": \" + err2.Error())" << endl;
     f_types_ << indent() << "  oprot.WriteMessageBegin(\"" << escape_string(tfunction->get_name())
                << "\", thrift.EXCEPTION, seqId)" << endl;
+<<<<<<< 1c5ee9a226e3f3e5bb105e8f9a057b38f5fc6c24:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << indent() << "  x.Write(oprot)" << endl;
     f_types_ << indent() << "  oprot.WriteMessageEnd()" << endl;
     f_types_ << indent() << "  oprot.Flush()" << endl;
+=======
+    f_service_ << indent() << "  x.Write(oprot)" << endl;
+    f_service_ << indent() << "  oprot.WriteMessageEnd()" << endl;
+    f_service_ << indent() << "  oprot.Flush()" << endl;
+
+    if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".server.exceptions.application_error"
+                   << "\")" << endl;
+    }
+>>>>>>> Add some metrics to the golang compiler:compiler/cpp/src/generate/t_go_generator.cc
   }
 
   f_types_ << indent() << "  return true, err2" << endl;
@@ -2818,7 +2853,18 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (!tfunction->get_returntype()->is_void()) {
       f_types_ << " else {" << endl; // make sure we set Success retval only on success
       indent_up();
+<<<<<<< 1c5ee9a226e3f3e5bb105e8f9a057b38f5fc6c24:compiler/cpp/src/thrift/generate/t_go_generator.cc
       f_types_ << indent() << "result.Success = ";
+=======
+
+      if (gen_metrics_) {
+        f_service_ << indent() << "thrift.Metrics.Incr(\""
+                   << tservice->get_name() << "." << tfunction->get_name()
+                   << ".server.success\")" << endl;
+      }
+
+      f_service_ << indent() << "result.Success = ";
+>>>>>>> Add some metrics to the golang compiler:compiler/cpp/src/generate/t_go_generator.cc
       if (need_reference) {
         f_types_ << "&";
       }
