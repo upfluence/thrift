@@ -33,6 +33,6 @@ func (m *Metric) Incr(metricName string) {
 	m.tracer.Count(metricName, 1)
 }
 
-func (m *Metric) Timing(metricName string, duration time.Duration) {
-	m.tracer.Timing(metricName, duration)
+func (m *Metric) Timing(metricName string, duration int64) {
+	m.tracer.Timing(metricName, time.Duration(duration))
 }
