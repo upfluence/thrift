@@ -9,7 +9,7 @@ if os.environ.get("STATSD_URL", None):
                                        prefix=os.environ.get('STATSD_PREFIX',
                                                              None))
 else:
-    statsd_client = None
+    statsd_client = statsd.StatsClient()
 
 
 def instrument(name):
