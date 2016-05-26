@@ -1023,6 +1023,13 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   f_service_.indent_up();
 
+  if (gen_metrics_) {
+    f_service_.indent() << "::Thrift::Metrics.instrument('"
+                        << capitalize(tservice->get_name()) << "."
+                        << tfunction->get_name() << ".server') do" << endl;
+    f_service_.indent_up();
+  }
+
   string argsname = capitalize(tfunction->get_name()) + "_args";
   string resultname = capitalize(tfunction->get_name()) + "_result";
 
@@ -1092,6 +1099,12 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   // Close function
   f_service_.indent_down();
+
+  if (gen_metrics_) {
+    f_service_.indent() << "end" << endl;
+    f_service_.indent_down();
+  }
+
   f_service_.indent() << "end" << endl << endl;
 }
 
