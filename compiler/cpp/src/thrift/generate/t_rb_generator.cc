@@ -230,6 +230,11 @@ public:
 
 private:
   /**
+   * True if metrcis should be enabled.
+   */
+
+  bool gen_metrics_;
+  /**
    * File streams
    */
 
@@ -1021,6 +1026,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
+
   f_service_.indent_up();
 
   string argsname = capitalize(tfunction->get_name()) + "_args";
@@ -1285,4 +1291,5 @@ THRIFT_REGISTER_GENERATOR(
     rb,
     "Ruby",
     "    rubygems:        Add a \"require 'rubygems'\" line to the top of each generated file.\n"
-    "    namespaced:      Generate files in idiomatic namespaced directories.\n")
+    "    namespaced:      Generate files in idiomatic namespaced directories.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n")
