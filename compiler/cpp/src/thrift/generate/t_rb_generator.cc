@@ -769,6 +769,10 @@ void t_rb_generator::generate_service(t_service* tservice) {
 
   f_service_ << rb_autogen_comment() << endl << render_require_thrift();
 
+  if (gen_metrics_) {
+    f_service_ << "require 'thrift/metrics'" << endl;
+  }
+
   if (tservice->get_extends() != NULL) {
     if (namespaced_) {
       f_service_ << "require '" << rb_namespace_to_path_prefix(
@@ -871,6 +875,14 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     // Open function
     f_service_.indent() << "def " << function_signature(*f_iter) << endl;
     f_service_.indent_up();
+
+    if (gen_metrics_) {
+      f_service_.indent() << "::Thrift::Metrics.instrument('"
+                          << capitalize(tservice->get_name()) << "."
+                          << funname << ".client') do" << endl;
+      f_service_.indent_up();
+    }
+
     f_service_.indent() << "send_" << funname << "(";
 
     bool first = true;
@@ -892,6 +904,12 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       f_service_ << "recv_" << funname << "()" << endl;
     }
     f_service_.indent_down();
+
+    if (gen_metrics_) {
+      f_service_.indent() << "end" << endl;
+      f_service_.indent_down();
+    }
+
     f_service_.indent() << "end" << endl;
     f_service_ << endl;
 
