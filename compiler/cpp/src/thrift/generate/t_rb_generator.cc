@@ -83,19 +83,9 @@ public:
     (void)option_string;
     std::map<std::string, std::string>::const_iterator iter;
 
-    require_rubygems_ = false;
-    namespaced_ = false;
-    for( iter = parsed_options.begin(); iter != parsed_options.end(); ++iter) {
-      if( iter->first.compare("rubygems") == 0) {
-        require_rubygems_ = true;
-      } else if( iter->first.compare("namespaced") == 0) {
-        namespaced_ = true;
-      } else {
-        throw "unknown option ruby:" + iter->first;
-      }
-    }
-
-    out_dir_base_ = "gen-rb";
+    require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
+    namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
+    gen_metrics_ = (parsed_options.find("metrics") != parsed_options.end());
   }
 
   /**
@@ -229,6 +219,11 @@ public:
   void end_namespace(t_rb_ofstream&, std::vector<std::string>);
 
 private:
+  /**
+   * True if metrcis should be enabled.
+   */
+
+  bool gen_metrics_;
   /**
    * File streams
    */
@@ -1021,6 +1016,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
+
   f_service_.indent_up();
 
   string argsname = capitalize(tfunction->get_name()) + "_args";
@@ -1285,4 +1281,5 @@ THRIFT_REGISTER_GENERATOR(
     rb,
     "Ruby",
     "    rubygems:        Add a \"require 'rubygems'\" line to the top of each generated file.\n"
-    "    namespaced:      Generate files in idiomatic namespaced directories.\n")
+    "    namespaced:      Generate files in idiomatic namespaced directories.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n")
