@@ -20,6 +20,7 @@
 require 'spec_helper'
 require 'rack/test'
 require 'thrift/server/thin_http_server'
+require 'thrift/server/rack_application'
 
 describe Thrift::ThinHTTPServer do
 
@@ -138,4 +139,3 @@ describe Thrift::ThinHTTPServer::RackApplication do
   end
 
 end
-
