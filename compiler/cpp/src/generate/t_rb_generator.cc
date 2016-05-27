@@ -85,6 +85,7 @@ public:
 
     require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
     namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
+    gen_metrics_ = (parsed_options.find("metrics") != parsed_options.end());
   }
 
   /**
@@ -216,6 +217,11 @@ public:
   void end_namespace(t_rb_ofstream&, std::vector<std::string>);
 
 private:
+  /**
+   * True if metrcis should be enabled.
+   */
+
+  bool gen_metrics_;
   /**
    * File streams
    */
@@ -752,6 +758,10 @@ void t_rb_generator::generate_service(t_service* tservice) {
 
   f_service_ << rb_autogen_comment() << endl << render_require_thrift();
 
+  if (gen_metrics_) {
+    f_service_ << "require 'thrift/metrics'" << endl;
+  }
+
   if (tservice->get_extends() != NULL) {
     if (namespaced_) {
       f_service_ << "require '" << rb_namespace_to_path_prefix(tservice->get_extends()->get_program()->get_namespace("rb")) << underscore(tservice->get_extends()->get_name())
@@ -853,6 +863,14 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     // Open function
     f_service_.indent() << "def " << function_signature(*f_iter) << endl;
     f_service_.indent_up();
+
+    if (gen_metrics_) {
+      f_service_.indent() << "::Thrift::Metrics.instrument('"
+                          << capitalize(tservice->get_name()) << "."
+                          << funname << ".client') do" << endl;
+      f_service_.indent_up();
+    }
+
     f_service_.indent() << "send_" << funname << "(";
 
     bool first = true;
@@ -874,6 +892,12 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       f_service_ << "recv_" << funname << "()" << endl;
     }
     f_service_.indent_down();
+
+    if (gen_metrics_) {
+      f_service_.indent() << "end" << endl;
+      f_service_.indent_down();
+    }
+
     f_service_.indent() << "end" << endl;
     f_service_ << endl;
 
@@ -984,7 +1008,15 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   (void)tservice;
   // Open function
   f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
+
   f_service_.indent_up();
+
+  if (gen_metrics_) {
+    f_service_.indent() << "::Thrift::Metrics.instrument('"
+                        << capitalize(tservice->get_name()) << "."
+                        << tfunction->get_name() << ".server') do" << endl;
+    f_service_.indent_up();
+  }
 
   string argsname = capitalize(tfunction->get_name()) + "_args";
   string resultname = capitalize(tfunction->get_name()) + "_result";
@@ -1055,6 +1087,12 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   // Close function
   f_service_.indent_down();
+
+  if (gen_metrics_) {
+    f_service_.indent() << "end" << endl;
+    f_service_.indent_down();
+  }
+
   f_service_.indent() << "end" << endl << endl;
 }
 
@@ -1248,4 +1286,5 @@ THRIFT_REGISTER_GENERATOR(
     rb,
     "Ruby",
     "    rubygems:        Add a \"require 'rubygems'\" line to the top of each generated file.\n"
-    "    namespaced:      Generate files in idiomatic namespaced directories.\n")
+    "    namespaced:      Generate files in idiomatic namespaced directories.\n"
+    "    metrics:         Generate code with endpoint monitoring.\n")
