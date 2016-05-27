@@ -20,6 +20,7 @@
 require 'spec_helper'
 require 'rack/test'
 require 'thrift/server/thin_http_server'
+require 'thrift/server/rack_application'
 
 describe Thrift::ThinHTTPServer do
 
@@ -35,7 +36,7 @@ describe Thrift::ThinHTTPServer do
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext' do
-        Thrift::ThinHTTPServer::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
+        Thrift::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor)
       end
 
@@ -60,7 +61,7 @@ describe Thrift::ThinHTTPServer do
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext with a different protocol factory' do
-        Thrift::ThinHTTPServer::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
+        Thrift::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor,
                            :protocol_factory => Thrift::JsonProtocolFactory.new)
       end
@@ -83,59 +84,3 @@ describe Thrift::ThinHTTPServer do
   end
 
 end
-
-describe Thrift::ThinHTTPServer::RackApplication do
-  include Rack::Test::Methods
-
-  let(:processor) { mock('processor') }
-  let(:protocol_factory) { mock('protocol factory') }
-
-  def app
-    Thrift::ThinHTTPServer::RackApplication.for("/", processor, protocol_factory)
-  end
-
-  context "404 response" do
-
-    it 'receives a non-POST' do
-      header('Content-Type', "application/x-thrift")
-      get "/"
-      last_response.status.should be 404
-    end
-
-    it 'receives a header other than application/x-thrift' do
-      header('Content-Type', "application/json")
-      post "/"
-      last_response.status.should be 404
-    end
-
-  end
-
-  context "200 response" do
-
-    before do
-      protocol_factory.stub(:get_protocol)
-      processor.stub(:process)
-    end
-
-    it 'creates an IOStreamTransport' do
-      header('Content-Type', "application/x-thrift")
-      Thrift::IOStreamTransport.should_receive(:new).with(an_instance_of(Rack::Lint::InputWrapper), an_instance_of(Rack::Response))
-      post "/"
-    end
-
-    it 'fetches the right protocol based on the Transport' do
-      header('Content-Type', "application/x-thrift")
-      protocol_factory.should_receive(:get_protocol).with(an_instance_of(Thrift::IOStreamTransport))
-      post "/"
-    end
-
-    it 'status code 200' do
-      header('Content-Type', "application/x-thrift")
-      post "/"
-      last_response.ok?.should be_true
-    end
-
-  end
-
-end
-

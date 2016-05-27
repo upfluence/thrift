@@ -21,7 +21,6 @@ require 'rack'
 
 module Thrift
   class RackApplication
-
     THRIFT_HEADER = "application/x-thrift"
 
     def self.for(path, processor, protocol_factory)
