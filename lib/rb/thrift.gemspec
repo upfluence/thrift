@@ -2,9 +2,9 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = 'thrift'
-  s.version     = '1.0.0'
-  s.authors     = ['Apache Thrift Developers']
+  s.name        = 'upfluence-thrift'
+  s.version     = '1.0.1'
+  s.authors     = ['Thrift Developers']
   s.email       = ['dev@thrift.apache.org']
   s.homepage    = 'http://thrift.apache.org'
   s.summary     = %q{Ruby bindings for Apache Thrift}
