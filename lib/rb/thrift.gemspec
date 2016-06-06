@@ -2,13 +2,8 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-<<<<<<< HEAD
-  s.name        = 'thrift'
-  s.version     = '0.12.0'
-=======
   s.name        = 'upfluence-thrift'
-  s.version     = '1.0.1'
->>>>>>> 880fab884 (Set the gem name as upfluence-thrift)
+  s.version     = '1.0.2'
   s.authors     = ['Thrift Developers']
   s.email       = ['dev@thrift.apache.org']
   s.homepage    = 'http://thrift.apache.org'
