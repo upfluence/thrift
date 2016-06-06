@@ -1090,6 +1090,12 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   if (tfunction->is_oneway()) {
     f_service_.indent() << "return" << endl;
     f_service_.indent_down();
+
+    if (gen_metrics_) {
+      f_service_.indent() << "end" << endl;
+      f_service_.indent_down();
+    }
+
     f_service_.indent() << "end" << endl << endl;
     return;
   }
