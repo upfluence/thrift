@@ -37,7 +37,7 @@ module Thrift
           def instrument(name, &block)
             begin
               r = block.call
-              Metrics.client.incr("#{name}.success")
+              Metrics.client.increment("#{name}.success")
               r
             rescue => e
               Metrics.client.increment("#{name}.exceptions.#{e.class.name.downcase}")
