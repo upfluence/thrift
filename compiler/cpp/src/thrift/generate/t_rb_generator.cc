@@ -90,13 +90,14 @@ public:
         require_rubygems_ = true;
       } else if( iter->first.compare("namespaced") == 0) {
         namespaced_ = true;
+      } else if( iter->first.compare("metrics") == 0) {
+        gen_metrics_ = true;
       } else {
         throw "unknown option ruby:" + iter->first;
       }
     }
 
     out_dir_base_ = "gen-rb";
-    gen_metrics_ = (parsed_options.find("metrics") != parsed_options.end());
   }
 
   /**

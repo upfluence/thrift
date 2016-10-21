@@ -111,6 +111,8 @@ public:
         gen_tornado_ = true;
       } else if( iter->first.compare("coding") == 0) {
         coding_ = iter->second;
+      } else if( iter->first.compare("metrics") == 0) {
+        gen_metrics_  = true;
       } else {
         throw "unknown option py:" + iter->first;
       }
@@ -120,9 +122,6 @@ public:
       throw "at most one of 'twisted' and 'tornado' are allowed";
     }
 
-
-    iter = parsed_options.find("metrics");
-    gen_metrics_ = (iter != parsed_options.end());
 
     copy_options_ = option_string;
 
