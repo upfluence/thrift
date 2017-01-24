@@ -32,6 +32,7 @@ module Thrift
       @headers = {'Content-Type' => 'application/x-thrift'}
       @outbuf = Bytes.empty_byte_buffer
       @ssl_verify_mode = opts.fetch(:ssl_verify_mode, OpenSSL::SSL::VERIFY_PEER)
+      @error_logger = opts[:error_logger]
     end
 
     def open?; true end
@@ -50,6 +51,9 @@ module Thrift
       data = resp.body
       data = Bytes.force_binary_encoding(data)
       @inbuf = StringIO.new data
+    rescue => e
+      @error_logger.capture_exception(e, extra: { url: @url }) if @error_logger
+    ensure
       @outbuf = Bytes.empty_byte_buffer
     end
   end
