@@ -32,6 +32,7 @@ module Thrift
       @headers = {'Content-Type' => 'application/x-thrift'}
       @outbuf = Bytes.empty_byte_buffer
       @ssl_verify_mode = opts.fetch(:ssl_verify_mode, OpenSSL::SSL::VERIFY_PEER)
+      @error_logger = opts[:error_logger]
     end
 
     def open?; true end
@@ -53,7 +54,7 @@ module Thrift
     ensure
       @outbuf = Bytes.empty_byte_buffer
     end
-    
+
     def to_s
       "@{self.url}"
     end
