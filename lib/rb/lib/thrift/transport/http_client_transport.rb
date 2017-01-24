@@ -33,6 +33,7 @@ module Thrift
       @outbuf = Bytes.empty_byte_buffer
       @ssl_verify_mode = opts.fetch(:ssl_verify_mode, OpenSSL::SSL::VERIFY_PEER)
       @error_logger = opts[:error_logger]
+      @retries = opts.fetch(:retries, 1)
     end
 
     def open?; true end
@@ -44,6 +45,7 @@ module Thrift
     end
 
     def flush
+      tries ||= @retries
       http = Net::HTTP.new @url.host, @url.port
       http.use_ssl = @url.scheme == 'https'
       http.verify_mode = @ssl_verify_mode if @url.scheme == 'https'
@@ -52,6 +54,7 @@ module Thrift
       data = Bytes.force_binary_encoding(data)
       @inbuf = StringIO.new data
     rescue => e
+      retry if (tries -= 1) > 0
       @error_logger.capture_exception(e, extra: { url: @url }) if @error_logger
     ensure
       @outbuf = Bytes.empty_byte_buffer
