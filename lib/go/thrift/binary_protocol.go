@@ -29,6 +29,8 @@ import (
 	"math"
 )
 
+const readLimit = 32768
+
 type TBinaryProtocol struct {
 	trans         TRichTransport
 	origTransport TTransport
