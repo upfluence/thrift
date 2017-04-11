@@ -29,7 +29,10 @@ import (
 	"math"
 )
 
-const readLimit = 32768
+const (
+	readLimit    = 32768
+	maxSliceSize = 1 << 20
+)
 
 type TBinaryProtocol struct {
 	trans         TRichTransport
@@ -326,7 +329,7 @@ func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err erro
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
@@ -350,7 +353,7 @@ func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err error) 
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
@@ -375,7 +378,7 @@ func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err error) {
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
