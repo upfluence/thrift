@@ -29,6 +29,14 @@ import (
 	"math"
 )
 
+<<<<<<< HEAD
+=======
+const (
+	readLimit    = 32768
+	maxSliceSize = 1 << 20
+)
+
+>>>>>>> f2179df2e (lib/go/binary_protocol: Cap the size allowed in the slices)
 type TBinaryProtocol struct {
 	trans         TRichTransport
 	origTransport TTransport
@@ -320,7 +328,7 @@ func (p *TBinaryProtocol) ReadMapBegin() (kType, vType TType, size int, err erro
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
@@ -344,7 +352,7 @@ func (p *TBinaryProtocol) ReadListBegin() (elemType TType, size int, err error) 
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
@@ -369,7 +377,7 @@ func (p *TBinaryProtocol) ReadSetBegin() (elemType TType, size int, err error) {
 		err = NewTProtocolException(e)
 		return
 	}
-	if size32 < 0 {
+	if size32 < 0 || size32 > maxSliceSize {
 		err = invalidDataLength
 		return
 	}
