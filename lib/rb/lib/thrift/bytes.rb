@@ -1,5 +1,5 @@
 # encoding: ascii-8bit
-# 
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License. You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,7 +26,7 @@ module Thrift
       #
       # size - The Integer size of the buffer (default: nil) to create
       #
-      # Returns a String with BINARY encoding, filled with null characters 
+      # Returns a String with BINARY encoding, filled with null characters
       # if size is greater than zero
       def self.empty_byte_buffer(size = nil)
         if (size && size > 0)
@@ -76,6 +76,8 @@ module Thrift
       # Returns a new String with BINARY encoding, containing the UTF-8
       # bytes of the original string.
       def self.convert_to_utf8_byte_buffer(string)
+        string = string.to_s if string.is_a?(Symbol)
+
         if string.encoding != Encoding::UTF_8
           # transcode to UTF-8
           string = string.encode(Encoding::UTF_8)
