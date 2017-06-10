@@ -98,7 +98,15 @@ public:
       }
     }
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     out_dir_base_ = "gen-go";
+=======
+    iter = parsed_options.find("package");
+
+    if (iter != parsed_options.end()) {
+      package_flag = (iter->second);
+    }
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
   }
 
   /**
@@ -285,11 +293,6 @@ private:
   std::string gen_thrift_import_;
   bool read_write_private_;
   bool ignore_initialisms_;
-
-  /**
-   * True if metrcis should be enabled.
-   */
-  bool gen_metrics_;
 
   /**
    * File streams
@@ -884,10 +887,6 @@ string t_go_generator::go_imports_begin(bool consts) {
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
 
-  if (gen_metrics_) {
-    r = r + "\t\"time\"\n";
-  }
-
   return r;
 }
 
@@ -903,9 +902,15 @@ string t_go_generator::go_imports_end() {
       "// (needed to ensure safety because of naive import list construction.)\n"
       "var _ = thrift.ZERO\n"
       "var _ = fmt.Printf\n"
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
       "var _ = context.Background\n"
       "var _ = reflect.DeepEqual\n"
       "var _ = bytes.Equal\n\n");
+=======
+      "var _ = bytes.Equal\n");
+
+  return r;
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
 }
 
 /**
@@ -2035,16 +2040,88 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_types_ << indent() << "func (p *" << serviceName << "Client) "
                << function_signature_if(*f_iter, "", true) << " {" << endl;
     indent_up();
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     std::string method = (*f_iter)->get_name();
     std::string argsType = publicize(method + "_args", true);
     std::string argsName = tmp("_args");
     f_types_ << indent() << "var " << argsName << " " << argsType << endl;
+=======
+    /*
+    f_service_ <<
+      indent() << "p.SeqId += 1" << endl;
+    if (!(*f_iter)->is_oneway()) {
+      f_service_ <<
+        indent() << "d := defer.Deferred()" << endl <<
+        indent() << "p.Reqs[p.SeqId] = d" << endl;
+    }
+    */
+    f_service_ << indent() << "if err = p.send" << funname << "(";
+    bool first = true;
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
 
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
       f_types_ << indent() << argsName << "." << publicize((*fld_iter)->get_name())
                << " = " << variable_name_to_go_name((*fld_iter)->get_name()) << endl;
     }
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
+=======
+    f_service_ << "); err != nil { return }" << endl;
+
+
+    if ((*f_iter)->get_returntype()->is_void() && !(*f_iter)->is_oneway()) {
+      f_service_ << indent() << "err = p.recv" << funname << "()" << endl;
+    } else if (!(*f_iter)->is_oneway()) {
+      f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
+    }
+
+
+    f_service_ << indent() << "return" << endl;
+
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "func (p *" << serviceName << "Client) send"
+               << function_signature(*f_iter) << "(err error) {" << endl;
+    indent_up();
+    std::string argsname = publicize((*f_iter)->get_name() + "_args", true);
+    // Serialize the request header
+    f_service_ << indent() << "oprot := p.OutputProtocol" << endl;
+    f_service_ << indent() << "if oprot == nil {" << endl;
+    f_service_ << indent() << "  oprot = p.ProtocolFactory.GetProtocol(p.Transport)" << endl;
+    f_service_ << indent() << "  p.OutputProtocol = oprot" << endl;
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "p.SeqId++" << endl;
+    f_service_ << indent() << "if err = oprot.WriteMessageBegin(\"" << (*f_iter)->get_name()
+               << "\", " << ((*f_iter)->is_oneway() ? "thrift.ONEWAY" : "thrift.CALL")
+               << ", p.SeqId); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "args := " << argsname << "{" << endl;
+
+    for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
+      f_service_ << indent() << publicize((*fld_iter)->get_name())
+                 << " : " << variable_name_to_go_name((*fld_iter)->get_name()) << "," << endl;
+    }
+    f_service_ << indent() << "}" << endl;
+
+    // Write to the stream
+    f_service_ << indent() << "if err = args.Write(oprot); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "if err = oprot.WriteMessageEnd(); err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "  return" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl;
+    f_service_ << indent() << "return oprot.Flush()" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
     if (!(*f_iter)->is_oneway()) {
       std::string resultName = tmp("_result");
       std::string resultType = publicize(method + "_result", true);
@@ -2834,7 +2911,12 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     if (!tfunction->get_returntype()->is_void()) {
       f_types_ << " else {" << endl; // make sure we set Success retval only on success
       indent_up();
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
       f_types_ << indent() << "result.Success = ";
+=======
+
+      f_service_ << indent() << "result.Success = ";
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
       if (need_reference) {
         f_types_ << "&";
       }
@@ -2844,7 +2926,12 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     } else {
       f_types_ << endl;
     }
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
+=======
+
+    f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
                << endl;
     f_types_ << indent() << "  err = err2" << endl;
@@ -2864,8 +2951,13 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_types_ << indent() << "}" << endl;
     f_types_ << indent() << "return true, err" << endl;
   } else {
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << endl;
     f_types_ << indent() << "return true, nil" << endl;
+=======
+    f_service_ << endl;
+    f_service_ << indent() << "return true, nil" << endl;
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
   }
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
@@ -3690,7 +3782,11 @@ string t_go_generator::type_to_go_type_with_opt(t_type* type,
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_list()) {
     t_list* t = (t_list*)type;
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     string elemType = type_to_go_type(t->get_elem_type());
+=======
+    string elemType = type_to_go_type(t->get_elem_type(), true);
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_typedef()) {
     return maybe_pointer + publicize(type_name(type));
@@ -3747,9 +3843,14 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
                           "    thrift_import=   Override thrift package import path (default:" + DEFAULT_THRIFT_IMPORT + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
                           "                     Disable automatic spelling correction of initialisms (e.g. \"URL\")\n" \
                           "    read_write_private\n"
                           "                     Make read/write methods private, default is public Read/Write\n")
+=======
+                          "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
+                          "    package=         Package name (default: inferred from thrift file name)\n")
+>>>>>>> 68d1b9ff... compiler/go: Fix up the type of typedef default arg:compiler/cpp/src/generate/t_go_generator.cc
