@@ -1966,9 +1966,25 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   }
 
   indent_down();
-  f_types_ << indent() << "}" << endl << endl;
+  f_service_ << indent() << "}" << endl << endl;
 
-  // Legacy constructor function
+  // Constructor function by provider
+  f_service_ << indent() << "func New" << serviceName
+             << "ClientFactoryProvider(p thrift.TClientProvider) (*" << serviceName
+             << "Client, error) {" << endl;
+
+  indent_up();
+  f_service_ << indent() << "t, f, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "if err != nil {" << endl;
+  indent_up();
+  f_service_ << indent() << "return nil, err" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+  f_service_ << indent() << "return New" << serviceName << "ClientFactory(t, f), nil" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  // Constructor function
   f_types_ << indent() << "func New" << serviceName
              << "ClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *" << serviceName
              << "Client {" << endl;
@@ -2738,11 +2754,32 @@ void t_go_generator::generate_service_server(t_service* tservice) {
     f_types_ << indent() << "}" << endl << endl;
     f_types_ << indent() << "func (p *" << serviceName
                << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl;
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     f_types_ << indent() << "  return p.processorMap" << endl;
     f_types_ << indent() << "}" << endl << endl;
     f_types_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
                << ") *" << serviceName << "Processor {" << endl << endl;
     f_types_
+=======
+    f_service_ << indent() << "  return p.processorMap" << endl;
+    f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "func New" << serviceName << "ServerFactoryProvider(p thrift.TServerProvider, handler " << serviceName
+               << ") (thrift.TServer, error) {" << endl ;
+    indent_up();
+    f_service_ << indent() << "s, f, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl << endl;
+    f_service_ << indent() << "if err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "return nil, err" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "return s.GetServer(f, New" << serviceName << "Processor(handler)), nil" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+
+    f_service_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
+               << ") *" << serviceName << "Processor {" << endl;
+    f_service_
+>>>>>>> 0bc8b1c91 (compiler/go: Add client and server building from a TClient/ServerProvider):compiler/cpp/src/generate/t_go_generator.cc
         << indent() << "  " << self << " := &" << serviceName
         << "Processor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}"
         << endl;
