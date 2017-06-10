@@ -1790,6 +1790,23 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
+
+  // Constructor function by provider
+  f_service_ << indent() << "func New" << serviceName
+             << "ClientFactoryProvider(p thrift.TClientProvider) (*" << serviceName
+             << "Client, error) {" << endl;
+
+  indent_up();
+  f_service_ << indent() << "t, f, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "if err != nil {" << endl;
+  indent_up();
+  f_service_ << indent() << "return nil, err" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+  f_service_ << indent() << "return New" << serviceName << "ClientFactory(t, f), nil" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
   // Constructor function
   f_service_ << indent() << "func New" << serviceName
              << "ClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *" << serviceName
@@ -2528,8 +2545,21 @@ void t_go_generator::generate_service_server(t_service* tservice) {
                << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl;
     f_service_ << indent() << "  return p.processorMap" << endl;
     f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "func New" << serviceName << "ServerFactoryProvider(p thrift.TServerProvider, handler " << serviceName
+               << ") (thrift.TServer, error) {" << endl ;
+    indent_up();
+    f_service_ << indent() << "s, f, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl << endl;
+    f_service_ << indent() << "if err != nil {" << endl;
+    indent_up();
+    f_service_ << indent() << "return nil, err" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+    f_service_ << indent() << "return s.GetServer(f, New" << serviceName << "Processor(handler)), nil" << endl;
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
+
     f_service_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
-               << ") *" << serviceName << "Processor {" << endl << endl;
+               << ") *" << serviceName << "Processor {" << endl;
     f_service_
         << indent() << "  " << self << " := &" << serviceName
         << "Processor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}"
