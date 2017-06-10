@@ -113,9 +113,6 @@ public:
       gen_thrift_import_ = (iter->second);
     }
 
-    iter = parsed_options.find("metrics");
-    gen_metrics_ = (iter != parsed_options.end());
-
     iter = parsed_options.find("package");
 
     if (iter != parsed_options.end()) {
@@ -307,11 +304,6 @@ private:
   std::string gen_thrift_import_;
   bool read_write_private_;
   bool ignore_initialisms_;
-
-  /**
-   * True if metrcis should be enabled.
-   */
-  bool gen_metrics_;
 
   /**
    * File streams
@@ -906,10 +898,6 @@ string t_go_generator::go_imports_begin(bool consts) {
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
 
-  if (gen_metrics_) {
-    r = r + "\t\"time\"\n";
-  }
-
   return r;
 }
 
@@ -928,12 +916,6 @@ string t_go_generator::go_imports_end() {
       "var _ = context.Background\n"
       "var _ = reflect.DeepEqual\n"
       "var _ = bytes.Equal\n\n");
-
-  if (gen_metrics_) {
-    r = r + "var _ = time.Now()\n";
-  }
-
-  r = r + "\n";
 
   return r;
 }
@@ -2074,9 +2056,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
         indent() << "p.Reqs[p.SeqId] = d" << endl;
     }
     */
-    if (gen_metrics_) {
-      f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
-    }
     f_service_ << indent() << "if err = p.send" << funname << "(";
     bool first = true;
 
@@ -2092,23 +2071,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       f_service_ << indent() << "err = p.recv" << funname << "()" << endl;
     } else if (!(*f_iter)->is_oneway()) {
       f_service_ << indent() << "r, err = p.recv" << funname << "()" << endl;
-    }
-
-    if (gen_metrics_) {
-      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
-      f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tservice->get_name() << "." << funname
-                 << ".client\", t1 - t0)" << endl;
-
-      f_service_ << indent() << "if err == nil {" << endl;
-      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
-                 << tservice->get_name() << "." << funname
-                 << ".client.success\")" << endl;
-      f_service_ << indent() << "} else {" << endl;
-      f_service_ << indent() << indent() << "thrift.Metrics.Incr(\""
-                 << tservice->get_name() << "." << funname
-                 << ".client.exceptions.application_error\")" << endl;
-      f_service_ << indent() << "}" << endl;
     }
 
 
@@ -2891,10 +2853,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
 
   f_service_ << indent() << "var err2 error" << endl;
 
-  if (gen_metrics_) {
-    f_service_ << indent() << "t0 := time.Now().UnixNano()" << endl;
-  }
-
   f_service_ << indent() << "if ";
 
   if (!tfunction->is_oneway()) {
@@ -2935,24 +2893,11 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_types_ << indent() << "  case " << type_to_go_type(((*xf_iter)->get_type())) << ":"
                  << endl;
 
-      if (gen_metrics_) {
-        f_service_ << indent() << "thrift.Metrics.Incr(\""
-                   << tservice->get_name() << "." << tfunction->get_name()
-                   << ".server.exceptions."
-                   << type_to_go_type(((*xf_iter)->get_type()))
-                   << "\")" << endl;
-      }
-
       f_service_ << indent() << "result."
                  << publicize((*xf_iter)->get_name()) << " = v" << endl;
     }
 
     f_service_ << indent() << "  default:" << endl;
-    if (gen_metrics_) {
-      f_service_ << indent() << "thrift.Metrics.Incr(\""
-                 << tservice->get_name() << "." << tfunction->get_name()
-                 << ".server.success\")" << endl;
-    }
   }
 
   if (!tfunction->is_oneway()) {
@@ -2964,13 +2909,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_service_ << indent() << "  x.Write(oprot)" << endl;
     f_service_ << indent() << "  oprot.WriteMessageEnd()" << endl;
     f_service_ << indent() << "  oprot.Flush()" << endl;
-
-    if (gen_metrics_) {
-        f_service_ << indent() << "thrift.Metrics.Incr(\""
-                   << tservice->get_name() << "." << tfunction->get_name()
-                   << ".server.exceptions.application_error"
-                   << "\")" << endl;
-    }
   }
 
   f_types_ << indent() << "  return true, err2" << endl;
@@ -2986,12 +2924,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       f_types_ << " else {" << endl; // make sure we set Success retval only on success
       indent_up();
 
-      if (gen_metrics_) {
-        f_service_ << indent() << "thrift.Metrics.Incr(\""
-                   << tservice->get_name() << "." << tfunction->get_name()
-                   << ".server.success\")" << endl;
-      }
-
       f_service_ << indent() << "result.Success = ";
       if (need_reference) {
         f_types_ << "&";
@@ -3002,14 +2934,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     } else {
       f_types_ << endl;
     }
-    if (gen_metrics_) {
-      f_service_ << endl;
-      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
-      f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tservice->get_name() << "." << tfunction->get_name()
-                 << ".server\", t1 - t0)" << endl;
-      f_service_ << endl;
-    }
+
     f_service_ << indent() << "if err2 = oprot.WriteMessageBegin(\""
                << escape_string(tfunction->get_name()) << "\", thrift.REPLY, seqId); err2 != nil {"
                << endl;
@@ -3030,14 +2955,6 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     f_types_ << indent() << "}" << endl;
     f_types_ << indent() << "return true, err" << endl;
   } else {
-    if (gen_metrics_) {
-      f_service_ << endl;
-      f_service_ << indent() << "t1 := time.Now().UnixNano()" << endl;
-      f_service_ << indent() << "thrift.Metrics.Timing(\""
-                 << tservice->get_name() << "." << tfunction->get_name()
-                 << ".server\", t1 - t0)" << endl;
-      f_service_ << endl;
-    }
     f_service_ << endl;
     f_service_ << indent() << "return true, nil" << endl;
   }
@@ -3873,7 +3790,11 @@ string t_go_generator::type_to_go_type_with_opt(t_type* type,
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_list()) {
     t_list* t = (t_list*)type;
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     string elemType = type_to_go_type(t->get_elem_type());
+=======
+    string elemType = type_to_go_type(t->get_elem_type(), true);
+>>>>>>> 68d1b9ff6 (compiler/go: Fix up the type of typedef default arg):compiler/cpp/src/generate/t_go_generator.cc
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_typedef()) {
     return maybe_pointer + publicize(type_name(type));
@@ -3930,11 +3851,14 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
+<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
                           "                     Disable automatic spelling correction of initialisms (e.g. \"URL\")\n" \
                           "    read_write_private\n"
                           "                     Make read/write methods private, default is public Read/Write\n")
                           "    metrics:         Generate code with endpoint monitoring.\n"
+=======
+>>>>>>> 68d1b9ff6 (compiler/go: Fix up the type of typedef default arg):compiler/cpp/src/generate/t_go_generator.cc
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n")
