@@ -31,6 +31,7 @@ type TSerializer struct {
 type TStruct interface {
 	Write(p TProtocol) error
 	Read(p TProtocol) error
+	String() string
 }
 
 func NewTSerializer() *TSerializer {
