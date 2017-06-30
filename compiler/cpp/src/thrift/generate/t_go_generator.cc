@@ -2742,24 +2742,11 @@ void t_go_generator::generate_service_server(t_service* tservice) {
     f_types_ << indent() << "}" << endl << endl;
     f_types_ << indent() << "func (p *" << serviceName
                << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl;
-    f_service_ << indent() << "  return p.processorMap" << endl;
-    f_service_ << indent() << "}" << endl << endl;
-    f_service_ << indent() << "func New" << serviceName << "ServerFactoryProvider(p thrift.TServerProvider, handler " << serviceName
-               << ") (thrift.TServer, error) {" << endl ;
-    indent_up();
-    f_service_ << indent() << "s, f, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl << endl;
-    f_service_ << indent() << "if err != nil {" << endl;
-    indent_up();
-    f_service_ << indent() << "return nil, err" << endl;
-    indent_down();
-    f_service_ << indent() << "}" << endl << endl;
-    f_service_ << indent() << "return s.GetServer(f, New" << serviceName << "Processor(handler)), nil" << endl;
-    indent_down();
-    f_service_ << indent() << "}" << endl << endl;
-
-    f_service_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
-               << ") *" << serviceName << "Processor {" << endl;
-    f_service_
+    f_types_ << indent() << "  return p.processorMap" << endl;
+    f_types_ << indent() << "}" << endl << endl;
+    f_types_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
+               << ") *" << serviceName << "Processor {" << endl << endl;
+    f_types_
         << indent() << "  " << self << " := &" << serviceName
         << "Processor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}"
         << endl;
@@ -3806,11 +3793,7 @@ string t_go_generator::type_to_go_type_with_opt(t_type* type,
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_list()) {
     t_list* t = (t_list*)type;
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
     string elemType = type_to_go_type(t->get_elem_type());
-=======
-    string elemType = type_to_go_type(t->get_elem_type(), true);
->>>>>>> 68d1b9ff6 (compiler/go: Fix up the type of typedef default arg):compiler/cpp/src/generate/t_go_generator.cc
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_typedef()) {
     return maybe_pointer + publicize(type_name(type));
@@ -3868,10 +3851,13 @@ bool format_go_output(const string& file_path) {
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
 <<<<<<< HEAD
+<<<<<<< HEAD
                           "    thrift_import=   Override thrift package import path (default:" + DEFAULT_THRIFT_IMPORT + ")\n" \
 =======
 <<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_go_generator.cc
 >>>>>>> 934379b07 (compiler/go: Fix up the type of typedef default arg)
+=======
+>>>>>>> ddd730b2c (compiler/go: Fix up the list of type def stub generation 2/2)
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
                           "                     Disable automatic spelling correction of initialisms (e.g. \"URL\")\n" \
@@ -3880,8 +3866,6 @@ THRIFT_REGISTER_GENERATOR(go, "Go",
 <<<<<<< HEAD
 =======
                           "    metrics:         Generate code with endpoint monitoring.\n"
-=======
->>>>>>> 68d1b9ff6 (compiler/go: Fix up the type of typedef default arg):compiler/cpp/src/generate/t_go_generator.cc
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n")
 >>>>>>> 934379b07 (compiler/go: Fix up the type of typedef default arg)
