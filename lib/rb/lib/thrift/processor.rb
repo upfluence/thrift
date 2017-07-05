@@ -19,8 +19,9 @@
 
 module Thrift
   module Processor
-    def initialize(handler)
+    def initialize(handler, middleware = nil)
       @handler = handler
+      @middleware = middleware
     end
 
     def process(iprot, oprot)
