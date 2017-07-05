@@ -24,5 +24,5 @@ type TMiddleware interface {
 }
 
 type TMiddlewareBuilder interface {
-	Build(string) TMiddleware
+	Build(string, string) TMiddleware
 }
