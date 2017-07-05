@@ -2,7 +2,7 @@ package thrift
 
 type TResponse interface {
 	TStruct
-	IsSetSuccess() bool
+	GetResult() TStruct
 	GetError() error
 }
 

@@ -1689,9 +1689,18 @@ void t_go_generator::generate_go_function_helpers(t_function* tfunction) {
 
 
     std::string tstruct_name(publicize(result.get_name(), true));
+    f_service_ << indent() << "func (p *" << tstruct_name << ") GetResult() thrift.TStruct {" << endl;
+    indent_up();
+    if (!tfunction->get_returntype()->is_void()) {
+      f_service_ << indent() << "return p.GetSuccess()" << endl;
+    } else {
+      f_service_ << indent() << "return nil" << endl << endl;
+    }
+    indent_down();
+    f_service_ << indent() << "}" << endl << endl;
     f_service_ << indent() << "func (p *" << tstruct_name << ") GetError() error {" << endl;
     indent_up();
-      for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
       t_field* f = *f_iter;
       f->set_req(t_field::T_OPTIONAL);
       result.append(f);
