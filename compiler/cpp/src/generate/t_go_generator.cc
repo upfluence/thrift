@@ -1814,7 +1814,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
              << "Client, error) {" << endl;
 
   indent_up();
-  f_service_ << indent() << "t, f, m, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "t, f, m, err := p.Build(\"" << tservice->get_program()->get_namespace("*") << ", " << tservice->get_name() << "\")" << endl;
   f_service_ << indent() << "if err != nil {" << endl;
   indent_up();
   f_service_ << indent() << "return nil, err" << endl;
@@ -2568,7 +2568,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
     f_service_ << indent() << "func New" << serviceName << "ServerFactoryProvider(p thrift.TServerProvider, handler " << serviceName
                << ") (thrift.TServer, error) {" << endl ;
     indent_up();
-    f_service_ << indent() << "s, f, m, err := p.Build(\"" << tservice->get_program()->get_name() << "." << tservice->get_name() << "\")" << endl << endl;
+    f_service_ << indent() << "s, f, m, err := p.Build(\"" << tservice->get_program()->get_namespace("*") << ", " << tservice->get_name() << "\")" << endl << endl;
     f_service_ << indent() << "if err != nil {" << endl;
     indent_up();
     f_service_ << indent() << "return nil, err" << endl;
