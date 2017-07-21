@@ -26,38 +26,45 @@ require 'stringio'
 
 module Thrift
   class HTTPClientTransport < BaseTransport
+    DEFAULT_HEADERS = { 'Content-Type' => 'application/x-thrift' }.freeze
 
     def initialize(url, opts = {})
       @url = URI url
-      @headers = {'Content-Type' => 'application/x-thrift'}
+      @headers = DEFAULT_HEADERS.merge(opts.fetch(:headers, {}))
       @outbuf = Bytes.empty_byte_buffer
       @ssl_verify_mode = opts.fetch(:ssl_verify_mode, OpenSSL::SSL::VERIFY_PEER)
       @error_logger = opts[:error_logger]
       @retries = opts.fetch(:retries, 1)
+      @open_timeout = opts[:open_timeout]
+      @read_timeout = opts[:read_timeout]
     end
 
     def open?; true end
     def read(sz); @inbuf.read sz end
     def write(buf); @outbuf << Bytes.force_binary_encoding(buf) end
 
-    def add_headers(headers)
-      @headers = @headers.merge(headers)
-    end
-
     def flush
       tries ||= @retries
-      http = Net::HTTP.new @url.host, @url.port
-      http.use_ssl = @url.scheme == 'https'
-      http.verify_mode = @ssl_verify_mode if @url.scheme == 'https'
-      resp = http.post(@url.request_uri, @outbuf, @headers)
-      data = resp.body
-      data = Bytes.force_binary_encoding(data)
-      @inbuf = StringIO.new data
+      resp = http_client.post(@url.request_uri, @outbuf.dup, @headers)
+      resp.value
+      @inbuf = StringIO.new Bytes.force_binary_encoding(resp.body)
     rescue => e
       retry if (tries -= 1) > 0
-      @error_logger.capture_exception(e, extra: { url: @url }) if @error_logger
+      raise TransportException.new(TransportException::UNKNOWN, e.to_s)
     ensure
       @outbuf = Bytes.empty_byte_buffer
+    end
+
+    private
+
+    def http_client
+      http = Net::HTTP.new @url.host, @url.port
+      http.use_ssl = @url.scheme == 'https'
+      http.open_timeout = @open_timeout if @open_timeout
+      http.read_timeout = @read_timeout if @read_timeout
+      http.verify_mode = @ssl_verify_mode if @url.scheme == 'https'
+
+      http
     end
   end
 end
