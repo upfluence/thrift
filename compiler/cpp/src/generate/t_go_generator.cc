@@ -1808,6 +1808,35 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
+  f_service_ << indent() << "type " << serviceName << "ClientPool struct {" << endl;
+  indent_up();
+  f_service_ << indent() << "pool thrift.TPool" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Get() (" << serviceName << ", error) {" << endl;
+  indent_up();
+  f_service_ << "cl, err := p.pool.Get()" << endl << endl;
+  f_service_ << "if err != nil { return nil, err }" << endl << endl;
+  f_service_ << "return cl.(*" serviceName << "Client), nil" << endl << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Get() (" << serviceName << ", error) {" << endl;
+  indent_up();
+  f_service_ << "cl, err := p.pool.Get()" << endl << endl;
+  f_service_ << "if err != nil { return nil, err }" << endl << endl;
+  f_service_ << "return cl.(*" serviceName << "Client), nil" << endl << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Put(cl " << serviceName << ") error {" << endl;
+  indent_up();
+  f_service_ << "return p.pool.Put(cl)" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  generate_go_docstring(f_service_, (*f_iter));
   // Constructor function by provider
   f_service_ << indent() << "func New" << serviceName
              << "ClientFactoryProvider(p thrift.TClientProvider) (*" << serviceName
