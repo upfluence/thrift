@@ -25,9 +25,6 @@ module Thrift
 
     def self.for(path, processor, protocol_factory)
       Rack::Builder.new do
-        use Rack::CommonLogger
-        use Rack::ShowExceptions
-        use Rack::Lint
         map path do
           run lambda { |env|
             request = Rack::Request.new(env)
