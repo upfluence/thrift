@@ -1246,7 +1246,8 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
       out << indent() << "func (p *" << tstruct_name << ") Set" << publicized_name << "(v "
           << goType << ") {" << endl;
 
-      out << indent() << "  p." << publicized_name << " = &v" << endl;
+      string mayberef = goOptType != goType ? "&" : "";
+      out << indent() << "  p." << publicized_name << " = " << mayberef << "v" << endl;
       out << indent() << "}" << endl;
       num_setable += 1;
     } else {
@@ -1643,7 +1644,7 @@ void t_go_generator::generate_service(t_service* tservice) {
   generate_service_client(tservice);
   generate_service_server(tservice);
   generate_service_helpers(tservice);
-  generate_service_remote(tservice);
+  //generate_service_remote(tservice);
   // Close service file
   f_service_ << endl;
   f_service_.close();
