@@ -1408,12 +1408,24 @@ void t_go_generator::generate_go_struct_definition(ostream& out,
       out << indent() << "    return " << def_var_name << endl;
       out << indent() << "  }" << endl;
       out << indent() << "return " << maybepointer << "p." << publicized_name << endl;
+      out << indent() << "}" << endl << endl;
+
+      out << indent() << "func (p *" << tstruct_name << ") Set" << publicized_name << "(v "
+          << goType << ") {" << endl;
+
+      out << indent() << "  p." << publicized_name << " = &v" << endl;
       out << indent() << "}" << endl;
     } else {
       out << endl;
       out << indent() << "func (p *" << tstruct_name << ") Get" << publicized_name << "() "
           << goType << " {" << endl;
       out << indent() << "  return p." << publicized_name << endl;
+      out << indent() << "}" << endl << endl;
+
+      out << indent() << "func (p *" << tstruct_name << ") Set" << publicized_name << "(v "
+          << goType << ") {" << endl;
+
+      out << indent() << "  p." << publicized_name << " = v" << endl;
       out << indent() << "}" << endl;
     }
   }
