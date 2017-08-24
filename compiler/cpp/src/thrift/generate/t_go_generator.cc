@@ -1831,13 +1831,6 @@ void t_go_generator::generate_service(t_service* tservice) {
   generate_service_helpers(tservice);
   // generate_service_remote(tservice);
   f_types_ << endl;
-=======
-  //generate_service_remote(tservice);
-  // Close service file
-  f_service_ << endl;
-  f_service_.close();
-  format_go_output(f_service_name);
->>>>>>> 835f55bd4 (compiler/go: Disable the remote generation):compiler/cpp/src/generate/t_go_generator.cc
 }
 
 /**
