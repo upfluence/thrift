@@ -2,7 +2,7 @@ package thrift
 
 type TResponse interface {
 	TStruct
-	GetResult() TStruct
+	GetResult() interface{}
 	GetError() error
 }
 
