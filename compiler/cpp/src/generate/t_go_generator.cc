@@ -2612,18 +2612,6 @@ void t_go_generator::generate_service_server(t_service* tservice) {
                << "Processor) ProcessorMap() map[string]thrift.TProcessorFunction {" << endl;
     f_service_ << indent() << "  return p.processorMap" << endl;
     f_service_ << indent() << "}" << endl << endl;
-    f_service_ << indent() << "func New" << serviceName << "ServerFactoryProvider(p thrift.TServerProvider, handler " << serviceName
-               << ") (thrift.TServer, error) {" << endl ;
-    indent_up();
-    f_service_ << indent() << "s, f, m, err := p.Build(\"" << tservice->get_program()->get_namespace("*") << "\", \"" << tservice->get_name() << "\")" << endl << endl;
-    f_service_ << indent() << "if err != nil {" << endl;
-    indent_up();
-    f_service_ << indent() << "return nil, err" << endl;
-    indent_down();
-    f_service_ << indent() << "}" << endl << endl;
-    f_service_ << indent() << "return s.GetServer(f, New" << serviceName << "Processor(handler, m)), nil" << endl;
-    indent_down();
-    f_service_ << indent() << "}" << endl << endl;
 
     f_service_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
                << ", middleware thrift.TMiddleware) *" << serviceName << "Processor {" << endl;

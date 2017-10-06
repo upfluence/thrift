@@ -982,13 +982,6 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 
   f_service_.indent() << "include ::Thrift::Processor" << endl << endl;
 
-  f_service_.indent() << "def self.from_provider(provider, handler)" << endl;
-  f_service_.indent_up();
-  f_service_.indent() << "server_factory, protocol_factory, middleware = provider.build(\"" << tservice->get_program()->get_namespace("*") << ", " << tservice->get_name() << "\"))" << endl;
-  f_service_.indent() << "server_factory.build(Processor.new(handler, middleware), protocol_factory)" << endl;
-  f_service_.indent_down();
-  f_service_.indent() << "end" << endl << endl;
-
   // Generate the process subfunctions
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     generate_process_function(tservice, *f_iter);
