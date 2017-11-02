@@ -11,18 +11,10 @@ func (b *TNoopMiddlewareBuilder) Build(_, _ string) TMiddleware {
 	return &TNoopMiddleware{}
 }
 
-func (m *TNoopMiddleware) HandleUnaryRequest(_ string, _ int32, _ TRequest) (TUnaryTransaction, error) {
-	return &noopUnaryTransaction{}, nil
+func (m *TNoopMiddleware) HandleUnaryRequest(ctx Context, _ string, _ int32, req TRequest, next func(Context, TRequest) error) error {
+	return next(ctx, req)
 }
 
-func (b *TNoopMiddleware) HandleBinaryRequest(_ string, _ int32, _ TRequest) (TBinaryTransaction, error) {
-	return &noopBinaryTransaction{}, nil
-}
-
-func (t *noopBinaryTransaction) Handle(_ TResponse, _ error) error {
-	return nil
-}
-
-func (t *noopUnaryTransaction) Handle(_ error) error {
-	return nil
+func (b *TNoopMiddleware) HandleBinaryRequest(ctx Context, _ string, _ int32, req TRequest, next func(Context, TRequest) (TResponse, error)) (TResponse, error) {
+	return next(ctx, req)
 }
