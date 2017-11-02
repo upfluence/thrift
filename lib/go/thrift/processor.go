@@ -22,9 +22,9 @@ package thrift
 // A processor is a generic object which operates upon an input stream and
 // writes to some output stream.
 type TProcessor interface {
-	Process(in, out TProtocol) (bool, TException)
+	Process(ctx Context, in, out TProtocol) (bool, TException)
 }
 
 type TProcessorFunction interface {
-	Process(seqId int32, in, out TProtocol) (bool, TException)
+	Process(ctx Context, seqId int32, in, out TProtocol) (bool, TException)
 }

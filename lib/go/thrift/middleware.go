@@ -10,19 +10,11 @@ type TRequest interface {
 	TStruct
 }
 
-type TBinaryTransaction interface {
-	Handle(TResponse, error) error
-}
-
-type TUnaryTransaction interface {
-	Handle(error) error
-}
-
 type TMiddleware interface {
-	HandleBinaryRequest(string, int32, TRequest) (TBinaryTransaction, error)
-	HandleUnaryRequest(string, int32, TRequest) (TUnaryTransaction, error)
+	HandleBinaryRequest(ctx Context, mth string, seqID int32, req TRequest, next func(Context, TRequest) (TResponse, error)) (TResponse, error)
+	HandleUnaryRequest(ctx Context, mth string, seqID int32, req TRequest, next func(Context, TRequest) error) error
 }
 
 type TMiddlewareBuilder interface {
-	Build(string, string) TMiddleware
+	Build(namespace, service string) TMiddleware
 }
