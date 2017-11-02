@@ -50,6 +50,8 @@ type TTransport interface {
 
 	// Returns true if the transport is open
 	IsOpen() bool
+
+	WriteContext(ctx Context) error
 }
 
 type stringWriter interface {

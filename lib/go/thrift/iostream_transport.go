@@ -107,6 +107,8 @@ func (p *StreamTransport) Open() error {
 	}
 }
 
+func (p *StreamTransport) WriteContext(_ Context) error { return nil }
+
 // Closes both the input and output streams.
 func (p *StreamTransport) Close() error {
 	if p.closed {

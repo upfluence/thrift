@@ -74,6 +74,8 @@ func (p *TSSLServerSocket) Accept() (TTransport, error) {
 	return NewTSSLSocketFromConnTimeout(conn, p.cfg, p.clientTimeout), nil
 }
 
+func (p *TSSLSocket) WriteContext(_ Context) error { return nil }
+
 // Checks whether the socket is listening.
 func (p *TSSLServerSocket) IsListening() bool {
 	return p.listener != nil
