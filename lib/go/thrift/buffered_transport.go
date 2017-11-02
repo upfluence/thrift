@@ -33,8 +33,10 @@ type TBufferedTransport struct {
 	tp TTransport
 }
 
-func (p *TBufferedTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
-	return NewTBufferedTransport(trans, p.size), nil
+func (p *TBufferedTransport) WriteContext(_ Context) error { return nil }
+
+func (p *TBufferedTransportFactory) GetTransport(trans TTransport) TTransport {
+	return NewTBufferedTransport(trans, p.size)
 }
 
 func NewTBufferedTransportFactory(bufferSize int) *TBufferedTransportFactory {

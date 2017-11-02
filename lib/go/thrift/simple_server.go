@@ -246,14 +246,11 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 		if err, ok := err.(TTransportException); ok && err.TypeId() == END_OF_FILE {
 			return nil
 		} else if err != nil {
-<<<<<<< HEAD
-=======
 			if p.errorLogger != nil {
 				(*p.errorLogger)(err)
 			} else {
 				log.Println("error processing request:", err)
 			}
->>>>>>> 711bc2784 (Add an error logger in the simple server)
 			return err
 		}
 		if err, ok := err.(TApplicationException); ok && err.TypeId() == UNKNOWN_METHOD {

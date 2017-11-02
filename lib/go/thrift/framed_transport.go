@@ -44,6 +44,8 @@ type tFramedTransportFactory struct {
 	maxLength uint32
 }
 
+func (p *TFramedTransport) WriteContext(_ Context) error { return nil }
+
 func NewTFramedTransportFactory(factory TTransportFactory) TTransportFactory {
 	return &tFramedTransportFactory{factory: factory, maxLength: DEFAULT_MAX_LENGTH}
 }
