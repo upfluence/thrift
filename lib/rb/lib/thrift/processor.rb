@@ -24,10 +24,10 @@ module Thrift
       @middleware = middleware
     end
 
-    def process(iprot, oprot)
+    def process(ctx, iprot, oprot)
       name, type, seqid  = iprot.read_message_begin
       if respond_to?("process_#{name}")
-        send("process_#{name}", seqid, iprot, oprot)
+        send("process_#{name}", ctx, seqid, iprot, oprot)
         true
       else
         iprot.skip(Types::STRUCT)
