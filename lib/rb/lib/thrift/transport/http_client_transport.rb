@@ -40,7 +40,15 @@ module Thrift
     end
 
     def open?; true end
-    def read(sz); @inbuf.read sz end
+
+    def read(sz)
+      res = @inbuf.read(sz)
+
+      raise TransportException.new(TransportException::END_OF_FILE) if res.nil?
+
+      res
+    end
+
     def write(buf); @outbuf << Bytes.force_binary_encoding(buf) end
 
     def flush
