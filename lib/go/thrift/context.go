@@ -22,3 +22,7 @@ package thrift
 import "context"
 
 var defaultCtx = context.Background()
+
+type Context interface {
+	context.Context
+}

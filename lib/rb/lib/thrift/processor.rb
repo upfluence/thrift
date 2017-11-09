@@ -28,11 +28,11 @@ module Thrift
       @logger.level = Logger::WARN
     end
 
-    def process(iprot, oprot)
+    def process(ctx, iprot, oprot)
       name, type, seqid  = iprot.read_message_begin
       if respond_to?("process_#{name}")
         begin
-          send("process_#{name}", seqid, iprot, oprot)
+          send("process_#{name}", ctx, seqid, iprot, oprot)
         rescue => e
           x = ApplicationException.new(ApplicationException::INTERNAL_ERROR, 'Internal error')
           @logger.debug "Internal error : #{e.message}\n#{e.backtrace.join("\n")}"

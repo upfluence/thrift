@@ -894,15 +894,13 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     const vector<t_field*>& fields = arg_struct->get_members();
     vector<t_field*>::const_iterator fld_iter;
     string funname = (*f_iter)->get_name();
+    std::string argsname = capitalize((*f_iter)->get_name() + "_args");
 
     // Open function
     f_service_.indent() << "def " << function_signature(*f_iter) << endl;
     f_service_.indent_up();
 
-    f_service_.indent() << "@middleware.handle_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "('" << funname << "') do" << endl;
-    f_service_.indent_up();
-
-    f_service_.indent() << "send_" << funname << "(";
+    f_service_.indent() << "@middleware.handle_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "(ctx, '" << funname << "', " << argsname << ".new(";
 
     bool first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
@@ -911,7 +909,23 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       } else {
         f_service_ << ", ";
       }
-      f_service_ << (*fld_iter)->get_name();
+
+      f_service_ << ":" << (*fld_iter)->get_name() << " => " << (*fld_iter)->get_name();
+    }
+
+    f_service_ << ")) do |ctx, args|" << endl;
+    f_service_.indent_up();
+
+    f_service_.indent() << "send_" << funname << "(ctx, ";
+
+    first = true;
+    for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
+      if (first) {
+        first = false;
+      } else {
+        f_service_ << ", ";
+      }
+      f_service_ << "args." << (*fld_iter)->get_name();
     }
     f_service_ << ")" << endl;
 
@@ -920,7 +934,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       if (!(*f_iter)->get_returntype()->is_void()) {
         f_service_ << "return ";
       }
-      f_service_ << "recv_" << funname << "()" << endl;
+      f_service_ << "recv_" << funname << "(ctx)" << endl;
     }
     f_service_.indent_down();
 
@@ -933,7 +947,6 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     f_service_.indent() << "def send_" << function_signature(*f_iter) << endl;
     f_service_.indent_up();
 
-    std::string argsname = capitalize((*f_iter)->get_name() + "_args");
     std::string messageSendProc = (*f_iter)->is_oneway() ? "send_oneway_message" : "send_message";
 
     f_service_.indent() << messageSendProc << "('" << funname << "', " << argsname;
@@ -1036,17 +1049,17 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 void t_rb_generator::generate_process_function(t_service* tservice, t_function* tfunction) {
   (void)tservice;
   // Open function
-  f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
+  f_service_.indent() << "def process_" << tfunction->get_name() << "(ctx, seqid, iprot, oprot)" << endl;
 
-  f_service_.indent_up();
-
-  f_service_.indent() << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "') do" << endl;
   f_service_.indent_up();
 
   string argsname = capitalize(tfunction->get_name()) + "_args";
   string resultname = capitalize(tfunction->get_name()) + "_result";
 
   f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
+
+  f_service_.indent() << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "(ctx, '" << tfunction->get_name() << "', args) do |ctx, args|" << endl;
+  f_service_.indent_up();
 
   t_struct* xs = tfunction->get_xceptions();
   const std::vector<t_field*>& xceptions = xs->get_members();
@@ -1072,7 +1085,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   if (!tfunction->is_oneway() && !tfunction->get_returntype()->is_void()) {
     f_service_ << "result.success = ";
   }
-  f_service_ << "@handler." << tfunction->get_name() << "(";
+  f_service_ << "@handler." << tfunction->get_name() << "(ctx, ";
   bool first = true;
   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
     if (first) {
@@ -1131,7 +1144,13 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
  */
 string t_rb_generator::function_signature(t_function* tfunction, string prefix) {
   // TODO(mcslee): Nitpicky, no ',' if argument_list is empty
-  return prefix + tfunction->get_name() + "(" + argument_list(tfunction->get_arglist()) + ")";
+  string signature = "(ctx";
+
+  if (tfunction->get_arglist()->get_members().size() > 0) {
+    signature += ", ";
+  }
+
+  return prefix + tfunction->get_name() + signature + argument_list(tfunction->get_arglist()) + ")";
 }
 
 /**
