@@ -1,5 +1,5 @@
 # encoding: ascii-8bit
-# 
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
@@ -7,16 +7,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License. You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# 
+#
 
 module Thrift
   class TransportException < Exception
@@ -48,7 +48,7 @@ module Thrift
 
   class BaseTransport
     def open?; end
-    
+
     def open; end
 
     def close; end
@@ -61,6 +61,8 @@ module Thrift
     def read(sz)
       raise NotImplementedError
     end
+
+    def set_context(ctx); end
 
     # Returns an unsigned byte as a Fixnum in the range (0..255).
     def read_byte
@@ -86,7 +88,7 @@ module Thrift
         chunk = read(size - buf.length)
         buf << chunk
       end
-    
+
       buf
     end
 
@@ -104,7 +106,7 @@ module Thrift
       "base"
     end
   end
-  
+
   class BaseTransportFactory
     def get_transport(trans)
       return trans
