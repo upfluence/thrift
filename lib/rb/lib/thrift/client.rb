@@ -29,16 +29,16 @@ module Thrift
     def send_message(name, args_class, args = {})
       @seqid += 1
       @oprot.write_message_begin(name, MessageTypes::CALL, @seqid)
-      send_message_args(args_class, args)
+      send_message_args(ctx, args_class, args)
     end
 
     def send_oneway_message(name, args_class, args = {})
       @seqid += 1
       @oprot.write_message_begin(name, MessageTypes::ONEWAY, @seqid)
-      send_message_args(args_class, args)
+      send_message_args(ctx, args_class, args)
     end
 
-    def send_message_args(args_class, args)
+    def send_message_args(ctx, args_class, args)
       data = args_class.new
       args.each do |k, v|
         data.send("#{k.to_s}=", v)
@@ -49,6 +49,7 @@ module Thrift
         @oprot.trans.close
         raise e
       end
+      @prot.trans.set_context(ctx)
       @oprot.write_message_end
       @oprot.trans.flush
     end

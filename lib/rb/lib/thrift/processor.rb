@@ -40,7 +40,6 @@ module Thrift
         rescue => e
           write_exception(e, oprot, name, seqid)
         end
-
         true
       else
         iprot.skip(Types::STRUCT)
