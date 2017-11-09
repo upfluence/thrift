@@ -7,12 +7,12 @@ module Thrift
         Noop.new
       end
 
-      def handle_binary(_, &block)
-        block.call
+      def handle_binary(ctx, _mth, args = {}, &block)
+        block.call(ctx, args)
       end
 
-      def handle_unary(_, &block)
-        block.call
+      def handle_unary(ctx, _mth, args = {},  &block)
+        block.call(ctx, args)
       end
     end
   end
