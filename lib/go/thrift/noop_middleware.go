@@ -4,8 +4,6 @@ var DefaultMiddlewareBuilder = &TNoopMiddlewareBuilder{}
 
 type TNoopMiddlewareBuilder struct{}
 type TNoopMiddleware struct{}
-type noopUnaryTransaction struct{}
-type noopBinaryTransaction struct{}
 
 func (b *TNoopMiddlewareBuilder) Build(_, _ string) TMiddleware {
 	return &TNoopMiddleware{}
