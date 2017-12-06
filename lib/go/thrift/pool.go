@@ -6,7 +6,7 @@ type TPoolProvider interface {
 }
 
 type TPool interface {
-	Get() (interface{}, error)
-	Put(interface{}) error
-	Discard(interface{}) error
+	Get(Context) (interface{}, error)
+	Put(Context, interface{}) error
+	Discard(Context, interface{}) error
 }
