@@ -1992,33 +1992,33 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Get() (*" << serviceName << "Client, error) {" << endl;
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Get(ctx thrift.Context) (*" << serviceName << "Client, error) {" << endl;
   indent_up();
-  f_service_ << indent() << "cl, err := p.pool.Get()" << endl << endl;
+  f_service_ << indent() << "cl, err := p.pool.Get(ctx)" << endl << endl;
   f_service_ << indent() << "if err != nil { return nil, err }" << endl << endl;
   f_service_ << indent() << "return cl.(*" << serviceName << "Client), nil" << endl << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Put(cl *" << serviceName << "Client) error {" << endl;
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Put(ctx thrift.Context, cl *" << serviceName << "Client) error {" << endl;
   indent_up();
-  f_service_ << indent() << "return p.pool.Put(cl)" << endl;
+  f_service_ << indent() << "return p.pool.Put(ctx, cl)" << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Discard(cl *" << serviceName << "Client) error {" << endl;
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Discard(ctx thrift.Context, cl *" << serviceName << "Client) error {" << endl;
   indent_up();
-  f_service_ << indent() << "return p.pool.Discard(cl)" << endl;
+  f_service_ << indent() << "return p.pool.Discard(ctx, cl)" << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) With(fn func (*" << serviceName << "Client) error) error {" << endl;
+  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) With(ctx thrift.Context, fn func (thrift.Context, *" << serviceName << "Client) error) error {" << endl;
   indent_up();
-  f_service_ << indent() << "var cl, err = p.Get()" << endl;
+  f_service_ << indent() << "var cl, err = p.Get(ctx)" << endl;
   f_service_ << indent() << "if err != nil { return err }" << endl << endl;
-  f_service_ << indent() << "err = fn(cl)" << endl << endl;
-  f_service_ << indent() << "if err != nil { return p.Discard(cl) }" << endl;
-  f_service_ << indent() << "return p.Put(cl)" << endl;
+  f_service_ << indent() << "err = fn(ctx, cl)" << endl << endl;
+  f_service_ << indent() << "if err != nil { return p.Discard(ctx, cl) }" << endl;
+  f_service_ << indent() << "return p.Put(ctx, cl)" << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
