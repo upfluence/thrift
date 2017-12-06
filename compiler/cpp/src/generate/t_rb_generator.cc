@@ -930,9 +930,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       f_service_.indent() << "def " << function_signature(&recv_function) << endl;
       f_service_.indent_up();
 
-      // TODO(mcslee): Validate message reply here, seq ids etc.
-
-      f_service_.indent() << "result = receive_message(" << resultname << ")" << endl;
+      f_service_.indent() << "result = receive_message(" << resultname << ", '" << (*f_iter)->get_name() << "')" << endl;
 
       // Careful, only return _result if not a void function
       if (!(*f_iter)->get_returntype()->is_void()) {

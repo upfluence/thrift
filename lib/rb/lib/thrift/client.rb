@@ -26,11 +26,13 @@ module Thrift
     end
 
     def send_message(name, args_class, args = {})
+      @seqid += 1
       @oprot.write_message_begin(name, MessageTypes::CALL, @seqid)
       send_message_args(args_class, args)
     end
 
     def send_oneway_message(name, args_class, args = {})
+      @seqid += 1
       @oprot.write_message_begin(name, MessageTypes::ONEWAY, @seqid)
       send_message_args(args_class, args)
     end
@@ -50,9 +52,25 @@ module Thrift
       @oprot.trans.flush
     end
 
-    def receive_message(result_klass)
-      fname, mtype, rseqid = @iprot.read_message_begin
+    def receive_message(result_klass, name=nil)
+      fname, mtype, seqid = @iprot.read_message_begin
       handle_exception(mtype)
+
+      raise ApplicationException.new(
+        ApplicationException::BAD_SEQUENCE_ID,
+        'out of seq'
+      ) if seqid != @seqid
+
+      raise ApplicationException.new(
+        ApplicationException::INVALID_MESSAGE_TYPE,
+        'invalid message type'
+      ) if mtype != MessageTypes::REPLY
+
+      raise ApplicationException.new(
+        ApplicationException::WRONG_METHOD_NAME,
+        'wrong method name'
+      ) if !name.nil? && name != fname
+
       result = result_klass.new
       result.read(@iprot)
       @iprot.read_message_end
@@ -60,12 +78,12 @@ module Thrift
     end
 
     def handle_exception(mtype)
-      if mtype == MessageTypes::EXCEPTION
-        x = ApplicationException.new
-        x.read(@iprot)
-        @iprot.read_message_end
-        raise x
-      end
+      return if mtype != MessageTypes::EXCEPTION
+
+      x = ApplicationException.new
+      x.read(@iprot)
+      @iprot.read_message_end
+      raise x
     end
   end
 end
