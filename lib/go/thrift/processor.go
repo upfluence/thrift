@@ -25,6 +25,179 @@ type TProcessor interface {
 	Process(ctx Context, in, out TProtocol) (bool, TException)
 }
 
+type TStandardProcessor struct {
+	ProcessorMap map[string]TProcessorFunction
+	Middlewares  []TMiddleware
+}
+
+func (p *TStandardProcessor) AddProcessor(fname string, fn TProcessorFunction) {
+	p.ProcessorMap[fname] = fn
+}
+
+func (p *TStandardProcessor) Process(ctx Context, in, out TProtocol) (bool, TException) {
+	name, _, seqID, err := in.ReadMessageBegin()
+
+	if err != nil {
+		return false, err
+	}
+
+	if processor, ok := p.ProcessorMap[name]; ok {
+		return processor.Process(ctx, seqID, in, out)
+	}
+
+	in.Skip(STRUCT)
+	in.ReadMessageEnd()
+	x5 := NewTApplicationException(UNKNOWN_METHOD, "Unknown function "+name)
+	out.WriteMessageBegin(name, EXCEPTION, seqID)
+	x5.Write(out)
+	out.WriteMessageEnd()
+	out.Flush()
+	return false, x5
+}
+
 type TProcessorFunction interface {
-	Process(ctx Context, seqId int32, in, out TProtocol) (bool, TException)
+	Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException)
+}
+
+type TBaseProcessorFunction struct {
+	fname       string
+	argBuilder  func() TRequest
+	middlewares []TMiddleware
+}
+
+func NewTBaseProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest) *TBaseProcessorFunction {
+	return &TBaseProcessorFunction{
+		fname:       fname,
+		argBuilder:  builder,
+		middlewares: p.Middlewares,
+	}
+}
+
+func (p *TBaseProcessorFunction) readRequest(in TProtocol) (TRequest, error) {
+	args := p.argBuilder()
+
+	if err := args.Read(in); err != nil {
+		in.ReadMessageEnd()
+		return nil, err
+	}
+
+	in.ReadMessageEnd()
+
+	return args, nil
+}
+
+type TBinaryHandler interface {
+	Handle(Context, TRequest) (TResponse, error)
+}
+
+type TBinaryProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TBinaryHandler
+}
+
+func NewTBinaryProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest, handler TBinaryHandler) *TBinaryProcessorFunction {
+	return &TBinaryProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
+}
+
+func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
+	var args, err = p.readRequest(in)
+
+	if err != nil {
+		x := NewTApplicationException(PROTOCOL_ERROR, err.Error())
+		out.WriteMessageBegin(p.fname, EXCEPTION, seqID)
+		x.Write(out)
+		out.WriteMessageEnd()
+		out.Flush()
+		return false, err
+	}
+
+	call := func(ctx Context, req TRequest) (TResponse, error) {
+		return p.handler.Handle(ctx, req)
+	}
+
+	for i := len(p.middlewares); i > 0; i-- {
+		call = func(ctx Context, req TRequest) (TResponse, error) {
+			return p.middlewares[i].HandleBinaryRequest(
+				ctx,
+				p.fname,
+				seqID,
+				req,
+				call,
+			)
+		}
+	}
+
+	res, err := call(ctx, args)
+
+	if err != nil {
+		x := NewTApplicationException(INTERNAL_ERROR, "Internal error processing perform_void: "+err.Error())
+		out.WriteMessageBegin(p.fname, EXCEPTION, seqID)
+		x.Write(out)
+		out.WriteMessageEnd()
+		out.Flush()
+		return true, err
+	}
+
+	if err2 := out.WriteMessageBegin(p.fname, REPLY, seqID); err2 != nil {
+		err = err2
+	}
+
+	if err2 := res.Write(out); err == nil && err2 != nil {
+		err = err2
+	}
+
+	if err2 := out.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+
+	if err2 := out.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+
+	return true, err
+}
+
+type TUnaryHandler interface {
+	Handle(Context, TRequest) error
+}
+
+type TUnaryProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TUnaryHandler
+}
+
+func NewTUnaryProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest, handler TUnaryHandler) *TUnaryProcessorFunction {
+	return &TUnaryProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
+}
+
+func (p *TUnaryProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
+	var args, err = p.readRequest(in)
+
+	if err != nil {
+		return false, err
+	}
+
+	call := func(ctx Context, req TRequest) error {
+		return p.handler.Handle(ctx, req)
+	}
+
+	for i := len(p.middlewares); i > 0; i-- {
+		call = func(ctx Context, req TRequest) error {
+			return p.middlewares[i].HandleUnaryRequest(
+				ctx,
+				p.fname,
+				seqID,
+				req,
+				call,
+			)
+		}
+	}
+
+	return true, call(ctx, args)
 }
