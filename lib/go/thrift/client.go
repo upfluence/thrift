@@ -1,54 +1,68 @@
 package thrift
 
 import (
-	"context"
 	"fmt"
+	"sync"
 )
 
 type TClient interface {
-	Call(ctx context.Context, method string, args, result TStruct) error
+	CallBinary(Context, string, TRequest, TResponse) error
+	CallUnary(Context, string, TRequest) error
 }
 
-type TStandardClient struct {
-	seqId        int32
-	iprot, oprot TProtocol
+type TSyncClient struct {
+	inputProtocol  TProtocol
+	outputProtocol TProtocol
+	mu             *sync.Mutex
+	seqID          int32
+
+	Middlewares []TMiddleware
 }
 
-// TStandardClient implements TClient, and uses the standard message format for Thrift.
-// It is not safe for concurrent use.
-func NewTStandardClient(inputProtocol, outputProtocol TProtocol) *TStandardClient {
-	return &TStandardClient{
-		iprot: inputProtocol,
-		oprot: outputProtocol,
-	}
-}
-
-func (p *TStandardClient) Send(ctx context.Context, oprot TProtocol, seqId int32, method string, args TStruct) error {
-	if err := oprot.WriteMessageBegin(method, CALL, seqId); err != nil {
+func send(ctx Context, oprot TProtocol, seqID int32, method string, args TRequest, mType TMessageType) error {
+	if err := oprot.WriteMessageBegin("perform", mType, seqID); err != nil {
 		return err
 	}
+
 	if err := args.Write(oprot); err != nil {
 		return err
 	}
+
 	if err := oprot.WriteMessageEnd(); err != nil {
 		return err
 	}
-	return oprot.Flush(ctx)
+
+	if err := oprot.Transport().WriteContext(ctx); err != nil {
+		return err
+	}
+
+	return oprot.Flush()
 }
 
-func (p *TStandardClient) Recv(iprot TProtocol, seqId int32, method string, result TStruct) error {
-	rMethod, rTypeId, rSeqId, err := iprot.ReadMessageBegin()
+func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
+	var rMethod, rTypeID, rSeqID, err = iprot.ReadMessageBegin()
+
 	if err != nil {
 		return err
 	}
 
 	if method != rMethod {
-		return NewTApplicationException(WRONG_METHOD_NAME, fmt.Sprintf("%s: wrong method name", method))
-	} else if seqId != rSeqId {
-		return NewTApplicationException(BAD_SEQUENCE_ID, fmt.Sprintf("%s: out of order sequence response", method))
-	} else if rTypeId == EXCEPTION {
-		var exception tApplicationException
-		if err := exception.Read(iprot); err != nil {
+		return NewTApplicationException(
+			WRONG_METHOD_NAME,
+			fmt.Sprintf("%s: wrong method name", method),
+		)
+	} else if seqID != rSeqID {
+		return NewTApplicationException(
+			BAD_SEQUENCE_ID,
+			fmt.Sprintf("%s: out of order sequence response", method),
+		)
+	} else if rTypeID == EXCEPTION {
+		var (
+			exception   tApplicationException
+			retErr, err = exception.Read(iprot)
+		)
+
+		if err != nil {
 			return err
 		}
 
@@ -56,9 +70,12 @@ func (p *TStandardClient) Recv(iprot TProtocol, seqId int32, method string, resu
 			return err
 		}
 
-		return &exception
-	} else if rTypeId != REPLY {
-		return NewTApplicationException(INVALID_MESSAGE_TYPE_EXCEPTION, fmt.Sprintf("%s: invalid message type", method))
+		return retErr
+	} else if rTypeID != REPLY {
+		return NewTApplicationException(
+			INVALID_MESSAGE_TYPE_EXCEPTION,
+			fmt.Sprintf("%s: invalid message type", method),
+		)
 	}
 
 	if err := result.Read(iprot); err != nil {
@@ -68,18 +85,58 @@ func (p *TStandardClient) Recv(iprot TProtocol, seqId int32, method string, resu
 	return iprot.ReadMessageEnd()
 }
 
-func (p *TStandardClient) Call(ctx context.Context, method string, args, result TStruct) error {
-	p.seqId++
-	seqId := p.seqId
+func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res TResponse) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	if err := p.Send(ctx, p.oprot, seqId, method, args); err != nil {
-		return err
+	c.seqID++
+
+	call := func(ctx Context, req TRequest) (TResponse, error) {
+		if err := send(ctx, c.outputProtocol, c.seqID, method, req, CALL); err != nil {
+			return nil, err
+		}
+
+		return res, recv(c.inputProtocol, c.seqID, method, res)
 	}
 
-	// method is oneway
-	if result == nil {
-		return nil
+	for i := len(c.Middlewares); i > 0; i-- {
+		call = func(ctx Context, req TRequest) (TResponse, error) {
+			return c.Middlewares[i].HandleBinaryRequest(
+				ctx,
+				method,
+				c.seqID,
+				req,
+				call,
+			)
+		}
 	}
 
-	return p.Recv(p.iprot, seqId, method, result)
+	_, err := call(ctx, req)
+
+	return err
+}
+
+func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.seqID++
+
+	call := func(ctx Context, req TRequest) error {
+		return send(ctx, c.outputProtocol, c.seqID, method, req, ONEWAY)
+	}
+
+	for i := len(c.Middlewares); i > 0; i-- {
+		call = func(ctx Context, req TRequest) error {
+			return c.Middlewares[i].HandleUnaryRequest(
+				ctx,
+				method,
+				c.seqID,
+				req,
+				call,
+			)
+		}
+	}
+
+	return call(ctx, req)
 }
