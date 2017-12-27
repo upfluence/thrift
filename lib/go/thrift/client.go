@@ -19,6 +19,15 @@ type TSyncClient struct {
 	Middlewares []TMiddleware
 }
 
+func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncClient {
+	return &TSyncClient{
+		inputProtocol:  f.GetProtocol(t),
+		outputProtocol: f.GetProtocol(t),
+		mu:             &sync.Mutex{},
+		Middlewares:    ms,
+	}
+}
+
 func send(ctx Context, oprot TProtocol, seqID int32, method string, args TRequest, mType TMessageType) error {
 	if err := oprot.WriteMessageBegin("perform", mType, seqID); err != nil {
 		return err
@@ -100,13 +109,14 @@ func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res T
 	}
 
 	for i := len(c.Middlewares); i > 0; i-- {
+		next := call
 		call = func(ctx Context, req TRequest) (TResponse, error) {
 			return c.Middlewares[i].HandleBinaryRequest(
 				ctx,
 				method,
 				c.seqID,
 				req,
-				call,
+				next,
 			)
 		}
 	}
@@ -127,13 +137,14 @@ func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error 
 	}
 
 	for i := len(c.Middlewares); i > 0; i-- {
+		next := call
 		call = func(ctx Context, req TRequest) error {
-			return c.Middlewares[i].HandleUnaryRequest(
+			return c.Middlewares[i-1].HandleUnaryRequest(
 				ctx,
 				method,
 				c.seqID,
 				req,
-				call,
+				next,
 			)
 		}
 	}

@@ -30,6 +30,13 @@ type TStandardProcessor struct {
 	Middlewares  []TMiddleware
 }
 
+func NewTStandardProcessor(ms []TMiddleware) *TStandardProcessor {
+	return &TStandardProcessor{
+		Middlewares:  ms,
+		ProcessorMap: make(map[string]TProcessorFunction),
+	}
+}
+
 func (p *TStandardProcessor) AddProcessor(fname string, fn TProcessorFunction) {
 	p.ProcessorMap[fname] = fn
 }
@@ -119,13 +126,14 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 	}
 
 	for i := len(p.middlewares); i > 0; i-- {
+		next := call
 		call = func(ctx Context, req TRequest) (TResponse, error) {
 			return p.middlewares[i].HandleBinaryRequest(
 				ctx,
 				p.fname,
 				seqID,
 				req,
-				call,
+				next,
 			)
 		}
 	}
@@ -188,13 +196,14 @@ func (p *TUnaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPro
 	}
 
 	for i := len(p.middlewares); i > 0; i-- {
+		next := call
 		call = func(ctx Context, req TRequest) error {
 			return p.middlewares[i].HandleUnaryRequest(
 				ctx,
 				p.fname,
 				seqID,
 				req,
-				call,
+				next,
 			)
 		}
 	}

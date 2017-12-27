@@ -1795,54 +1795,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
 
-  f_service_ << indent() << "func New" << serviceName << "ClientPool(provider thrift.TPoolProvider) (*" << serviceName << "ClientPool, error) {" << endl;
-  indent_up();
-  f_service_ << indent() << "pool, err := provider.BuildPool(func() (interface{}, error) {" << endl;
-  indent_up();
-  f_service_ << indent() << "return New" << serviceName << "ClientFactoryProvider(provider.BuildClient())" << endl;
-  indent_down();
-  f_service_ << indent() << "})" << endl << endl;
-  f_service_ << indent() << "if err != nil { return nil, err }" << endl << endl;
-  f_service_ << indent() << "return &" << serviceName << "ClientPool{pool}, nil" << endl;
-  f_service_ << indent() << "}" << endl << endl;
-  indent_down();
-
-  f_service_ << indent() << "type " << serviceName << "ClientPool struct {" << endl;
-  indent_up();
-  f_service_ << indent() << "pool thrift.TPool" << endl;
-  indent_down();
-  f_service_ << indent() << "}" << endl << endl;
-
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Get(ctx thrift.Context) (*" << serviceName << "Client, error) {" << endl;
-  indent_up();
-  f_service_ << indent() << "cl, err := p.pool.Get(ctx)" << endl << endl;
-  f_service_ << indent() << "if err != nil { return nil, err }" << endl << endl;
-  f_service_ << indent() << "return cl.(*" << serviceName << "Client), nil" << endl << endl;
-  indent_down();
-  f_service_ << indent() << "}" << endl << endl;
-
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Put(ctx thrift.Context, cl *" << serviceName << "Client) error {" << endl;
-  indent_up();
-  f_service_ << indent() << "return p.pool.Put(ctx, cl)" << endl;
-  indent_down();
-  f_service_ << indent() << "}" << endl << endl;
-
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) Discard(ctx thrift.Context, cl *" << serviceName << "Client) error {" << endl;
-  indent_up();
-  f_service_ << indent() << "return p.pool.Discard(ctx, cl)" << endl;
-  indent_down();
-  f_service_ << indent() << "}" << endl << endl;
-
-  f_service_ << indent() << "func (p *" << serviceName << "ClientPool) With(ctx thrift.Context, fn func (thrift.Context, *" << serviceName << "Client) error) error {" << endl;
-  indent_up();
-  f_service_ << indent() << "var cl, err = p.Get(ctx)" << endl;
-  f_service_ << indent() << "if err != nil { return err }" << endl << endl;
-  f_service_ << indent() << "err = fn(ctx, cl)" << endl << endl;
-  f_service_ << indent() << "if err != nil { return p.Discard(ctx, cl) }" << endl;
-  f_service_ << indent() << "return p.Put(ctx, cl)" << endl;
-  indent_down();
-  f_service_ << indent() << "}" << endl << endl;
-
   // Constructor function by provider
   f_service_ << indent() << "func New" << serviceName
              << "ClientFactoryProvider(p thrift.TClientProvider) (*" << serviceName
@@ -1888,11 +1840,11 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     } else {
       std::string resultname = publicize((*f_iter)->get_name() + "_result", true);
       f_service_ << indent() << "result := " << resultname << "{}" << endl;
-      f_service_ << indent() << "if err :=  p.CallBinary(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result); err != nil {" << endl;
+      f_service_ << indent() << "if err =  p.CallBinary(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result); err != nil {" << endl;
       if ((*f_iter)->get_returntype()->is_void()) {
         f_service_ << indent() << "return err" << endl;
       } else {
-        f_service_ << indent() << "return nil, err" << endl;
+        f_service_ << indent() << "return res, err" << endl;
       }
       f_service_ << indent() << "}" << endl << endl;
 
@@ -1907,7 +1859,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
         if ((*f_iter)->get_returntype()->is_void()) {
           f_service_ << indent() << "  return result." << pubname << endl;
         } else {
-          f_service_ << indent() << "  return nil, result." << pubname << endl;
+          f_service_ << indent() << "  return res, result." << pubname << endl;
         }
         f_service_ << indent() << "}";
 
@@ -1921,7 +1873,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       if ((*f_iter)->get_returntype()->is_void()) {
         f_service_ << indent() << "return nil" << endl;
       } else {
-        f_service_ << indent() << "return result.Success, nil" << endl;
+        f_service_ << indent() << "return result.GetSuccess(), nil" << endl;
       }
     }
 
@@ -1970,7 +1922,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
   if (!extends_processor.empty()) {
     f_service_ << indent() << "p := " << extends_processor_new << "(handler, middlewares)" << endl;
   } else {
-    f_service_ << indent() << "p := &thrift.TStandardProcessor{Middlewares: middlewares}" << endl;
+    f_service_ << indent() << "p := thrift.NewTStandardProcessor(middlewares)" << endl;
   }
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     string escapedFuncName(escape_string((*f_iter)->get_name()));
@@ -2026,7 +1978,10 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
   }
 
   indent_up();
-  f_service_ << indent() << "args := req.(*" << argsname << ")" << endl;
+
+  if (!tfunction->get_arglist()->get_members().empty()) {
+    f_service_ << indent() << "args := req.(*" << argsname << ")" << endl;
+  }
 
   if (!tfunction->get_returntype()->is_void()) {
     f_service_ << indent() << "retval, err2 := p.handler." << publicize(tfunction->get_name()) << "(ctx";
@@ -2069,8 +2024,8 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
                    << publicize((*xf_iter)->get_name()) << " = v" << endl;
         f_service_ << indent() << "return result, nil" << endl;
       }
+      f_service_ << indent() << "}" << endl;
     }
-    f_service_ << indent() << "}" << endl;
     f_service_ << indent() << "return nil, err2" << endl;
     f_service_ << indent() << "}" << endl << endl; // make sure we set Success retval only on success
 
@@ -2703,6 +2658,7 @@ string t_go_generator::function_signature_if(t_function* tfunction, string prefi
   string errs = argument_list(exceptions);
 
   if (!ret->is_void()) {
+    signature += "res ";
     signature += type_to_go_type(ret);
 
     if (addError || errs.size() == 0) {
@@ -2711,7 +2667,7 @@ string t_go_generator::function_signature_if(t_function* tfunction, string prefi
   }
 
   if (addError) {
-    signature += "error";
+    signature += "err error";
   }
 
   signature += ")";
