@@ -5,6 +5,20 @@ import (
 	"sync"
 )
 
+type TClientFactory interface {
+	GetClient(TTransportFactory, TProtocolFactory, []TMiddleware) TClient
+}
+
+type tSyncClientFactory struct{}
+
+func NewTDefaultClientFactory() TClientFactory {
+	return &tSyncClientFactory{}
+}
+
+func (*tSyncClientFactory) GetClient(t TTransportFactory, p TProtocolFactory, ms []TMiddleware) TClient {
+	return NewTSyncClient(t.GetTransport(nil), p, ms...)
+}
+
 type TClient interface {
 	CallBinary(Context, string, TRequest, TResponse) error
 	CallUnary(Context, string, TRequest) error
@@ -29,7 +43,7 @@ func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncC
 }
 
 func send(ctx Context, oprot TProtocol, seqID int32, method string, args TRequest, mType TMessageType) error {
-	if err := oprot.WriteMessageBegin("perform", mType, seqID); err != nil {
+	if err := oprot.WriteMessageBegin(method, mType, seqID); err != nil {
 		return err
 	}
 
