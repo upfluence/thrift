@@ -126,9 +126,10 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 	}
 
 	for i := len(p.middlewares); i > 0; i-- {
+		j := i
 		next := call
 		call = func(ctx Context, req TRequest) (TResponse, error) {
-			return p.middlewares[i].HandleBinaryRequest(
+			return p.middlewares[j-1].HandleBinaryRequest(
 				ctx,
 				p.fname,
 				seqID,
@@ -196,9 +197,10 @@ func (p *TUnaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPro
 	}
 
 	for i := len(p.middlewares); i > 0; i-- {
+		j := i
 		next := call
 		call = func(ctx Context, req TRequest) error {
-			return p.middlewares[i].HandleUnaryRequest(
+			return p.middlewares[j-1].HandleUnaryRequest(
 				ctx,
 				p.fname,
 				seqID,
