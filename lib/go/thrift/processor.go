@@ -77,11 +77,11 @@ type TBaseProcessorFunction struct {
 	middlewares []TMiddleware
 }
 
-func NewTBaseProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest) *TBaseProcessorFunction {
+func NewTBaseProcessorFunction(p TProcessor, fname string, builder func() TRequest) *TBaseProcessorFunction {
 	return &TBaseProcessorFunction{
 		fname:       fname,
 		argBuilder:  builder,
-		middlewares: p.Middlewares,
+		middlewares: p.GetMiddlewares(),
 	}
 }
 
@@ -107,7 +107,7 @@ type TBinaryProcessorFunction struct {
 	handler TBinaryHandler
 }
 
-func NewTBinaryProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest, handler TBinaryHandler) *TBinaryProcessorFunction {
+func NewTBinaryProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TBinaryHandler) *TBinaryProcessorFunction {
 	return &TBinaryProcessorFunction{
 		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
 		handler:                handler,
@@ -183,7 +183,7 @@ type TUnaryProcessorFunction struct {
 	handler TUnaryHandler
 }
 
-func NewTUnaryProcessorFunction(p *TStandardProcessor, fname string, builder func() TRequest, handler TUnaryHandler) *TUnaryProcessorFunction {
+func NewTUnaryProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TUnaryHandler) *TUnaryProcessorFunction {
 	return &TUnaryProcessorFunction{
 		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
 		handler:                handler,
