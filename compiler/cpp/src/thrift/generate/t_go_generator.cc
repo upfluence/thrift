@@ -2094,14 +2094,30 @@ void t_go_generator::generate_service_server(t_service* tservice) {
 
   string pServiceName(privatize(serviceName));
 
+  f_service_ << indent() << "func New" << serviceName << "ProcessorProvider(handler " << serviceName
+             << ", provider thrift.TProcessorProvider) (thrift.TProcessor, error) {" << endl;
+  f_service_ << indent() << "p, err := provider.Build(\"" << tservice->get_program()->get_namespace("*") << "\", \"" << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "if err != nil {" << endl;
+  indent_up();
+  f_service_ << indent() << "return nil, err" << endl;
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+  f_service_ << indent() << "  return New" << serviceName << "ProcessorFactory(handler, p), nil" << endl;
+  f_service_ << indent() << "}" << endl << endl;
+
   f_service_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
-             << ", middlewares []thrift.TMiddleware) *thrift.TStandardProcessor {" << endl;
+             << ", middlewares []thrift.TMiddleware) thrift.TProcessor {" << endl;
 
   if (!extends_processor.empty()) {
     f_service_ << indent() << "p := " << extends_processor_new << "(handler, middlewares)" << endl;
   } else {
     f_service_ << indent() << "p := thrift.NewTStandardProcessor(middlewares)" << endl;
   }
+  f_service_ << indent() << "  return New" << serviceName << "ProcessorFactory(handler, p)" << endl;
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func New" << serviceName << "ProcessorFactory(handler " << serviceName
+             << ", p thrift.Processor) thrift.TProcessor {" << endl;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     string escapedFuncName(escape_string((*f_iter)->get_name()));
     f_service_ << indent() << "p.AddProcessor(" << endl;
