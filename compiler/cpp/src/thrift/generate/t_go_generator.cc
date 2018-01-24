@@ -2117,7 +2117,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
   f_service_ << indent() << "}" << endl << endl;
 
   f_service_ << indent() << "func New" << serviceName << "ProcessorFactory(handler " << serviceName
-             << ", p thrift.Processor) thrift.TProcessor {" << endl;
+             << ", p thrift.TProcessor) thrift.TProcessor {" << endl;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     string escapedFuncName(escape_string((*f_iter)->get_name()));
     f_service_ << indent() << "p.AddProcessor(" << endl;
