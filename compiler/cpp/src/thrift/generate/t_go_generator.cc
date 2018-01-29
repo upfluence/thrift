@@ -138,11 +138,15 @@ public:
                               t_struct* tstruct,
                               const string& tstruct_name,
                               bool is_result = false);
-  void generate_countsetfields_helper(std::ostream& out,
-                                      t_struct* tstruct,
-                                      const string& tstruct_name,
-                                      bool is_result = false);
-  void generate_go_struct_reader(std::ostream& out,
+  void generate_countsetfields_helper(std::ofstream& out,
+                              t_struct* tstruct,
+                              const string& tstruct_name,
+                              bool is_result = false);
+  void generate_interface_helper(std::ofstream& out,
+                              t_struct* tstruct,
+                              const string& tstruct_name,
+                              bool is_result = false);
+  void generate_go_struct_reader(std::ofstream& out,
                                  t_struct* tstruct,
                                  const string& tstruct_name,
                                  bool is_result = false);
@@ -1435,6 +1439,7 @@ void t_go_generator::generate_go_struct_definition(ostream& out,
 
   if (tstruct->is_union() && num_setable > 0) {
     generate_countsetfields_helper(out, tstruct, tstruct_name, is_result);
+    generate_interface_helper(out, tstruct, tstruct_name, is_result);
   }
 
   generate_isset_helpers(out, tstruct, tstruct_name, is_result);
@@ -1498,10 +1503,43 @@ void t_go_generator::generate_isset_helpers(ostream& out,
 /**
  * Generates the CountSetFields helper method for a struct
  */
-void t_go_generator::generate_countsetfields_helper(ostream& out,
-                                                    t_struct* tstruct,
-                                                    const string& tstruct_name,
-                                                    bool is_result) {
+void t_go_generator::generate_interface_helper(ofstream& out,
+                                            t_struct* tstruct,
+                                            const string& tstruct_name,
+                                            bool is_result) {
+  (void)is_result;
+  const vector<t_field*>& fields = tstruct->get_members();
+  vector<t_field*>::const_iterator f_iter;
+  const string escaped_tstruct_name(escape_string(tstruct->get_name()));
+
+  out << indent() << "func (p *" << tstruct_name << ") Interface() interface{} {"
+      << endl;
+  indent_up();
+  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    if ((*f_iter)->get_req() == t_field::T_REQUIRED)
+      continue;
+
+    if (!is_pointer_field(*f_iter))
+      continue;
+
+    const string field_name(
+        publicize(escape_string((*f_iter)->get_name())));
+
+    out << indent() << "if (p.IsSet" << field_name << "()) {" << endl;
+    indent_up();
+    out << indent() << "return p." << field_name << endl;
+    indent_down();
+    out << indent() << "}" << endl;
+  }
+
+  out << indent() << "return nil" << endl << endl;
+  indent_down();
+  out << indent() << "}" << endl << endl;
+}
+void t_go_generator::generate_countsetfields_helper(ofstream& out,
+                                            t_struct* tstruct,
+                                            const string& tstruct_name,
+                                            bool is_result) {
   (void)is_result;
   const vector<t_field*>& fields = tstruct->get_members();
   vector<t_field*>::const_iterator f_iter;
