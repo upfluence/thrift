@@ -162,15 +162,70 @@ class ExecReporter(TestReporter):
     ])),
   }
 
-  def maybe_false_positive(self):
-    """Searches through log file for socket bind error.
-    Returns True if suspicious expression is found, otherwise False"""
-    def match(line):
-      for expr in exprs:
-        if expr.search(line):
-          return True
-    try:
-      if self.out and not self.out.closed:
+    def killed(self):
+        print(file=self.out)
+        print('Server process is successfully killed.', file=self.out)
+        self.end(None)
+
+    def died(self):
+        print(file=self.out)
+        print('*** Server process has died unexpectedly ***', file=self.out)
+        self.end(None)
+
+    _init_failure_exprs = {
+        'server': list(map(re.compile, [
+            '[Aa]ddress already in use',
+            'Could not bind',
+            'EADDRINUSE',
+        ])),
+        'client': list(map(re.compile, [
+            '[Cc]onnection refused',
+            'Could not connect to',
+            'Could not open UNIX ',       # domain socket (rb)
+            'ECONNREFUSED',
+            'econnrefused',               # erl
+            'CONNECTION-REFUSED-ERROR',   # cl
+            'No such file or directory',  # domain socket
+        ])),
+    }
+
+    def maybe_false_positive(self):
+        """Searches through log file for socket bind error.
+        Returns True if suspicious expression is found, otherwise False"""
+        try:
+            if self.out and not self.out.closed:
+                self.out.flush()
+            exprs = self._init_failure_exprs[self._prog.kind]
+
+            def match(line):
+                for expr in exprs:
+                    if expr.search(line):
+                        self._log.info("maybe false positive: %s" % line)
+                        return True
+
+            with logfile_open(self.logpath, 'r') as fp:
+                if any(map(match, fp)):
+                    return True
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as ex:
+            self._log.warn('[%s]: Error while detecting false positive: %s' % (self._test.name, str(ex)))
+            self._log.info(traceback.print_exc())
+        return False
+
+    def _open(self):
+        self.out = logfile_open(self.logpath, 'w+')
+
+    def _close(self):
+        self.out.close()
+
+    def _print_header(self):
+        self._print_date()
+        print('Executing: %s' % str_join(' ', self._prog.command), file=self.out)
+        print('Directory: %s' % self._prog.workdir, file=self.out)
+        print('config:delay: %s' % self._test.delay, file=self.out)
+        print('config:timeout: %s' % self._test.timeout, file=self.out)
+        self._print_bar()
         self.out.flush()
       exprs = list(map(re.compile, self._init_failure_exprs[self._prog.kind]))
 

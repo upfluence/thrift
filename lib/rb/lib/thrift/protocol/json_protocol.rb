@@ -759,6 +759,10 @@ module Thrift
     def read_binary
       read_json_base64
     end
+
+    def to_s
+      "json(#{super.to_s})"
+    end
   end
 
   class SimpleJsonProtocol < JsonProtocol
@@ -828,6 +832,10 @@ module Thrift
   class JsonProtocolFactory < BaseProtocolFactory
     def get_protocol(trans)
       Thrift::JsonProtocol.new(trans)
+    end
+
+    def to_s
+      "json"
     end
   end
 end

@@ -74,5 +74,9 @@ module Thrift
 
       http
     end
+
+    def to_s
+      "@{self.url}"
+    end
   end
 end

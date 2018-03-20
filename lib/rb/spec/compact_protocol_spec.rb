@@ -133,6 +133,11 @@ describe Thrift::CompactProtocol do
     struct.should == struct2
   end
 
+  it "should provide a reasonable to_s" do
+    trans = Thrift::MemoryBufferTransport.new
+    Thrift::CompactProtocol.new(trans).to_s.should == "compact(memory)"
+  end
+
   class JankyHandler
     def Janky(i32arg)
       i32arg * 2
@@ -145,5 +150,15 @@ describe Thrift::CompactProtocol do
 
   def reader(sym)
     "read_#{sym.to_s}"
+  end
+end
+
+describe Thrift::CompactProtocolFactory do
+  it "should create a CompactProtocol" do
+    Thrift::CompactProtocolFactory.new.get_protocol(mock("MockTransport")).should be_instance_of(Thrift::CompactProtocol)
+  end
+
+  it "should provide a reasonable to_s" do
+    Thrift::CompactProtocolFactory.new.to_s.should == "compact"
   end
 end

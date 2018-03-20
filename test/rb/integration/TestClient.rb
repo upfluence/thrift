@@ -25,19 +25,24 @@ require 'test_helper'
 require 'thrift'
 require 'thrift_test'
 
+$domain_socket = nil
 $protocolType = "binary"
 $host = "localhost"
 $port = 9090
 $transport = "buffered"
+
 ARGV.each do|a|
   if a == "--help"
     puts "Allowed options:"
     puts "\t -h [ --help ] \t produce help message"
+    puts "\t--domain-socket arg (=) \t Unix domain socket path - if not empty, host and port are ignored"
     puts "\t--host arg (=localhost) \t Host to connect"
     puts "\t--port arg (=9090) \t Port number to listen"
-    puts "\t--protocol arg (=binary) \t protocol: binary, accel"
+    puts "\t--protocol arg (=binary) \t protocol: accel, binary, compact, json"
     puts "\t--transport arg (=buffered) transport: buffered, framed, http"
     exit
+  elsif a.start_with?("--domain-socket")
+    $domain_socket = a.split("=")[1]
   elsif a.start_with?("--host")
     $host = a.split("=")[1]
   elsif a.start_with?("--protocol")
@@ -45,16 +50,20 @@ ARGV.each do|a|
   elsif a.start_with?("--transport")
     $transport = a.split("=")[1]
   elsif a.start_with?("--port")
-    $port = a.split("=")[1].to_i 
+    $port = a.split("=")[1].to_i
   end
 end
 ARGV=[]
 
 class SimpleClientTest < Test::Unit::TestCase
-  def setup 
+  def setup
     unless @socket
-      @socket   = Thrift::Socket.new($host, $port)
-      transportFactory = Thrift::BufferedTransport.new(@socket)
+      if $domain_socket.to_s.strip.empty?
+        @socket   = Thrift::Socket.new($host, $port)
+      else
+        @socket   = Thrift::UNIXSocket.new($domain_socket)
+      end
+
       if $transport == "buffered"
         transportFactory = Thrift::BufferedTransport.new(@socket)
       elsif $transport == ""
@@ -82,7 +91,7 @@ class SimpleClientTest < Test::Unit::TestCase
       @socket.open
     end
   end
-  
+
   def test_void
     @client.testVoid()
   end
@@ -117,7 +126,7 @@ class SimpleClientTest < Test::Unit::TestCase
   end
 
   # TODO: testBinary
-  
+
   def test_map
     val = {1 => 1, 2 => 2, 3 => 3}
     assert_equal(@client.testMap(val), val)
