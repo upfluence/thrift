@@ -310,7 +310,7 @@ module Thrift
     def write_json_base64(str)
       @context.write(trans)
       trans.write(@@kJSONStringDelimiter)
-      write_json_string([str].pack("m"))
+      trans.write([str].pack("m")[..-2])
       trans.write(@@kJSONStringDelimiter)
     end
 

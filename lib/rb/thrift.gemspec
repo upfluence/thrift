@@ -27,11 +27,11 @@ Gem::Specification.new do |s|
 
   s.require_paths = %w[lib ext]
 
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency "rack"
-  s.add_development_dependency "rack-test"
-  s.add_development_dependency "thin"
-  s.add_development_dependency "bundler"
-  s.add_development_dependency 'rake'
+  s.add_development_dependency 'bundler'
+  s.add_development_dependency 'rack',               '~> 2.0'
+  s.add_development_dependency 'rack-test'
+  s.add_development_dependency 'rake',               '~> 12.3'
+  s.add_development_dependency 'rspec',              '~> 3.5'
+  s.add_development_dependency 'thin',               '~> 1.7'
 end
 

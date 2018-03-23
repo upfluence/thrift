@@ -63,6 +63,10 @@ module Thrift
       @outbuf = Bytes.empty_byte_buffer
     end
 
+    def to_s
+      "@{self.url}"
+    end
+
     private
 
     def http_client
@@ -73,10 +77,6 @@ module Thrift
       http.verify_mode = @ssl_verify_mode if @url.scheme == 'https'
 
       http
-    end
-
-    def to_s
-      "@{self.url}"
     end
   end
 end

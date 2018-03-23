@@ -28,34 +28,49 @@ describe 'Thrift::HTTPClientTransport' do
         retries: 0
       )
     end
-    
+
     it "should provide a reasonable to_s" do
       @client.to_s == "http://my.domain.com/path/to/service?param=value"
     end
 
     it "should always be open" do
-      @client.should be_open
+      expect(@client).to be_open
       @client.close
-      @client.should be_open
+      expect(@client).to be_open
     end
 
     it "should post via HTTP and return the results" do
       @client.write "a test"
       @client.write " frame"
-      Net::HTTP.should_receive(:new).with("my.domain.com", 80).and_return do
-        mock("Net::HTTP").tap do |http|
-          http.should_receive(:use_ssl=).with(false)
-          http.should_receive(:post).with("/path/to/service?param=value", "a test frame", {"Content-Type"=>"application/x-thrift"}).and_return do
-            mock("Net::HTTPOK").tap do |response|
-              response.should_receive(:body).and_return "data"
-              response.should_receive(:value).and_return nil
+      expect(Net::HTTP).to receive(:new).with("my.domain.com", 80) do
+        double("Net::HTTP").tap do |http|
+          expect(http).to receive(:use_ssl=).with(false)
+          expect(http).to receive(:post) do
+            double("Net::HTTP").tap do |response|
+              expect(response).to receive(:value)
+              expect(response).to receive(:body).and_return "data"
             end
           end
         end
       end
       @client.flush
-      @client.read(10).should == "data"
+      expect(@client.read(10)).to eq("data")
     end
+
+    it 'should reset the outbuf on HTTP failures' do
+      @client.write "test"
+
+      expect(Net::HTTP).to receive(:new).with("my.domain.com", 80) do
+        double("Net::HTTP").tap do |http|
+          expect(http).to receive(:use_ssl=).with(false)
+          expect(http).to receive(:post) { raise Net::ReadTimeout }
+        end
+      end
+
+      @client.flush  rescue
+      expect(@client.instance_variable_get(:@outbuf)).to eq(Thrift::Bytes.empty_byte_buffer)
+    end
+
   end
 
   describe 'ssl enabled' do
@@ -69,21 +84,20 @@ describe 'Thrift::HTTPClientTransport' do
 
       client.write "test"
 
-      Net::HTTP.should_receive(:new).with("my.domain.com", 443).and_return do
-        mock("Net::HTTP").tap do |http|
-          http.should_receive(:use_ssl=).with(true)
-          http.should_receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-          http.should_receive(:post).with(@service_path, "test",
-              "Content-Type" => "application/x-thrift").and_return do
-            mock("Net::HTTPOK").tap do |response|
-              response.should_receive(:body).and_return "data"
-              response.should_receive(:value).and_return nil
+      expect(Net::HTTP).to receive(:new).with("my.domain.com", 443) do
+        double("Net::HTTP").tap do |http|
+          expect(http).to receive(:use_ssl=).with(true)
+          expect(http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+          expect(http).to receive(:post) do
+            double("Net::HTTPOK").tap do |response|
+              expect(response).to receive(:value)
+              expect(response).to receive(:body).and_return "data"
             end
           end
         end
       end
       client.flush
-      client.read(4).should == "data"
+      expect(client.read(4)).to eq("data")
     end
 
     it "should set SSL verify mode when specified" do
@@ -91,21 +105,20 @@ describe 'Thrift::HTTPClientTransport' do
           :ssl_verify_mode => OpenSSL::SSL::VERIFY_NONE)
 
       client.write "test"
-      Net::HTTP.should_receive(:new).with("my.domain.com", 443).and_return do
-        mock("Net::HTTP").tap do |http|
-          http.should_receive(:use_ssl=).with(true)
-          http.should_receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
-          http.should_receive(:post).with(@service_path, "test",
-              "Content-Type" => "application/x-thrift").and_return do
-            mock("Net::HTTPOK").tap do |response|
-              response.should_receive(:body).and_return "data"
-              response.should_receive(:value).and_return nil
+      expect(Net::HTTP).to receive(:new).with("my.domain.com", 443) do
+        double("Net::HTTP").tap do |http|
+          expect(http).to receive(:use_ssl=).with(true)
+          expect(http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
+          expect(http).to receive(:post) do
+            double("Net::HTTPOK").tap do |response|
+              expect(response).to receive(:value)
+              expect(response).to receive(:body).and_return "data"
             end
           end
         end
       end
       client.flush
-      client.read(4).should == "data"
+      expect(client.read(4)).to eq("data")
     end
   end
 end

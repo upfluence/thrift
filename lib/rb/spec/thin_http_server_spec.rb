@@ -24,24 +24,19 @@ require 'thrift/server/rack_application'
 
 describe Thrift::ThinHTTPServer do
 
-  let(:processor) { mock('processor') }
+  let(:processor) { double('processor') }
 
   describe "#initialize" do
 
     context "when using the defaults" do
 
       it "binds to port 80, with host 0.0.0.0, a path of '/'" do
-        Thin::Server.should_receive(:new).with('0.0.0.0', 80, an_instance_of(Rack::Builder))
-        Thrift::ThinHTTPServer.new(processor)
-      end
-
-      it 'creates a ThinHTTPServer::RackApplicationContext' do
-        Thrift::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
+        expect(Thin::Server).to receive(:new).with('0.0.0.0', 80, an_instance_of(Rack::Builder))
         Thrift::ThinHTTPServer.new(processor)
       end
 
       it "uses the BinaryProtocolFactory" do
-        Thrift::BinaryProtocolFactory.should_receive(:new)
+        expect(Thrift::BinaryProtocolFactory).to receive(:new)
         Thrift::ThinHTTPServer.new(processor)
       end
 
@@ -53,19 +48,12 @@ describe Thrift::ThinHTTPServer do
         ip = "192.168.0.1"
         port = 3000
         path = "/thin"
-        Thin::Server.should_receive(:new).with(ip, port, an_instance_of(Rack::Builder))
+        expect(Thin::Server).to receive(:new).with(ip, port, an_instance_of(Rack::Builder))
         Thrift::ThinHTTPServer.new(processor,
                            :ip => ip,
                            :port => port,
                            :path => path)
       end
-
-      it 'creates a ThinHTTPServer::RackApplicationContext with a different protocol factory' do
-        Thrift::RackApplication.should_receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
-        Thrift::ThinHTTPServer.new(processor,
-                           :protocol_factory => Thrift::JsonProtocolFactory.new)
-      end
-
     end
 
   end
@@ -73,12 +61,12 @@ describe Thrift::ThinHTTPServer do
   describe "#serve" do
 
     it 'starts the Thin server' do
-      underlying_thin_server = mock('thin server', :start => true)
-      Thin::Server.stub(:new).and_return(underlying_thin_server)
+      underlying_thin_server = double('thin server', :start => true)
+      allow(Thin::Server).to receive(:new).and_return(underlying_thin_server)
 
       thin_thrift_server = Thrift::ThinHTTPServer.new(processor)
 
-      underlying_thin_server.should_receive(:start)
+      expect(underlying_thin_server).to receive(:start)
       thin_thrift_server.serve
     end
   end
