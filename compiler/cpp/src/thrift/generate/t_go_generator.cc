@@ -2243,7 +2243,7 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
     const vector<t_field*>& x_fields = exceptions->get_members();
     f_service_ << indent() << "if err2 != nil {" << endl;
     if (!x_fields.empty()) {
-      f_service_ << indent() << "switch v := err2.(type) {" << endl;
+      f_service_ << indent() << "switch v := thrift.Cause(err2).(type) {" << endl;
 
       vector<t_field*>::const_iterator xf_iter;
 
