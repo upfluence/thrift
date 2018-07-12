@@ -1273,12 +1273,29 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
   generate_go_struct_reader(out, tstruct, tstruct_name, is_result);
   generate_go_struct_writer(out, tstruct, tstruct_name, is_result, num_setable > 0);
 
+  const vector<t_field*>& fields = tstruct->get_sorted_members();
+  vector<t_field*>::const_iterator f_iter;
+
   out << indent() << "func (p *" << tstruct_name << ") String() string {" << endl;
   out << indent() << "  if p == nil {" << endl;
   out << indent() << "    return \"<nil>\"" << endl;
   out << indent() << "  }" << endl;
-  out << indent() << "  return fmt.Sprintf(\"" << escape_string(tstruct_name) << "(%+v)\", *p)"
-      << endl;
+  out << indent() << "  return fmt.Sprintf(" << endl;
+  out << indent() << "    \"" << escape_string(tstruct_name) << "({";
+
+  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    out << (*f_iter)->get_name() << ": %v";
+    if (fields.back() != *f_iter) {
+      out << ", ";
+    }
+  }
+  out << "})\", " << endl;
+
+  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    out << "    p.Get" << publicize(escape_string((*f_iter)->get_name())) << "()," << endl;
+  }
+
+  out <<  ")" << endl;
   out << indent() << "}" << endl << endl;
 
   if (is_exception) {
