@@ -30,8 +30,9 @@ import (
 )
 
 const (
-	readLimit    = 32768
-	maxSliceSize = 1 << 20
+	readLimit     = 32768
+	maxSliceSize  = 1 << 20
+	maxStringSize = 1 << 20
 )
 
 type TBinaryProtocol struct {
@@ -482,6 +483,10 @@ const readLimit = 32768
 func (p *TBinaryProtocol) readStringBody(size int32) (value string, err error) {
 	if size < 0 {
 		return "", nil
+	}
+
+	if size > maxStringSize {
+		return "", invalidDataLength
 	}
 
 	var (
