@@ -32,8 +32,9 @@ import (
 <<<<<<< HEAD
 =======
 const (
-	readLimit    = 32768
-	maxSliceSize = 1 << 20
+	readLimit     = 32768
+	maxSliceSize  = 1 << 20
+	maxStringSize = 1 << 20
 )
 
 >>>>>>> f2179df2e (lib/go/binary_protocol: Cap the size allowed in the slices)
@@ -481,6 +482,10 @@ const readLimit = 32768
 func (p *TBinaryProtocol) readStringBody(size int32) (value string, err error) {
 	if size < 0 {
 		return "", nil
+	}
+
+	if size > maxStringSize {
+		return "", invalidDataLength
 	}
 
 	var (
