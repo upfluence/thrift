@@ -126,8 +126,9 @@ func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res T
 
 	for i := len(c.Middlewares); i > 0; i-- {
 		next := call
+		i := i
 		call = func(ctx Context, req TRequest) (TResponse, error) {
-			return c.Middlewares[i].HandleBinaryRequest(
+			return c.Middlewares[i-1].HandleBinaryRequest(
 				ctx,
 				method,
 				c.seqID,
@@ -154,6 +155,7 @@ func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error 
 
 	for i := len(c.Middlewares); i > 0; i-- {
 		next := call
+		i := i
 		call = func(ctx Context, req TRequest) error {
 			return c.Middlewares[i-1].HandleUnaryRequest(
 				ctx,
