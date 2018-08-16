@@ -244,7 +244,7 @@ func ReadWriteBool(t testing.TB, p TProtocol, trans TTransport) {
 	_, ok := p.(*TSimpleJSONProtocol)
 	if !ok {
 		if thetype != thetype2 {
-			t.Errorf("%s: %T %T type %s != type %s", "ReadWriteBool", p, trans, thetype, thetype2)
+			t.Errorf("%v: %T %T type %s != type %s", "ReadWriteBool", p, trans, thetype, thetype2)
 		}
 		if thelen != thelen2 {
 			t.Errorf("%s: %T %T len %v != len %v", "ReadWriteBool", p, trans, thelen, thelen2)
