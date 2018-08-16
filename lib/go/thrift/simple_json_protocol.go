@@ -65,7 +65,6 @@ func (p _ParseContext) String() string {
 // This protocol produces/consumes a simple output format
 // suitable for parsing by scripting languages.  It should not be
 // confused with the full-featured TJSONProtocol.
-//
 type TSimpleJSONProtocol struct {
 	trans TTransport
 
@@ -1065,7 +1064,7 @@ func (p *TSimpleJSONProtocol) ParseListEnd() error {
 	for _, char := range line {
 		switch char {
 		default:
-			e := fmt.Errorf("Expecting end of list \"]\", but found: \"%v\"", line)
+			e := fmt.Errorf("Expecting end of list \"]\", but found: \"%s\"", line)
 			return NewTProtocolExceptionWithType(INVALID_DATA, e)
 		case ' ', '\n', '\r', '\t', rune(JSON_RBRACKET[0]):
 			break
