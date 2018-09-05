@@ -2027,15 +2027,32 @@ void t_go_generator::generate_service_client(t_service* tservice) {
              << "Client, error) {" << endl;
 
   indent_up();
-  f_service_ << indent() << "cl, err := p.Build(\"" << tservice->get_program()->get_namespace("*") << "\", \"" << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "cl, err := p.Build(\""
+             << tservice->get_program()->get_namespace("*") << "\", \""
+             << tservice->get_name() << "\")" << endl << endl;
   f_service_ << indent() << "if err != nil {" << endl;
   indent_up();
   f_service_ << indent() << "return nil, err" << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
-  f_service_ << indent() << "return &" << serviceName << "Client{TClient: cl}, nil" << endl;
+  f_service_ << indent() << "return New" << serviceName << "Client(cl), nil" << endl;
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func New" << serviceName
+             << "Client(cl thrift.TClient) *" << serviceName
+             << "Client {" << endl;
+  indent_up();
+
+  if (!extends_client.empty()) {
+    f_service_ << indent() << "return &" << serviceName << "Client{" <<  extends_field << ": " << extends_client_new << "(cl)}" << endl;
+  } else {
+    f_service_ << indent() << "return &" << serviceName << "Client{TClient: cl}" << endl;
+  }
+
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
 
   // Generate client method implementations
   vector<t_function*> functions = tservice->get_functions();
