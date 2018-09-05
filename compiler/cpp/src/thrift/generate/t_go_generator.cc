@@ -2051,9 +2051,24 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   f_types_ << indent() << "return nil, err" << endl;
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
-  f_types_ << indent() << "return &" << serviceName << "Client{TClient: cl}, nil" << endl;
+  f_types_ << indent() << "return New" << serviceName << "Client(cl), nil" << endl;
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
+
+  f_types_ << indent() << "func New" << serviceName
+             << "Client(cl thrift.TClient) *" << serviceName
+             << "Client {" << endl;
+  indent_up();
+
+  if (!extends_client.empty()) {
+    f_types_ << indent() << "return &" << serviceName << "Client{" <<  extends_field << ": " << extends_client_new << "(cl)}" << endl;
+  } else {
+    f_types_ << indent() << "return &" << serviceName << "Client{TClient: cl}" << endl;
+  }
+
+  indent_down();
+  f_types_ << indent() << "}" << endl << endl;
+
 
   // Generate client method implementations
   vector<t_function*> functions = tservice->get_functions();
