@@ -18,24 +18,3 @@
  */
 
 package thrift
-
-import (
-	"testing"
-)
-
-func TestReadWriteBinaryProtocol(t *testing.T) {
-	ReadWriteProtocolTest(t, NewTBinaryProtocolFactoryDefault())
-}
-
-func BenchmarkBinaryReadString(b *testing.B) {
-	var (
-		trans = NewTMemoryBuffer()
-		p     = NewTBinaryProtocolTransport(trans)
-	)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		ReadWriteString(b, p, trans)
-	}
-}
