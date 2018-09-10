@@ -477,3 +477,40 @@ func ReadWriteBinary(t testing.TB, p TProtocol, trans TTransport) {
 		}
 	}
 }
+
+var cases = []struct {
+	name        string
+	protFactory TProtocolFactory
+}{
+	{name: "binary", protFactory: NewTBinaryProtocolFactoryDefault()},
+	{name: "json", protFactory: NewTJSONProtocolFactory()},
+	{name: "simple_json", protFactory: NewTSimpleJSONProtocolFactory()},
+}
+
+func TestReadWriteStringProtocol(t *testing.T) {
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var (
+				trans = NewTMemoryBuffer()
+				p     = c.protFactory.GetProtocol(trans)
+			)
+			ReadWriteString(t, p, trans)
+		})
+	}
+}
+
+func BenchmarkReadWriteStringProtocol(b *testing.B) {
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+
+			for i := 0; i < b.N; i++ {
+				var (
+					trans = NewTMemoryBuffer()
+					p     = c.protFactory.GetProtocol(trans)
+				)
+
+				ReadWriteString(b, p, trans)
+			}
+		})
+	}
+}
