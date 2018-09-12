@@ -506,6 +506,6 @@ func (p *TBinaryProtocol) readStringBody(size int) (value string, err error) {
 		bufPool.Put(buf)
 	}()
 
-	_, e := io.Copy(buf, p.trans)
+	_, e := io.CopyN(buf, p.trans, int64(size))
 	return buf.String(), NewTProtocolException(e)
 }
