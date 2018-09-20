@@ -32,7 +32,7 @@ import (
 const (
 	readLimit     = 32768
 	maxSliceSize  = 1 << 20
-	maxStringSize = 1 << 20
+	maxStringSize = 1 << 24
 )
 
 type TBinaryProtocol struct {
