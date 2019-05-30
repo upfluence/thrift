@@ -28,6 +28,7 @@ import (
 	"io"
 	"math"
 	"strconv"
+	"strings"
 )
 
 type _ParseContext int
@@ -879,27 +880,38 @@ func (p *TSimpleJSONProtocol) ParseStringBody() (string, error) {
 }
 
 func (p *TSimpleJSONProtocol) ParseQuotedStringBody() (string, error) {
-	line, err := p.reader.ReadString(JSON_QUOTE)
-	if err != nil {
-		return "", NewTProtocolException(err)
+	var b strings.Builder
+
+	if err := p.parseQuotedStringBody(&b); err != nil {
+		return "", err
 	}
-	l := len(line)
-	// count number of escapes to see if we need to keep going
-	i := 1
-	for ; i < l; i++ {
-		if line[l-i-1] != '\\' {
-			break
+
+	return b.String(), nil
+}
+
+func (p *TSimpleJSONProtocol) parseQuotedStringBody(sw stringWriter) error {
+	for {
+		line, err := p.reader.ReadString(JSON_QUOTE)
+
+		if err != nil {
+			return NewTProtocolException(err)
+		}
+
+		sw.WriteString(line)
+
+		l := len(line)
+		// count number of escapes to see if we need to keep going
+		i := 1
+		for ; i < l; i++ {
+			if line[l-i-1] != '\\' {
+				break
+			}
+		}
+
+		if i&0x01 == 1 {
+			return nil
 		}
 	}
-	if i&0x01 == 1 {
-		return line, nil
-	}
-	s, err := p.ParseQuotedStringBody()
-	if err != nil {
-		return "", NewTProtocolException(err)
-	}
-	v := line + s
-	return v, nil
 }
 
 func (p *TSimpleJSONProtocol) ParseBase64EncodedBody() ([]byte, error) {
