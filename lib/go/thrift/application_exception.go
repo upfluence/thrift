@@ -28,7 +28,8 @@ const (
 	MISSING_RESULT                 = 5
 	INTERNAL_ERROR                 = 6
 	PROTOCOL_ERROR                 = 7
-	INVALID_TRANSFORM              = 8
+	INTERNAL_TIME_OUT_ERROR        = 8
+	INVALID_TRANSFORM              = 11
 	INVALID_PROTOCOL               = 9
 	UNSUPPORTED_CLIENT_TYPE        = 10
 )
@@ -60,19 +61,23 @@ type tApplicationException struct {
 	type_   int32
 }
 
-func (e tApplicationException) Error() string {
-	if e.message != "" {
-		return e.message
+func (ae tApplicationException) Error() string {
+	if ae.message != "" {
+		return ae.message
 	}
-	return defaultApplicationExceptionMessage[e.type_]
+	return defaultApplicationExceptionMessage[ae.type_]
+}
+
+func (ae *tApplicationException) Timeout() bool {
+	return ae.type_ == INTERNAL_TIME_OUT_ERROR
 }
 
 func NewTApplicationException(type_ int32, message string) TApplicationException {
 	return &tApplicationException{message, type_}
 }
 
-func (p *tApplicationException) TypeId() int32 {
-	return p.type_
+func (ae *tApplicationException) TypeId() int32 {
+	return ae.type_
 }
 
 func (p *tApplicationException) Read(iprot TProtocol) error {
