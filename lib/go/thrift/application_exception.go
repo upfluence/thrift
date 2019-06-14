@@ -28,6 +28,7 @@ const (
 	MISSING_RESULT                 = 5
 	INTERNAL_ERROR                 = 6
 	PROTOCOL_ERROR                 = 7
+	INTERNAL_TIME_OUT_ERROR        = 8
 )
 
 var defaultApplicationExceptionMessage = map[int32]string{
@@ -54,19 +55,23 @@ type tApplicationException struct {
 	type_   int32
 }
 
-func (e tApplicationException) Error() string {
-	if e.message != "" {
-		return e.message
+func (ae tApplicationException) Error() string {
+	if ae.message != "" {
+		return ae.message
 	}
-	return defaultApplicationExceptionMessage[e.type_]
+	return defaultApplicationExceptionMessage[ae.type_]
+}
+
+func (ae *tApplicationException) Timeout() bool {
+	return ae.type_ == INTERNAL_TIME_OUT_ERROR
 }
 
 func NewTApplicationException(type_ int32, message string) TApplicationException {
 	return &tApplicationException{message, type_}
 }
 
-func (p *tApplicationException) TypeId() int32 {
-	return p.type_
+func (ae *tApplicationException) TypeId() int32 {
+	return ae.type_
 }
 
 func (p *tApplicationException) Read(iprot TProtocol) error {
