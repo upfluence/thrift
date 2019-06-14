@@ -22,6 +22,7 @@ package thrift
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"testing"
 )
@@ -34,6 +35,19 @@ func (t *timeout) Timeout() bool {
 
 func (t *timeout) Error() string {
 	return fmt.Sprintf("Timeout: %v", t.timedout)
+}
+
+func TestNestedTExceptionTimeout(t *testing.T) {
+	e := NewTTransportException(TIMED_OUT, "inner error")
+	te := NewTTransportExceptionFromError(e)
+
+	if te != e {
+		t.Fatalf("Error did not match: expected %q, got %q", te, e)
+	}
+
+	if !os.IsTimeout(te) {
+		t.Fatal("exception should be a timeout")
+	}
 }
 
 func TestTExceptionTimeout(t *testing.T) {
