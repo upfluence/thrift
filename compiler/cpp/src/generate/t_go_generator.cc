@@ -401,11 +401,11 @@ bool t_go_generator::is_pointer_field(t_field* tfield, bool in_container_value) 
   } else if (type->is_struct() || type->is_xception()) {
     return true;
   } else if (type->is_map()) {
-    return has_default;
+    return false;
   } else if (type->is_set()) {
-    return has_default;
+    return false;
   } else if (type->is_list()) {
-    return has_default;
+    return false;
   } else if (type->is_typedef()) {
     return has_default;
   }
