@@ -2936,6 +2936,12 @@ string t_go_generator::type_to_go_type_with_opt(t_type* type,
     string elemType = type_to_go_type(t->get_elem_type(), true);
     return maybe_pointer + string("[]") + elemType;
   } else if (type->is_typedef()) {
+    t_typedef* t = (t_typedef*)type;
+
+    if (t->is_forward_typedef()) {
+      maybe_pointer = "*";
+    }
+
     return maybe_pointer + publicize(type_name(type));
   }
 
