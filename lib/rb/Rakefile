@@ -20,23 +20,12 @@
 require 'rubygems'
 require 'rake'
 require 'rake/clean'
-require 'rspec/core/rake_task'
 require "bundler/gem_tasks"
 
 THRIFT = '../../compiler/cpp/thrift'
 
 task :default => [:gem]
-task :spec => [:'gen-rb', :build_ext, :realspec]
-
-RSpec::Core::RakeTask.new(:realspec) do |t|
-  t.rspec_opts = ['--color', '--format d']
-end
-
-RSpec::Core::RakeTask.new(:'spec:rcov') do |t|
-  t.rspec_opts = ['--color', '--format d']
-  t.rcov = true
-  t.rcov_opts = ['--exclude', '^spec,/gems/']
-end
+task :spec => [:'gen-rb', :build_ext]
 
 desc 'Compile the .thrift files for the specs'
 task :'gen-rb' => [:'gen-rb:spec', :'gen-rb:namespaced_spec', :'gen-rb:flat_spec', :'gen-rb:benchmark', :'gen-rb:debug_proto']
