@@ -57,7 +57,7 @@ describe Thrift::RackApplication do
 
     it 'creates an IOStreamTransport' do
       header('Content-Type', "application/x-thrift")
-      Thrift::IOStreamTransport.should_receive(:new).with(an_instance_of(Rack::Lint::InputWrapper), an_instance_of(Rack::Response))
+      Thrift::IOStreamTransport.should_receive(:new).with(an_instance_of(StringIO), an_instance_of(Rack::Response))
       post "/"
     end
 

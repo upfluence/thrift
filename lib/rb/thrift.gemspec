@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = 'upfluence-thrift'
-  s.version     = '1.0.12'
+  s.version     = '1.1.0'
   s.authors     = ['Thrift Developers']
   s.email       = ['dev@thrift.apache.org']
   s.homepage    = 'http://thrift.apache.org'
@@ -28,8 +28,8 @@ Gem::Specification.new do |s|
   s.require_paths = %w[lib ext]
 
   s.add_development_dependency 'rspec', '~> 2.10.0'
-  s.add_development_dependency "rack", "~> 1.5.2"
-  s.add_development_dependency "rack-test", "~> 0.6.2"
+  s.add_development_dependency "rack"
+  s.add_development_dependency "rack-test"
   s.add_development_dependency "thin", "~> 1.5.0"
   s.add_development_dependency "bundler"
   s.add_development_dependency 'rake'

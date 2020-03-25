@@ -21,37 +21,48 @@ require 'rack'
 
 module Thrift
   class RackApplication
-    THRIFT_HEADER = "application/x-thrift"
+    THRIFT_HEADER = 'application/x-thrift'.freeze
 
     def self.for(path, processor, protocol_factory)
       Rack::Builder.new do
         map path do
-          run lambda { |env|
-            request = Rack::Request.new(env)
-            if RackApplication.valid_thrift_request?(request)
-              RackApplication.successful_request(request, processor, protocol_factory)
-            else
-              RackApplication.failed_request
-            end
-          }
+          run Thrift::RackApplication.new(processor, protocol_factory)
         end
       end
     end
 
-    def self.successful_request(rack_request, processor, protocol_factory)
-      response = Rack::Response.new([], 200, {'Content-Type' => THRIFT_HEADER})
-      transport = IOStreamTransport.new rack_request.body, response
-      protocol = protocol_factory.get_protocol transport
-      processor.process protocol, protocol
-      response
+    def initialize(processor, protocol_factory)
+      @processor = processor
+      @protocol_factory = protocol_factory
+      @headers = { 'Content-Type' => THRIFT_HEADER }
     end
 
-    def self.failed_request
-      Rack::Response.new(['Not Found'], 404, {'Content-Type' => THRIFT_HEADER})
+    def call(env)
+      req = Rack::Request.new(env)
+
+      if valid_thrift_request?(req)
+        successful_request(req)
+      else
+        failed_request
+      end
     end
 
-    def self.valid_thrift_request?(rack_request)
-      rack_request.post? && rack_request.env["CONTENT_TYPE"] == THRIFT_HEADER
+    def successful_request(req)
+      resp = Rack::Response.new([], 200, @headers)
+      transport = IOStreamTransport.new req.body, resp
+      protocol = @protocol_factory.get_protocol transport
+
+      @processor.process protocol, protocol
+
+      [resp.status, resp.headers, resp.body]
+    end
+
+    def failed_request
+      [404, @headers, 'Not found']
+    end
+
+    def valid_thrift_request?(req)
+      req.post? && req.env['CONTENT_TYPE'] == THRIFT_HEADER
     end
   end
 end
