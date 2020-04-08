@@ -724,6 +724,15 @@ void t_go_generator::init_generator() {
   f_consts_ << go_autogen_comment() << go_package() << render_includes();
 
   f_const_values_ << endl << "func init() {" << endl;
+
+
+  const vector<t_struct*>& structs = program_->get_structs();
+
+  for (size_t i = 0; i < structs.size(); ++i) {
+    f_const_values_ << "  thrift.RegisterStruct((*"
+                    << publicize(structs[i]->get_name(), false)
+                    << ")(nil))"<< endl;
+  }
 }
 
 /**
@@ -1216,6 +1225,10 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
   generate_go_struct_initializer(out, tstruct, is_result || is_args);
   out << indent() << "}" << endl << endl;
   // Default values for optional fields
+  out << indent() << "func (p *" << tstruct_name << ") StructDefinition() thrift.StructDefinition {" << endl;
+  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_program()->get_namespace("*") << "\", Name: \"" << tstruct->get_name() << "\"}" << endl;
+  out << indent() << "}" << endl << endl;
+
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
     string publicized_name;
     t_const_value* def_value;
