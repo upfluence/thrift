@@ -791,6 +791,13 @@ void t_go_generator::init_generator() {
   f_unused_prot_.open(f_unused_prot_name_.c_str());
   f_unused_prot_ << go_autogen_comment() << go_package() << render_import_protection();
   f_unused_prot_.close();
+
+  const vector<t_struct*>& structs = program_->get_structs();
+  for (size_t i = 0; i < structs.size(); ++i) {
+    f_const_values_ << "  thrift.RegisterStruct((*"
+                    << publicize(structs[i]->get_name(), false)
+                    << ")(nil))"<< endl;
+  }
 }
 
 string t_go_generator::render_included_programs(string& unused_prot) {
@@ -870,6 +877,7 @@ string t_go_generator::render_system_packages(std::vector<string>& system_packag
   }
   return result;
 }
+
 
 /**
  * Renders all the imports necessary for including another Thrift program.
@@ -1436,6 +1444,10 @@ void t_go_generator::generate_go_struct_definition(ostream& out,
   generate_go_struct_initializer(out, tstruct, is_result || is_args);
   out << indent() << "}" << endl << endl;
   // Default values for optional fields
+  out << indent() << "func (p *" << tstruct_name << ") StructDefinition() thrift.StructDefinition {" << endl;
+  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_program()->get_namespace("*") << "\", Name: \"" << tstruct->get_name() << "\"}" << endl;
+  out << indent() << "}" << endl << endl;
+
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
     string publicized_name;
     t_const_value* def_value;
