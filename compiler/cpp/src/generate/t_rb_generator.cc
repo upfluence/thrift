@@ -85,6 +85,12 @@ public:
 
     require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
     namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
+
+    std::map<std::string, std::string>::const_iterator iter = parsed_options.find("namespace_wrapper");
+
+    if (iter != parsed_options.end()) {
+      namespace_wrapper_ = iter->second;
+    }
   }
 
   /**
@@ -194,7 +200,14 @@ public:
   std::string rb_namespace_to_path_prefix(std::string rb_namespace);
 
   std::vector<std::string> ruby_modules(t_program* p) {
-    std::string ns = p->get_namespace("rb");
+    std::string ns;
+
+    if (namespace_wrapper_ != "") {
+      ns = namespace_wrapper_ + ".";
+    }
+
+    ns += p->get_namespace("rb");
+
     std::vector<std::string> modules;
     if (ns.empty()) {
       return modules;
@@ -234,6 +247,8 @@ private:
 
   /** If true, generate files in idiomatic namespaced directories. */
   bool namespaced_;
+
+  std::string namespace_wrapper_;
 };
 
 /**
@@ -567,17 +582,21 @@ void t_rb_generator::generate_rb_struct(t_rb_ofstream& out,
   out << endl;
 
   out.indent_up();
-  out.indent() << "include ::Thrift::Struct, ::Thrift::Struct_Union" << endl;
+  out.indent() << "include ::Thrift::Struct, ::Thrift::Struct_Union" << endl << endl;
 
   if (is_exception) {
     generate_rb_simple_exception_constructor(out, tstruct);
   }
+
+  out.indent() << "NAME      = \"" << tstruct->get_name() << "\".freeze" << endl;
+  out.indent() << "NAMESPACE = \"" << tstruct->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
 
   generate_field_constants(out, tstruct);
   generate_field_defns(out, tstruct);
   generate_rb_struct_required_validator(out, tstruct);
 
   out.indent() << "::Thrift::Struct.generate_accessors self" << endl;
+  out.indent() << "::Thrift.register_struct_type self" << endl;
 
   out.indent_down();
   out.indent() << "end" << endl << endl;
@@ -594,7 +613,10 @@ void t_rb_generator::generate_rb_union(t_rb_ofstream& out,
   out.indent() << "class " << type_name(tstruct) << " < ::Thrift::Union" << endl;
 
   out.indent_up();
-  out.indent() << "include ::Thrift::Struct_Union" << endl;
+  out.indent() << "include ::Thrift::Struct_Union" << endl << endl;
+
+  out.indent() << "NAME      = \"" << tstruct->get_name() << "\".freeze" << endl;
+  out.indent() << "NAMESPACE = \"" << tstruct->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
 
   generate_field_constructors(out, tstruct);
 
@@ -794,8 +816,8 @@ void t_rb_generator::generate_service(t_service* tservice) {
 
   f_service_.indent() << "module " << capitalize(tservice->get_name()) << endl;
   f_service_.indent_up();
-  f_service_.indent() << "SERVICE_NAME = \"" << tservice->get_name() << "\"" << endl;
-  f_service_.indent() << "PROGRAM_NAME = \"" << tservice->get_program()->get_namespace("*") << "\"" << endl << endl;
+  f_service_.indent() << "SERVICE   = \"" << tservice->get_name() << "\".freeze" << endl;
+  f_service_.indent() << "NAMESPACE = \"" << tservice->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
 
   // Generate the three main parts of the service (well, two for now in PHP)
   generate_service_client(tservice);
@@ -870,7 +892,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
   f_service_.indent() << "def self.from_provider(provider)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "Client.new(*provider.build(\"" << tservice->get_program()->get_namespace("*") << ", " << tservice->get_name() << "\"))" << endl;
+  f_service_.indent() << "Client.new(*provider.build(NAMESPACE, SERVICE))" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
@@ -888,7 +910,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     f_service_.indent() << "def " << function_signature(*f_iter) << endl;
     f_service_.indent_up();
 
-    f_service_.indent() << "@middleware.handle_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "(ctx, '" << funname << "', " << argsname << ".new(";
+    f_service_.indent() << "@middleware.handle_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "('" << funname << "', " << argsname << ".new(";
 
     bool first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
@@ -901,10 +923,10 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       f_service_ << ":" << (*fld_iter)->get_name() << " => " << (*fld_iter)->get_name();
     }
 
-    f_service_ << ")) do |ctx, args|" << endl;
+    f_service_ << ")) do |args|" << endl;
     f_service_.indent_up();
 
-    f_service_.indent() << "send_" << funname << "(ctx, ";
+    f_service_.indent() << "send_" << funname << "(";
 
     first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
@@ -919,10 +941,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
     if (!(*f_iter)->is_oneway()) {
       f_service_.indent();
-      if (!(*f_iter)->get_returntype()->is_void()) {
-        f_service_ << "return ";
-      }
-      f_service_ << "recv_" << funname << "(ctx)" << endl;
+      f_service_ << "recv_" << funname << "()" << endl;
     }
     f_service_.indent_down();
 
@@ -1035,7 +1054,7 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 void t_rb_generator::generate_process_function(t_service* tservice, t_function* tfunction) {
   (void)tservice;
   // Open function
-  f_service_.indent() << "def process_" << tfunction->get_name() << "(ctx, seqid, iprot, oprot)" << endl;
+  f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
 
   f_service_.indent_up();
 
@@ -1044,7 +1063,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
 
-  f_service_.indent() << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "(ctx, '" << tfunction->get_name() << "', args) do |ctx, args|" << endl;
+  f_service_.indent() << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
   f_service_.indent_up();
 
   t_struct* xs = tfunction->get_xceptions();
@@ -1071,7 +1090,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
   if (!tfunction->is_oneway() && !tfunction->get_returntype()->is_void()) {
     f_service_ << "result.success = ";
   }
-  f_service_ << "@handler." << tfunction->get_name() << "(ctx, ";
+  f_service_ << "@handler." << tfunction->get_name() << "(";
   bool first = true;
   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
     if (first) {
@@ -1130,11 +1149,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
  */
 string t_rb_generator::function_signature(t_function* tfunction, string prefix) {
   // TODO(mcslee): Nitpicky, no ',' if argument_list is empty
-  string signature = "(ctx";
-
-  if (tfunction->get_arglist()->get_members().size() > 0) {
-    signature += ", ";
-  }
+  string signature = "(";
 
   return prefix + tfunction->get_name() + signature + argument_list(tfunction->get_arglist()) + ")";
 }
@@ -1221,7 +1236,14 @@ string t_rb_generator::type_to_enum(t_type* type) {
 }
 
 string t_rb_generator::rb_namespace_to_path_prefix(string rb_namespace) {
-  string namespaces_left = rb_namespace;
+  string namespaces_left;
+
+  if (namespace_wrapper_ != "") {
+    namespaces_left = namespace_wrapper_ + ".";
+  }
+
+  namespaces_left += rb_namespace;
+
   string::size_type loc;
 
   string path_prefix = "";
@@ -1317,5 +1339,6 @@ void t_rb_generator::generate_rb_union_validator(t_rb_ofstream& out, t_struct* t
 THRIFT_REGISTER_GENERATOR(
     rb,
     "Ruby",
-    "    rubygems:        Add a \"require 'rubygems'\" line to the top of each generated file.\n"
-    "    namespaced:      Generate files in idiomatic namespaced directories.\n")
+    "    rubygems:          Add a \"require 'rubygems'\" line to the top of each generated file.\n"
+    "    namespace_wrapper: Add a top-level namespace around namespace defined in the idl.\n"
+    "    namespaced:        Generate files in idiomatic namespaced directories.\n")
