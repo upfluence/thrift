@@ -19,9 +19,16 @@
 
 module Thrift
   module Processor
-    def initialize(handler, middleware = nil)
+    def initialize(handler, middlewares = [])
       @handler = handler
-      @middleware = middleware
+      @middleware = case middlewares.length
+                    when 0
+                      Middleware::NOP_MIDDLEWARE
+                    when 1
+                      middlewares.first
+                    else
+                      Middleware::MultiMiddleware.new(middlewares)
+                    end
     end
 
     def process(iprot, oprot)
