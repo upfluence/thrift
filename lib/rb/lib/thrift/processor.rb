@@ -21,7 +21,7 @@ require 'logger'
 
 module Thrift
   module Processor
-    def initialize(handler, middleware = nil, logger=nil)
+    def initialize(handler, middlewares = [], logger=nil)
       @handler = handler
       if logger.nil?
         @logger = Logger.new(STDERR)
@@ -29,7 +29,14 @@ module Thrift
       else
         @logger = logger
       end
-      @middleware = middleware
+      @middleware = case middlewares.length
+                    when 0
+                      Middleware::NOP_MIDDLEWARE
+                    when 1
+                      middlewares.first
+                    else
+                      Middleware::MultiMiddleware.new(middlewares)
+                    end
     end
 
     def process(iprot, oprot)
