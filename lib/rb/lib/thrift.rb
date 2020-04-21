@@ -22,12 +22,14 @@
 
 $:.unshift File.dirname(__FILE__)
 
+require 'thrift/definition'
 require 'thrift/bytes'
 require 'thrift/core_ext'
 require 'thrift/exceptions'
 require 'thrift/types'
 require 'thrift/processor'
 require 'thrift/multiplexed_processor'
+require 'thrift/middleware'
 require 'thrift/client'
 require 'thrift/struct'
 require 'thrift/union'
