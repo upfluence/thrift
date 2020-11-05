@@ -588,8 +588,8 @@ void t_rb_generator::generate_rb_struct(t_rb_ofstream& out,
     generate_rb_simple_exception_constructor(out, tstruct);
   }
 
-  out.indent() << "NAME      = \"" << tstruct->get_name() << "\".freeze" << endl;
-  out.indent() << "NAMESPACE = \"" << tstruct->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
+  out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
+  out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
   generate_field_constants(out, tstruct);
   generate_field_defns(out, tstruct);
@@ -615,8 +615,8 @@ void t_rb_generator::generate_rb_union(t_rb_ofstream& out,
   out.indent_up();
   out.indent() << "include ::Thrift::Struct_Union" << endl << endl;
 
-  out.indent() << "NAME      = \"" << tstruct->get_name() << "\".freeze" << endl;
-  out.indent() << "NAMESPACE = \"" << tstruct->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
+  out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
+  out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
   generate_field_constructors(out, tstruct);
 
@@ -687,7 +687,7 @@ void t_rb_generator::generate_field_constants(t_rb_ofstream& out, t_struct* tstr
     std::string field_name = (*f_iter)->get_name();
     std::string cap_field_name = upcase_string(field_name);
 
-    out.indent() << cap_field_name << " = " << (*f_iter)->get_key() << endl;
+    out.indent() << "THRIFT_FIELD_INDEX_" << cap_field_name << " = " << (*f_iter)->get_key() << endl;
   }
   out << endl;
 }
@@ -706,7 +706,7 @@ void t_rb_generator::generate_field_defns(t_rb_ofstream& out, t_struct* tstruct)
     // generate the field docstrings within the FIELDS constant. no real better place...
     generate_rdoc(out, *f_iter);
 
-    out.indent() << upcase_string((*f_iter)->get_name()) << " => ";
+    out.indent() << "THRIFT_FIELD_INDEX_" << upcase_string((*f_iter)->get_name()) << " => ";
 
     generate_field_data(out,
                         (*f_iter)->get_type(),
@@ -729,44 +729,44 @@ void t_rb_generator::generate_field_data(t_rb_ofstream& out,
   field_type = get_true_type(field_type);
 
   // Begin this field's defn
-  out << "{:type => " << type_to_enum(field_type);
+  out << "{type: " << type_to_enum(field_type);
 
   if (!field_name.empty()) {
-    out << ", :name => '" << field_name << "'";
+    out << ", name: '" << field_name << "'";
   }
 
   if (field_value != NULL) {
-    out << ", :default => ";
+    out << ", default: ";
     render_const_value(out, field_type, field_value);
   }
 
   if (!field_type->is_base_type()) {
     if (field_type->is_struct() || field_type->is_xception()) {
-      out << ", :class => " << full_type_name((t_struct*)field_type);
+      out << ", class: " << full_type_name((t_struct*)field_type);
     } else if (field_type->is_list()) {
-      out << ", :element => ";
+      out << ", element: ";
       generate_field_data(out, ((t_list*)field_type)->get_elem_type());
     } else if (field_type->is_map()) {
-      out << ", :key => ";
+      out << ", key: ";
       generate_field_data(out, ((t_map*)field_type)->get_key_type());
-      out << ", :value => ";
+      out << ", value: ";
       generate_field_data(out, ((t_map*)field_type)->get_val_type());
     } else if (field_type->is_set()) {
-      out << ", :element => ";
+      out << ", element: ";
       generate_field_data(out, ((t_set*)field_type)->get_elem_type());
     }
   } else {
     if (((t_base_type*)field_type)->is_binary()) {
-      out << ", :binary => true";
+      out << ", binary: true";
     }
   }
 
   if (optional) {
-    out << ", :optional => true";
+    out << ", optional: true";
   }
 
   if (field_type->is_enum()) {
-    out << ", :enum_class => " << full_type_name(field_type);
+    out << ", enum_class: " << full_type_name(field_type);
   }
 
   // End of this field's defn
@@ -816,8 +816,8 @@ void t_rb_generator::generate_service(t_service* tservice) {
 
   f_service_.indent() << "module " << capitalize(tservice->get_name()) << endl;
   f_service_.indent_up();
-  f_service_.indent() << "SERVICE   = \"" << tservice->get_name() << "\".freeze" << endl;
-  f_service_.indent() << "NAMESPACE = \"" << tservice->get_program()->get_namespace("*") << "\".freeze" << endl << endl;
+  f_service_.indent() << "SERVICE = '" << tservice->get_name() << "'.freeze" << endl;
+  f_service_.indent() << "NAMESPACE = '" << tservice->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
   // Generate the three main parts of the service (well, two for now in PHP)
   generate_service_client(tservice);
