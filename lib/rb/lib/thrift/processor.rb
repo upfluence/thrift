@@ -29,14 +29,7 @@ module Thrift
       else
         @logger = logger
       end
-      @middleware = case middlewares.length
-                    when 0
-                      Middleware::NOP_MIDDLEWARE
-                    when 1
-                      middlewares.first
-                    else
-                      Middleware::MultiMiddleware.new(middlewares)
-                    end
+      @middleware = Middleware.wrap(middlewares)
     end
 
     def process(iprot, oprot)
@@ -54,7 +47,7 @@ module Thrift
         write_exception(
           ApplicationException.new(
             ApplicationException::UNKNOWN_METHOD,
-            'Unknown function '+name,
+            'Unknown function ' + name,
           ),
           oprot,
           name,
