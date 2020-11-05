@@ -1005,6 +1005,12 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 
   f_service_.indent() << "include ::Thrift::Processor" << endl << endl;
 
+  f_service_.indent() << "def self.from_provider(provider)" << endl;
+  f_service_.indent_up();
+  f_service_.indent() << "Processor.new(provider.build(NAMESPACE, SERVICE))" << endl;
+  f_service_.indent_down();
+  f_service_.indent() << "end" << endl << endl;
+
   // Generate the process subfunctions
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     generate_process_function(tservice, *f_iter);
@@ -1031,7 +1037,12 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
 
-  f_service_.indent() << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
+  f_service_.indent();
+
+  if (!tfunction->is_oneway()) {
+    f_service_ << "result = ";
+  }
+  f_service_ << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
   f_service_.indent_up();
 
   t_struct* xs = tfunction->get_xceptions();
@@ -1087,7 +1098,7 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
 
   // Shortcut out here for oneway functions
   if (tfunction->is_oneway()) {
-    f_service_.indent() << "return" << endl;
+    f_service_.indent() << "nil" << endl;
     f_service_.indent_down();
 
     f_service_.indent() << "end" << endl;
@@ -1097,13 +1108,14 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
     return;
   }
 
+
+  f_service_.indent() << "result" << endl;
+  f_service_.indent_down();
+  f_service_.indent() << "end" << endl << endl;
   f_service_.indent() << "write_result(result, oprot, '" << tfunction->get_name() << "', seqid)"
                       << endl;
 
   // Close function
-  f_service_.indent_down();
-
-  f_service_.indent() << "end" << endl;
   f_service_.indent_down();
 
   f_service_.indent() << "end" << endl << endl;
