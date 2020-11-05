@@ -33,5 +33,18 @@ module Thrift
     end
 
     NOP_MIDDLEWARE = NopMiddleware.new
+
+    class << self
+      def wrap(middlewares)
+        case middlewares.length
+        when 0
+          NOP_MIDDLEWARE
+        when 1
+          middlewares.first
+        else
+          MultiMiddleware.new(middlewares)
+        end
+      end
+    end
   end
 end
