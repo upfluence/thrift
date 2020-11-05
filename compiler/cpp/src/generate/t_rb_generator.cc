@@ -888,11 +888,15 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
   f_service_.indent() << "class Client" << extends_client << endl;
   f_service_.indent_up();
 
-  f_service_.indent() << "include ::Thrift::Client" << endl << endl;
+  f_service_.indent() << "def initialize(client)" << endl;
+  f_service_.indent_up();
+  f_service_.indent() << "@client = client" << endl;
+  f_service_.indent_down();
+  f_service_.indent() << "end" << endl << endl;
 
   f_service_.indent() << "def self.from_provider(provider)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "Client.new(*provider.build(NAMESPACE, SERVICE))" << endl;
+  f_service_.indent() << "Client.new(provider.build(NAMESPACE, SERVICE))" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
@@ -910,7 +914,15 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     f_service_.indent() << "def " << function_signature(*f_iter) << endl;
     f_service_.indent_up();
 
-    f_service_.indent() << "@middleware.handle_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "('" << funname << "', " << argsname << ".new(";
+    f_service_.indent();
+
+    if (!(*f_iter)->is_oneway()) {
+      f_service_ << "result = ";
+    }
+    f_service_ << "@client.call_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "(" << endl;
+    f_service_.indent_up();
+    f_service_.indent() << "'" << funname << "'," << endl;
+    f_service_.indent() << argsname << ".new(";
 
     bool first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
@@ -920,66 +932,17 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
         f_service_ << ", ";
       }
 
-      f_service_ << ":" << (*fld_iter)->get_name() << " => " << (*fld_iter)->get_name();
+      f_service_ << (*fld_iter)->get_name() << ": " << (*fld_iter)->get_name();
     }
 
-    f_service_ << ")) do |args|" << endl;
-    f_service_.indent_up();
-
-    f_service_.indent() << "send_" << funname << "(";
-
-    first = true;
-    for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      if (first) {
-        first = false;
-      } else {
-        f_service_ << ", ";
-      }
-      f_service_ << "args." << (*fld_iter)->get_name();
-    }
-    f_service_ << ")" << endl;
+    f_service_ << ")";
 
     if (!(*f_iter)->is_oneway()) {
-      f_service_.indent();
-      f_service_ << "recv_" << funname << "()" << endl;
-    }
-    f_service_.indent_down();
+      f_service_ << "," << endl;
 
-    f_service_.indent() << "end" << endl;
-    f_service_.indent_down();
-
-    f_service_.indent() << "end" << endl;
-    f_service_ << endl;
-
-    f_service_.indent() << "def send_" << function_signature(*f_iter) << endl;
-    f_service_.indent_up();
-
-    std::string messageSendProc = (*f_iter)->is_oneway() ? "send_oneway_message" : "send_message";
-
-    f_service_.indent() << messageSendProc << "('" << funname << "', " << argsname;
-
-    for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      f_service_ << ", :" << (*fld_iter)->get_name() << " => " << (*fld_iter)->get_name();
-    }
-
-    f_service_ << ")" << endl;
-
-    f_service_.indent_down();
-    f_service_.indent() << "end" << endl;
-
-    if (!(*f_iter)->is_oneway()) {
-      std::string resultname = capitalize((*f_iter)->get_name() + "_result");
-      t_struct noargs(program_);
-
-      t_function recv_function((*f_iter)->get_returntype(),
-                               string("recv_") + (*f_iter)->get_name(),
-                               &noargs);
-      // Open function
-      f_service_ << endl;
-      f_service_.indent() << "def " << function_signature(&recv_function) << endl;
-      f_service_.indent_up();
-
-      f_service_.indent() << "result = receive_message(" << resultname << ", '" << (*f_iter)->get_name() << "')" << endl;
+      f_service_.indent() << capitalize((*f_iter)->get_name() + "_result") << endl;
+      f_service_.indent_down();
+      f_service_.indent() << ")" << endl << endl;
 
       // Careful, only return _result if not a void function
       if (!(*f_iter)->get_returntype()->is_void()) {
@@ -996,18 +959,23 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
       // Careful, only return _result if not a void function
       if ((*f_iter)->get_returntype()->is_void()) {
-        f_service_.indent() << "return" << endl;
+        f_service_.indent() << "nil" << endl;
       } else {
         f_service_.indent() << "raise "
                                "::Thrift::ApplicationException.new(::Thrift::ApplicationException::"
                                "MISSING_RESULT, '" << (*f_iter)->get_name()
                             << " failed: unknown result')" << endl;
-      }
 
-      // Close function
+        f_service_.indent() << "result" << endl;
+      }
+    } else {
+      f_service_ << endl;
       f_service_.indent_down();
-      f_service_.indent() << "end" << endl << endl;
+      f_service_.indent() << ")" << endl;
     }
+
+    f_service_.indent_down();
+    f_service_.indent() << "end" << endl << endl;
   }
 
   f_service_.indent_down();
