@@ -824,6 +824,8 @@ void t_rb_generator::generate_service(t_service* tservice) {
   generate_service_server(tservice);
   generate_service_helpers(tservice);
 
+  f_service_.indent() << "::Thrift.register_service_type(self)"<< endl << endl;
+
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
