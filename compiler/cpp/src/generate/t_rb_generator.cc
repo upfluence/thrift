@@ -1007,9 +1007,9 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 
   f_service_.indent() << "include ::Thrift::Processor" << endl << endl;
 
-  f_service_.indent() << "def self.from_provider(provider)" << endl;
+  f_service_.indent() << "def self.from_provider(handler, provider)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "Processor.new(provider.build(NAMESPACE, SERVICE))" << endl;
+  f_service_.indent() << "provider.build(NAMESPACE, SERVICE, Processor, handler)" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
