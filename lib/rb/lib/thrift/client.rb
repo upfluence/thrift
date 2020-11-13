@@ -20,17 +20,9 @@
 
 module Thrift
   module Client
-    def initialize(iprot, middlewares = [], oprot = nil)
+    def initialize(iprot, oprot = nil)
       @iprot = iprot
       @oprot = oprot || iprot
-      @middleware = case middlewares.length
-                    when 0
-                      Middleware::NOP_MIDDLEWARE
-                    when 1
-                      middlewares.first
-                    else
-                      Middleware::MultiMiddleware.new(middlewares)
-                    end
       @seqid = 0
     end
 
@@ -48,9 +40,15 @@ module Thrift
 
     def send_message_args(args_class, args)
       data = args_class.new
+
       args.each do |k, v|
         data.send("#{k.to_s}=", v)
       end
+
+      send_message_instance(data)
+    end
+
+    def send_message_instance(data)
       begin
         data.write(@oprot)
       rescue StandardError => e
@@ -93,6 +91,29 @@ module Thrift
       x.read(@iprot)
       @iprot.read_message_end
       raise x
+    end
+  end
+
+  class BaseClient
+    include Client
+
+    def call_unary(name, req)
+      @oprot.write_message_begin(name, Thrift::MessageTypes::ONEWAY, @seqid)
+      send_message_instance(req)
+    end
+
+    def call_binary(name, req, resp_klass)
+      @oprot.write_message_begin(name, Thrift::MessageTypes::CALL, @seqid)
+      send_message_instance(req)
+      receive_message(resp_klass)
+    end
+  end
+
+  class << self
+    def build_client(input)
+      return BaseClient.new(input) if input.is_a? BaseProtocol
+
+      input
     end
   end
 end
