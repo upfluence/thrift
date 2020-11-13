@@ -93,4 +93,27 @@ module Thrift
       raise x
     end
   end
+
+  class BaseClient
+    include Client
+
+    def call_unary(name, req)
+      @oprot.write_message_begin(name, Thrift::MessageTypes::ONEWAY, @seqid)
+      send_message_instance(req)
+    end
+
+    def call_binary(name, req, resp_klass)
+      @oprot.write_message_begin(name, Thrift::MessageTypes::CALL, @seqid)
+      send_message_instance(req)
+      receive_message(resp_klass)
+    end
+  end
+
+  class << self
+    def build_client(input)
+      return BaseClient.new(input) if input.is_a? BaseProtocol
+
+      input
+    end
+  end
 end
