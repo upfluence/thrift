@@ -86,6 +86,8 @@ project.lock.json
 /compiler/cpp/thrifty.h
 /compiler/cpp/thrifty.hh
 /compiler/cpp/src/thrift/version.h
+/compiler/cpp/version.h
+/compiler/cpp/CMakeFiles
 /config.*
 /configure
 /configure.lineno
@@ -256,6 +258,7 @@ project.lock.json
 /lib/rb/ext/thrift_native.so
 /lib/rb/test/
 /lib/rb/thrift-*.gem
+/lib/rb/pkg/*.gem
 /lib/php/src/ext/thrift_protocol/Makefile.*
 /lib/php/src/ext/thrift_protocol/build/
 /lib/php/src/ext/thrift_protocol/config.*
@@ -415,4 +418,11 @@ project.lock.json
 /tutorial/rs/target
 /tutorial/rs/Cargo.lock
 /ylwrap
-
+/lib/*.a
+/cmake_*
+/CMake*
+/bin/*
+/thrift/config.h
+/CPack*.cmake
+/compile_commands.json
+/install_manifest.txt
