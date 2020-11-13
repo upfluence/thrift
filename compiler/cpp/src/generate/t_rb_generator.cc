@@ -892,7 +892,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
   f_service_.indent() << "def initialize(client)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "@client = client" << endl;
+  f_service_.indent() << "@client = Thrift.build_client(client)" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
