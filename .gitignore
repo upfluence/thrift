@@ -59,6 +59,7 @@ test-driver
 /compiler/cpp/thrifty.h
 /compiler/cpp/thrifty.hh
 /compiler/cpp/version.h
+/compiler/cpp/CMakeFiles
 /config.*
 /configure
 /configure.lineno
@@ -195,6 +196,7 @@ test-driver
 /lib/rb/ext/thrift_native.so
 /lib/rb/test/
 /lib/rb/thrift-*.gem
+/lib/rb/pkg/*.gem
 /lib/php/src/ext/thrift_protocol/Makefile.*
 /lib/php/src/ext/thrift_protocol/build/
 /lib/php/src/ext/thrift_protocol/config.*
@@ -268,5 +270,11 @@ test-driver
 /tutorial/java/build/
 /tutorial/js/build/
 /ylwrap
-
+/lib/*.a
 /cmake_*
+/CMake*
+/bin/*
+/thrift/config.h
+/CPack*.cmake
+/compile_commands.json
+/install_manifest.txt
