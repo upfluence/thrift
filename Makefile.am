@@ -61,6 +61,9 @@ DISTCLEANFILES = \
     missing \
     ylwrap
 
+include_typesdir = ${TYPES_PREFIX}/types
+include_types_HEADERS = types/known/*.thrift
+
 dist-hook:
 	find $(distdir) -type f \( -iname ".DS_Store" -or -iname "._*" -or -iname ".gitignore" \) | xargs rm -f
 	find $(distdir) -type d \( -iname ".deps" -or -iname ".libs" \) | xargs rm -rf
