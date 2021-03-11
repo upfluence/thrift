@@ -63,6 +63,13 @@ AC_ARG_VAR([INSTALLDIRS], [When installing Perl modules, specifies which
                            Default = "vendor"])
 AS_IF([test "x$INSTALLDIRS" = x], [INSTALLDIRS="vendor"])
 
+AC_ARG_VAR([TYPES_PREFIX], [Prefix for installing Perl modules.
+                           (Normal --prefix is ignored for Perl because
+                           Perl has different conventions.)
+                           Ignored, when INSTALLDIRS set to site or vendor.
+                           Default = "/usr/local/share/thrift"])
+AS_IF([test "x$TYPES_PREFIX" = x], [TYPES_PREFIX="/usr/local/share/thrift"])
+
 AC_ARG_VAR([PERL_PREFIX], [Prefix for installing Perl modules.
                            (Normal --prefix is ignored for Perl because
                            Perl has different conventions.)

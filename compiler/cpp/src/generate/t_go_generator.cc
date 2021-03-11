@@ -60,7 +60,7 @@ static const string endl = "\n"; // avoid ostream << std::endl flushes
  */
 bool format_go_output(const string& file_path);
 
-const string default_thrift_import = "git.apache.org/thrift.git/lib/go/thrift";
+const string default_thrift_import = "github.com/upfluence/thrift/lib/go/thrift";
 static std::string package_flag;
 
 /**

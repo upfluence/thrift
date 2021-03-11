@@ -1053,6 +1053,8 @@ int main(int argc, char** argv) {
   // Set the current path to a dummy value to make warning messages clearer.
   g_curpath = "arguments";
 
+  g_incl_searchpath.push_back(THRIFT_TYPES_PATH);
+
   // Hacky parameter handling... I didn't feel like using a library sorry!
   for (i = 1; i < argc - 1; i++) {
     char* arg;
