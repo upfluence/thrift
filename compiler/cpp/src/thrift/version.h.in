@@ -25,5 +25,6 @@
 #endif // _MSC_VER
 
 #define THRIFT_VERSION "@PACKAGE_VERSION@"
+#define THRIFT_TYPES_PATH "@TYPES_PREFIX@"
 
 #endif // _THRIFT_VERSION_H_
