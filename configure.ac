@@ -116,10 +116,9 @@ AC_SUBST(CPPSTYLE_CMD, 'find . -type f \( -iname "*.h" -or -iname "*.cpp" -or -i
 # The above comment is to fix editor syntax highlighting
 
 AC_ARG_ENABLE([libs],
-  AS_HELP_STRING([--enable-libs], [build the Apache Thrift libraries [default=yes]]),
-  [], enable_libs=yes
+  AS_HELP_STRING([--enable-libs], [build the Apache Thrift libraries [default=no]]),
+  [], enable_libs=no
 )
-have_libs=yes
 if test "$enable_libs" = "no"; then
   have_libs="no"
   with_as3="no"

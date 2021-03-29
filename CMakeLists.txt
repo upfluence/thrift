@@ -35,6 +35,10 @@ project("thrift" VERSION ${PACKAGE_VERSION})
 message(STATUS "Configuring ${CMAKE_PROJECT_NAME} ${thrift_VERSION}")
 
 
+set(TYPES_PREFIX "/usr/local/share/thrift")
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/types" DESTINATION "${TYPES_PREFIX}")
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake")
 
 # TODO: add `git rev-parse --short HEAD`
