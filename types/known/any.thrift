@@ -1,4 +1,4 @@
-namespace * thrift.types.known.any
+namespace * types.known.any
 
 struct Any {
   1: required string type;
