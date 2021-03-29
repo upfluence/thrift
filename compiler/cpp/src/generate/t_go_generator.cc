@@ -754,7 +754,13 @@ string t_go_generator::render_includes() {
       }
     }
 
-    result += "\t\"" + gen_package_prefix_ + go_module + "\"\n";
+    string import_path = go_module;
+
+    if (includes[i]->is_std_path()) {
+      import_path = default_thrift_import + "/" + go_module;
+    }
+
+    result += "\t\"" + gen_package_prefix_ + import_path + "\"\n";
     unused_prot += "var _ = " + go_module.substr(found) + ".GoUnusedProtection__\n";
   }
 

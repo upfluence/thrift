@@ -316,6 +316,11 @@ string t_rb_generator::render_includes() {
       t_program* included = includes[i];
       std::string included_require_prefix
           = rb_namespace_to_path_prefix(included->get_namespace("rb"));
+
+      if (included->is_std_path()) {
+        included_require_prefix = "thrift/" + included_require_prefix;
+      }
+
       std::string included_name = included->get_name();
       result += "require '" + included_require_prefix + underscore(included_name) + "_types'\n";
     } else {

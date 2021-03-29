@@ -39,6 +39,7 @@
 #include "t_map.h"
 #include "t_set.h"
 #include "generate/t_generator_registry.h"
+#include "version.h"
 //#include "t_doc.h"
 
 /**
@@ -72,6 +73,10 @@ public:
       delete scope_;
       scope_ = NULL;
     }
+  }
+
+  bool is_std_path() const {
+    return path_.rfind(THRIFT_TYPES_PATH, 0) == 0;
   }
 
   // Path accessor
