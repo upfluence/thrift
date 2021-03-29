@@ -30,6 +30,15 @@ install:
 	@echo '##############################################################'
 	@echo '##############################################################'
 
+TYPE_FILES = ../../types/known/*.thrift
+
+$(TYPE_FILES):
+	thrift -gen go --out thrift $@
+
+generate-types: $(TYPE_FILES)
+
+.PHONY: generate-types $(TYPE_FILES)
+
 check-local:
 	$(GO) test ./thrift
 
