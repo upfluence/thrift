@@ -37,6 +37,15 @@ check-local: all
 
 endif
 
+TYPE_FILES = ../../types/known/*.thrift
+
+$(TYPE_FILES):
+	thrift -gen rb:namespace_wrapper=thrift --out lib/thrift/types $@
+
+generate-types: $(TYPE_FILES)
+
+.PHONY: generate-types $(TYPE_FILES)
+
 EXTRA_DIST = \
 	Rakefile \
 	Gemfile \
