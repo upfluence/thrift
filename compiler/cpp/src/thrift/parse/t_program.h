@@ -39,6 +39,7 @@
 #include "thrift/parse/t_map.h"
 #include "thrift/parse/t_set.h"
 #include "thrift/generate/t_generator_registry.h"
+#include "thrift/version.h"
 //#include "thrift/parse/t_doc.h"
 
 /**
@@ -70,6 +71,10 @@ public:
       delete scope_;
       scope_ = NULL;
     }
+  }
+
+  bool is_std_path() const {
+    return path_.rfind(THRIFT_TYPES_PATH, 0) == 0;
   }
 
   // Path accessor
