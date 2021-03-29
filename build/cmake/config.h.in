@@ -44,6 +44,11 @@
 /* Define to the full name and version of this package. */
 #define PACKAGE_STRING "${PACKAGE_STRING}"
 
+/* Version number of package */
+#define VERSION "${VERSION}"
+
+#define TYPES_PREFIX "${TYPES_PREFIX}"
+
 /************************** DEFINES *************************/
 
 /* Define if the AI_ADDRCONFIG symbol is unavailable */
