@@ -18,6 +18,7 @@
 #
 
 DESTDIR ?= /
+THRIFT = $(top_builddir)/compiler/cpp/thrift
 
 if HAVE_BUNDLER
 
@@ -40,11 +41,11 @@ endif
 TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
 
 $(TYPE_FILES):
-	thrift -gen rb:namespace_wrapper=thrift --out lib/thrift/types $@
+	mkdir -p lib/thrift/$(patsubst ../../%,%,$(dir $@))
+	$(THRIFT) -gen rb:namespace_wrapper=thrift \
+		     --out lib/thrift/$(patsubst ../../%,%,$(dir $@)) $@
 
 generate-types: $(TYPE_FILES)
-
-.PHONY: generate-types $(TYPE_FILES)
 
 EXTRA_DIST = \
 	Rakefile \
