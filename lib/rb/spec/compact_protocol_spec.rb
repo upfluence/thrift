@@ -31,14 +31,14 @@ describe Thrift::CompactProtocol do
     :double => [0.0, 1.0, -1.0, 1.1, -1.1, 10000000.1, 1.0/0.0, -1.0/0.0],
     :bool => [true, false]
   }
-  
+
   it "should encode and decode naked primitives correctly" do
     TESTS.each_pair do |primitive_type, test_values|
       test_values.each do |value|
         # puts "testing #{value}" if primitive_type == :i64
         trans = Thrift::MemoryBufferTransport.new
         proto = Thrift::CompactProtocol.new(trans)
-        
+
         proto.send(writer(primitive_type), value)
         # puts "buf: #{trans.inspect_buffer}" if primitive_type == :i64
         read_back = proto.send(reader(primitive_type))
@@ -46,7 +46,7 @@ describe Thrift::CompactProtocol do
       end
     end
   end
-  
+
   it "should encode and decode primitives in fields correctly" do
     TESTS.each_pair do |primitive_type, test_values|
       final_primitive_type = primitive_type == :binary ? :string : primitive_type
@@ -80,32 +80,54 @@ describe Thrift::CompactProtocol do
     struct.write(proto)
 
     struct2 = Thrift::Test::CompactProtoTestStruct.new
-    struct2.read(proto)    
+    struct2.read(proto)
     expect(struct2).to eq(struct)
   end
 
-  it "should make method calls correctly" do
-    client_out_trans = Thrift::MemoryBufferTransport.new
+  xit "should make method calls correctly" do
+    r1, w1 = IO.pipe
+    r2, w2 = IO.pipe
+    client_out_trans = Thrift::IOStreamTransport.new(r2, w1)
     client_out_proto = Thrift::CompactProtocol.new(client_out_trans)
 
-    client_in_trans = Thrift::MemoryBufferTransport.new
+    client_in_trans = Thrift::IOStreamTransport.new(r1, w2)
     client_in_proto = Thrift::CompactProtocol.new(client_in_trans)
 
     processor = Thrift::Test::Srv::Processor.new(JankyHandler.new)
 
+<<<<<<< HEAD
     client = Thrift::Test::Srv::Client.new(client_in_proto, client_out_proto)
     client.send_Janky(1)
     # puts client_out_trans.inspect_buffer
     processor.process(client_out_proto, client_in_proto)
     expect(client.recv_Janky).to eq(2)
+=======
+    client = Srv::Client.new(
+      Thrift::BaseClient.new(client_in_proto, client_out_proto)
+    )
+
+    t = Thread.new { processor.process(client_in_proto, client_out_proto) }
+
+    client.Janky(1).should == 2
+
+    t.join
+>>>>>>> 7727fe875 (lib/rb: Update the test suite)
   end
-  
+
   it "should deal with fields following fields that have non-delta ids" do
+<<<<<<< HEAD
     brcp = Thrift::Test::BreaksRubyCompactProtocol.new(
-      :field1 => "blah", 
+      :field1 => "blah",
       :field2 => Thrift::Test::BigFieldIdStruct.new(
-        :field1 => "string1", 
-        :field2 => "string2"), 
+        :field1 => "string1",
+        :field2 => "string2"),
+=======
+    brcp = BreaksRubyCompactProtocol.new(
+      :field1 => "blah",
+      :field2 => BigFieldIdStruct.new(
+        :field1 => "string1",
+        :field2 => "string2"),
+>>>>>>> 7727fe875 (lib/rb: Update the test suite)
       :field3 => 3)
     ser = Thrift::Serializer.new(Thrift::CompactProtocolFactory.new)
     bytes = ser.serialize(brcp)
@@ -115,7 +137,7 @@ describe Thrift::CompactProtocol do
     deser.deserialize(brcp2, bytes)
     expect(brcp2).to eq(brcp)
   end
-  
+
   it "should deserialize an empty map to an empty hash" do
     struct = Thrift::Test::SingleMapTestStruct.new(:i32_map => {})
     ser = Thrift::Serializer.new(Thrift::CompactProtocolFactory.new)
@@ -126,22 +148,22 @@ describe Thrift::CompactProtocol do
     deser.deserialize(struct2, bytes)
     expect(struct).to eq(struct2)
   end
-  
+
   it "should provide a reasonable to_s" do
     trans = Thrift::MemoryBufferTransport.new
     expect(Thrift::CompactProtocol.new(trans).to_s).to eq("compact(memory)")
   end
-  
+
   class JankyHandler
     def Janky(i32arg)
       i32arg * 2
     end
   end
-  
+
   def writer(sym)
     "write_#{sym.to_s}"
   end
-  
+
   def reader(sym)
     "read_#{sym.to_s}"
   end
