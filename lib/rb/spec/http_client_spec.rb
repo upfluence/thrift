@@ -23,9 +23,12 @@ describe 'Thrift::HTTPClientTransport' do
 
   describe Thrift::HTTPClientTransport do
     before(:each) do
-      @client = Thrift::HTTPClientTransport.new("http://my.domain.com/path/to/service?param=value")
+      @client = Thrift::HTTPClientTransport.new(
+        "http://my.domain.com/path/to/service?param=value",
+        retries: 0
+      )
     end
-    
+
     it "should provide a reasonable to_s" do
       @client.to_s == "http://my.domain.com/path/to/service?param=value"
     end
