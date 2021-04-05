@@ -42,7 +42,7 @@ endif
 dist-hook:
 	$(RM) -r $(distdir)/spec/gen-rb/
 
-TYPE_FILES = ../../types/known/*.thrift
+TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
 
 $(TYPE_FILES):
 	thrift -gen rb:namespace_wrapper=thrift --out lib/thrift/types $@
