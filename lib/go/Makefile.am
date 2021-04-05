@@ -17,6 +17,8 @@
 # under the License.
 #
 
+THRIFT = $(top_builddir)/compiler/cpp/thrift
+
 SUBDIRS = .
 
 if WITH_TESTS
@@ -33,7 +35,7 @@ install:
 TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
 
 $(TYPE_FILES):
-	thrift -gen go --out thrift $@
+	$(THRIFT) -gen go --out thrift $@
 
 generate-types: $(TYPE_FILES)
 
