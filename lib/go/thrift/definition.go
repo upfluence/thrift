@@ -26,7 +26,7 @@ func (str *structTypeRegistry) registerStructType(rs RegistrableStruct) {
 	}
 
 	sd := rs.StructDefinition()
-	n := fmt.Sprintf("%s.%s", sd.Namespace, sd.Name)
+	n := sd.CanonicalName()
 
 	str.Lock()
 	defer str.Unlock()
@@ -47,6 +47,10 @@ func (str *structTypeRegistry) structType(n string) (reflect.Type, bool) {
 type StructDefinition struct {
 	Namespace string
 	Name      string
+}
+
+func (sd StructDefinition) CanonicalName() string {
+	return fmt.Sprintf("%s.%s", sd.Namespace, sd.Name)
 }
 
 type RegistrableStruct interface {
