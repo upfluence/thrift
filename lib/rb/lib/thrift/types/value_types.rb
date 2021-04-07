@@ -205,6 +205,7 @@ module Thrift
         end
 
         ::Thrift::Union.generate_accessors self
+        ::Thrift.register_struct_type self
       end
 
     end
