@@ -630,6 +630,7 @@ void t_rb_generator::generate_rb_union(t_rb_ofstream& out,
   generate_rb_union_validator(out, tstruct);
 
   out.indent() << "::Thrift::Union.generate_accessors self" << endl;
+  out.indent() << "::Thrift.register_struct_type self" << endl;
 
   out.indent_down();
   out.indent() << "end" << endl << endl;
