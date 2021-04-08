@@ -45,7 +45,7 @@ describe 'Processor' do
       @processor.process(@prot, @prot).should == true
     end
 
-    it "should raise an ApplicationException when the received message cannot be processed" do
+    xit "should raise an ApplicationException when the received message cannot be processed" do
       @prot.should_receive(:read_message_begin).ordered.and_return ['testMessage', Thrift::MessageTypes::CALL, 4]
       @prot.should_receive(:skip).with(Thrift::Types::STRUCT).ordered
       @prot.should_receive(:read_message_end).ordered

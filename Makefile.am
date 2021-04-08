@@ -29,6 +29,12 @@ if WITH_TUTORIAL
 SUBDIRS += tutorial
 endif
 
+include_types_knowndir = ${TYPES_PREFIX}/types/known
+include_types_known_HEADERS = types/known/*.thrift
+
+include_typesdir = ${TYPES_PREFIX}/types
+include_types_HEADERS = types/*.thrift
+
 dist-hook:
 	find $(distdir) -type f \( -iname ".DS_Store" -or -iname "._*" -or -iname ".gitignore" \) | xargs rm -rf
 	find $(distdir) -type d \( -iname ".deps" -or -iname ".libs" \) | xargs rm -rf

@@ -23,7 +23,10 @@ describe 'Thrift::HTTPClientTransport' do
 
   describe Thrift::HTTPClientTransport do
     before(:each) do
-      @client = Thrift::HTTPClientTransport.new("http://my.domain.com/path/to/service?param=value")
+      @client = Thrift::HTTPClientTransport.new(
+        "http://my.domain.com/path/to/service?param=value",
+        retries: 0
+      )
     end
 
     it "should always be open" do
@@ -41,31 +44,13 @@ describe 'Thrift::HTTPClientTransport' do
           http.should_receive(:post).with("/path/to/service?param=value", "a test frame", {"Content-Type"=>"application/x-thrift"}).and_return do
             mock("Net::HTTPOK").tap do |response|
               response.should_receive(:body).and_return "data"
+              response.should_receive(:value).and_return nil
             end
           end
         end
       end
       @client.flush
       @client.read(10).should == "data"
-    end
-
-    it "should send custom headers if defined" do
-      @client.write "test"
-      custom_headers = {"Cookie" => "Foo"}
-      headers = {"Content-Type"=>"application/x-thrift"}.merge(custom_headers)
-
-      @client.add_headers(custom_headers)
-      Net::HTTP.should_receive(:new).with("my.domain.com", 80).and_return do
-        mock("Net::HTTP").tap do |http|
-          http.should_receive(:use_ssl=).with(false)
-          http.should_receive(:post).with("/path/to/service?param=value", "test", headers).and_return do
-            mock("Net::HTTPOK").tap do |response|
-              response.should_receive(:body).and_return "data"
-            end
-          end
-        end
-      end
-      @client.flush
     end
   end
 
@@ -88,6 +73,7 @@ describe 'Thrift::HTTPClientTransport' do
               "Content-Type" => "application/x-thrift").and_return do
             mock("Net::HTTPOK").tap do |response|
               response.should_receive(:body).and_return "data"
+              response.should_receive(:value).and_return nil
             end
           end
         end
@@ -109,6 +95,7 @@ describe 'Thrift::HTTPClientTransport' do
               "Content-Type" => "application/x-thrift").and_return do
             mock("Net::HTTPOK").tap do |response|
               response.should_receive(:body).and_return "data"
+              response.should_receive(:value).and_return nil
             end
           end
         end

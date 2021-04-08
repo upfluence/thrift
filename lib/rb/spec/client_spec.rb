@@ -37,7 +37,7 @@ describe 'Client' do
     end
 
     it "should send a test message" do
-      @prot.should_receive(:write_message_begin).with('testMessage', Thrift::MessageTypes::CALL, 0)
+      @prot.should_receive(:write_message_begin).with('testMessage', Thrift::MessageTypes::CALL, 1)
       mock_args = mock('#<TestMessage_args:mock>')
       mock_args.should_receive(:foo=).with('foo')
       mock_args.should_receive(:bar=).with(42)
@@ -66,7 +66,7 @@ describe 'Client' do
     end
 
     it "should receive a test message" do
-      @prot.should_receive(:read_message_begin).and_return [nil, Thrift::MessageTypes::CALL, 0]
+      @prot.should_receive(:read_message_begin).and_return [nil, Thrift::MessageTypes::REPLY, 0]
       @prot.should_receive(:read_message_end)
       mock_klass = mock("#<MockClass:mock>")
       mock_klass.should_receive(:read).with(@prot)

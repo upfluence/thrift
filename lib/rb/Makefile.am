@@ -18,6 +18,7 @@
 #
 
 DESTDIR ?= /
+THRIFT = $(top_builddir)/compiler/cpp/thrift
 
 if HAVE_BUNDLER
 
@@ -36,6 +37,15 @@ check-local: all
 	$(BUNDLER) exec rake
 
 endif
+
+TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+
+$(TYPE_FILES):
+	mkdir -p lib/thrift/$(patsubst ../../%,%,$(dir $@))
+	$(THRIFT) -gen rb:namespace_wrapper=thrift \
+		     --out lib/thrift/$(patsubst ../../%,%,$(dir $@)) $@
+
+generate-types: $(TYPE_FILES)
 
 EXTRA_DIST = \
 	Rakefile \

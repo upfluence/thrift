@@ -17,6 +17,8 @@
 # under the License.
 #
 
+THRIFT = $(top_builddir)/compiler/cpp/thrift
+
 SUBDIRS = .
 
 if WITH_TESTS
@@ -29,6 +31,15 @@ install:
 	@echo 'The Go client library should be installed via "go get", please see /lib/go/README.md'
 	@echo '##############################################################'
 	@echo '##############################################################'
+
+TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+
+$(TYPE_FILES):
+	$(THRIFT) -gen go --out thrift $@
+
+generate-types: $(TYPE_FILES)
+
+.PHONY: generate-types $(TYPE_FILES)
 
 check-local:
 	$(GO) test ./thrift

@@ -47,6 +47,8 @@
 /* Version number of package */
 #define VERSION "${VERSION}"
 
+#define TYPES_PREFIX "${TYPES_PREFIX}"
+
 /************************** DEFINES *************************/
 
 /* Define if the AI_ADDRCONFIG symbol is unavailable */

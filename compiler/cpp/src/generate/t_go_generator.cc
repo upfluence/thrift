@@ -60,7 +60,7 @@ static const string endl = "\n"; // avoid ostream << std::endl flushes
  */
 bool format_go_output(const string& file_path);
 
-const string default_thrift_import = "git.apache.org/thrift.git/lib/go/thrift";
+const string default_thrift_import = "github.com/upfluence/thrift/lib/go/thrift";
 static std::string package_flag;
 
 /**
@@ -754,7 +754,13 @@ string t_go_generator::render_includes() {
       }
     }
 
-    result += "\t\"" + gen_package_prefix_ + go_module + "\"\n";
+    string import_path = go_module;
+
+    if (includes[i]->is_std_path()) {
+      import_path = default_thrift_import + "/" + go_module;
+    }
+
+    result += "\t\"" + gen_package_prefix_ + import_path + "\"\n";
     unused_prot += "var _ = " + go_module.substr(found) + ".GoUnusedProtection__\n";
   }
 
