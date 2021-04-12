@@ -76,7 +76,7 @@ public:
   }
 
   bool is_std_path() const {
-    return path_.rfind(THRIFT_TYPES_PATH, 0) == 0;
+    return path_.rfind(THRIFT_TYPES_NESTED_PATH, 0) == 0;
   }
 
   // Path accessor
