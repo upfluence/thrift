@@ -35,7 +35,8 @@ project("thrift" VERSION ${PACKAGE_VERSION})
 message(STATUS "Configuring ${CMAKE_PROJECT_NAME} ${thrift_VERSION}")
 
 
-set(TYPES_PREFIX "/usr/local/share/thrift")
+set(TYPES_PREFIX "/usr/local/share/thrift" CACHE STRING "Directory the thrift tpyes will be installed in")
+message(STATUS "Types will be installed in ${TYPES_PREFIX}")
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/types" DESTINATION "${TYPES_PREFIX}")
 
