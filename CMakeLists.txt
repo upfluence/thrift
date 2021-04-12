@@ -28,7 +28,8 @@ cmake_minimum_required(VERSION 3.1)
 
 project("Apache Thrift")
 
-set(TYPES_PREFIX "/usr/local/share/thrift")
+set(TYPES_PREFIX "/usr/local/share/thrift" CACHE STRING "Directory the thrift tpyes will be installed in")
+message(STATUS "Types will be installed in ${TYPES_PREFIX}")
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/types" DESTINATION "${TYPES_PREFIX}")
 
