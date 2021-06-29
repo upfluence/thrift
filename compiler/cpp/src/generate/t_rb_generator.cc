@@ -902,9 +902,9 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
-  f_service_.indent() << "def self.from_provider(provider)" << endl;
+  f_service_.indent() << "def self.from_provider(provider, opts = {})" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "Client.new(provider.build(NAMESPACE, SERVICE))" << endl;
+  f_service_.indent() << "Client.new(provider.build(NAMESPACE, SERVICE, opts))" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
