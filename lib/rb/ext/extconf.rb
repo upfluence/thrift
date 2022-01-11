@@ -23,10 +23,7 @@ else
   require 'mkmf'
   require 'rbconfig'
 
-  $ARCH_FLAGS = RbConfig::CONFIG['CFLAGS'].scan( /(-arch )(\S+)/ ).map{|x,y| x + y + ' ' }.join('')
-
-
-  $CFLAGS = "-fsigned-char -g -O2 -Wall -Werror " + $ARCH_FLAGS
+  $CFLAGS += " -fsigned-char"
 
   have_func("strlcpy", "string.h")
 

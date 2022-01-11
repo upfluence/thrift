@@ -52,6 +52,8 @@ $(TYPE_FILES):
 
 generate-types: $(TYPE_FILES)
 
+.PHONY: generate-types $(TYPE_FILES)
+
 EXTRA_DIST = \
 	coding_standards.md \
 	Rakefile \
