@@ -58,7 +58,8 @@ syn keyword thriftStructure map list set struct typedef exception enum throws un
 syn match thriftSpecial "\d\+:"
 
 " Structure
-syn keyword thriftStructure service oneway extends
+syn keyword thriftStructure service oneway extends sink stream
+
 "async"         { return tok_async;         }
 "exception"     { return tok_xception;      }
 "extends"       { return tok_extends;       }

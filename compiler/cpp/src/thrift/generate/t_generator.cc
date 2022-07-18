@@ -146,6 +146,7 @@ void t_generator::validate_id(const string& id) const {
     failure("Cannot use reserved language keyword: \"%s\"", id.c_str());
   }
 }
+bool t_generator::support_streaming() const { return false; }
 
 string t_generator::escape_string(const string& in) const {
   string result = "";

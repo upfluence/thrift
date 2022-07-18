@@ -110,6 +110,7 @@ public:
 
   void set_language(const std::string& lang) { language_ = lang; }
   void set_parsed_options(const std::map<std::string, std::string>& opts) { parsed_options_ = opts; }
+  virtual bool support_streaming() const;
 
   std::string get_escaped_string(t_const_value* constval) {
     return escape_string(constval->get_string());
