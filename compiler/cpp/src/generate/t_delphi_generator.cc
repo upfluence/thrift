@@ -2050,7 +2050,7 @@ void t_delphi_generator::generate_service_client(t_service* tservice) {
       string result_intfnm = normalize_clsnm(org_resultname, "I");
 
       t_struct noargs(program_);
-      t_function recv_function((*f_iter)->get_returntype(),
+      t_function recv_function((*f_iter)->get_return(),
                                string("recv_") + (*f_iter)->get_name(),
                                &noargs,
                                (*f_iter)->get_xceptions());

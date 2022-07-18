@@ -172,6 +172,8 @@ literal_begin (['\"])
 "list"               { return tok_list;                 }
 "set"                { return tok_set;                  }
 "oneway"             { return tok_oneway;               }
+"stream"             { return tok_stream;               }
+"sink"               { return tok_sink;                 }
 "typedef"            { return tok_typedef;              }
 "struct"             { return tok_struct;               }
 "union"              { return tok_union;                }

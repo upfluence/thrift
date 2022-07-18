@@ -154,6 +154,16 @@ public:
     return 0 == occurrences;
   }
 
+  bool is_streaming() const {
+    for (std::vector<t_service*>::const_iterator iter = services_.begin(); iter != services_.end(); ++iter) {
+      if ((*iter)->is_streaming()) {
+         return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Search all type collections for duplicate typenames
    * @param prog the program to search

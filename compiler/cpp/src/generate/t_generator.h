@@ -83,6 +83,8 @@ public:
    */
   virtual std::string escape_string(const std::string& in) const;
 
+  virtual bool support_streaming() const;
+
   std::string get_escaped_string(t_const_value* constval) {
     return escape_string(constval->get_string());
   }

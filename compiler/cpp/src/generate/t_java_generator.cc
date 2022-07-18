@@ -2829,7 +2829,7 @@ void t_java_generator::generate_service_client(t_service* tservice) {
       string resultname = (*f_iter)->get_name() + "_result";
 
       t_struct noargs(program_);
-      t_function recv_function((*f_iter)->get_returntype(),
+      t_function recv_function((*f_iter)->get_return(),
                                string("recv") + sep + javaname,
                                &noargs,
                                (*f_iter)->get_xceptions());

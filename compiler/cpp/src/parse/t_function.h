@@ -21,6 +21,7 @@
 #define T_FUNCTION_H
 
 #include <string>
+#include "t_return.h"
 #include "t_type.h"
 #include "t_struct.h"
 #include "t_annotated.h"
@@ -33,46 +34,43 @@
  */
 class t_function : public t_annotated {
 public:
-  t_function(t_type* returntype, std::string name, t_struct* arglist, bool oneway = false)
-    : t_annotated(name), returntype_(returntype), arglist_(arglist), oneway_(oneway) {
-    xceptions_ = new t_struct(NULL);
-    if (oneway_ && (!returntype_->is_void())) {
-      pwarning(1, "Oneway methods should return void.\n");
-    }
+  t_function(t_type* returntype_,
+             std::string name,
+             t_struct* arglist)
+    : t_annotated(name),
+      arglist_(arglist) {
+    return_ = new t_return(returntype_, false);
   }
 
-  t_function(t_type* returntype,
+  t_function(t_return* return_,
              std::string name,
              t_struct* arglist,
-             t_struct* xceptions,
-             bool oneway = false)
+             t_struct* xceptions)
     : t_annotated(name),
-      returntype_(returntype),
+      return_(return_),
       arglist_(arglist),
-      xceptions_(xceptions),
-      oneway_(oneway) {
-    if (oneway_ && !xceptions_->get_members().empty()) {
+      xceptions_(xceptions) {
+    if (return_->is_oneway() && !xceptions_->get_members().empty()) {
       throw std::string("Oneway methods can't throw exceptions.");
-    }
-    if (oneway_ && (!returntype_->is_void())) {
-      pwarning(1, "Oneway methods should return void.\n");
     }
   }
 
   ~t_function() {}
 
-  t_type* get_returntype() const { return returntype_; }
+  t_return* get_return() const { return return_; }
+  t_type* get_returntype() const { return return_->get_returntype(); }
 
   t_struct* get_arglist() const { return arglist_; }
 
   t_struct* get_xceptions() const { return xceptions_; }
 
-  bool is_oneway() const { return oneway_; }
+  bool is_oneway() const { return return_->is_oneway(); }
+
 private:
-  t_type* returntype_;
+  t_return* return_;
+  std::string name_;
   t_struct* arglist_;
   t_struct* xceptions_;
-  bool oneway_;
 };
 
 #endif

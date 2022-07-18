@@ -2070,7 +2070,7 @@ void t_javame_generator::generate_service_client(t_service* tservice) {
       string resultname = (*f_iter)->get_name() + "_result";
 
       t_struct noargs(program_);
-      t_function recv_function((*f_iter)->get_returntype(),
+      t_function recv_function((*f_iter)->get_return(),
                                string("recv_") + (*f_iter)->get_name(),
                                &noargs,
                                (*f_iter)->get_xceptions());

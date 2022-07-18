@@ -49,6 +49,16 @@ public:
 
   const std::vector<t_function*>& get_functions() const { return functions_; }
 
+  bool is_streaming() const {
+    for (std::vector<t_function*>::const_iterator iter = functions_.begin(); iter != functions_.end(); ++iter) {
+      if ((*iter)->get_return()->is_streaming()) {
+         return true;
+      }
+    }
+
+    return false;
+  }
+
   t_service* get_extends() { return extends_; }
 
   virtual std::string get_fingerprint_material() const {

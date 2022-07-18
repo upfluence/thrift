@@ -1288,7 +1288,7 @@ void t_c_glib_generator::generate_service_client(t_service* tservice) {
     /* make the function name C friendly */
     string funname = to_lower_case(initial_caps_to_underscores((*f_iter)->get_name()));
 
-    t_function service_function((*f_iter)->get_returntype(),
+    t_function service_function((*f_iter)->get_return(),
                                 service_name_lc + string("_client_") + funname,
                                 (*f_iter)->get_arglist(),
                                 (*f_iter)->get_xceptions());
@@ -1302,7 +1302,7 @@ void t_c_glib_generator::generate_service_client(t_service* tservice) {
     // implement recv if not a oneway service
     if (!(*f_iter)->is_oneway()) {
       t_struct noargs(program_);
-      t_function recv_function((*f_iter)->get_returntype(),
+      t_function recv_function((*f_iter)->get_return(),
                                service_name_lc + string("_client_recv_") + funname,
                                &noargs,
                                (*f_iter)->get_xceptions());
@@ -1468,7 +1468,7 @@ void t_c_glib_generator::generate_service_client(t_service* tservice) {
     // Generate recv function only if not an async function
     if (!(*f_iter)->is_oneway()) {
       t_struct noargs(program_);
-      t_function recv_function((*f_iter)->get_returntype(),
+      t_function recv_function((*f_iter)->get_return(),
                                service_name_lc + string("_client_recv_") + funname,
                                &noargs,
                                (*f_iter)->get_xceptions());
@@ -1559,7 +1559,7 @@ void t_c_glib_generator::generate_service_client(t_service* tservice) {
     }
 
     // Open function
-    t_function service_function((*f_iter)->get_returntype(),
+    t_function service_function((*f_iter)->get_return(),
                                 service_name_lc + string("_client_") + funname,
                                 (*f_iter)->get_arglist(),
                                 (*f_iter)->get_xceptions());
@@ -1787,7 +1787,7 @@ void t_c_glib_generator::generate_service_handler(t_service* tservice) {
   for (function_iter = functions.begin(); function_iter != functions.end(); ++function_iter) {
     string function_name = (*function_iter)->get_name();
     string method_name = initial_caps_to_underscores(function_name);
-    t_type* return_type = (*function_iter)->get_returntype();
+    t_return* return_ = (*function_iter)->get_return();
     t_struct* arg_list = (*function_iter)->get_arglist();
     t_struct* x_list = (*function_iter)->get_xceptions();
 
@@ -1796,11 +1796,10 @@ void t_c_glib_generator::generate_service_handler(t_service* tservice) {
 
     vector<t_field*>::const_iterator field_iter;
 
-    t_function implementing_function(return_type,
+    t_function implementing_function(return_,
                                      service_name_lc + "_handler_" + method_name,
                                      arg_list,
-                                     x_list,
-                                     (*function_iter)->is_oneway());
+                                     x_list);
 
     indent(f_service_) << function_signature(&implementing_function) << endl;
     scope_up(f_service_);
@@ -1809,7 +1808,7 @@ void t_c_glib_generator::generate_service_handler(t_service* tservice) {
                << "_GET_CLASS (iface)"
                << "->" << method_name << " (iface, ";
 
-    if (!return_type->is_void()) {
+    if (!return_->get_returntype()->is_void()) {
       f_service_ << "_return, ";
     }
     for (field_iter = args.begin(); field_iter != args.end(); ++field_iter) {

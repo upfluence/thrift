@@ -272,14 +272,14 @@ string t_cocoa_generator::cocoa_imports() {
  */
 string t_cocoa_generator::cocoa_thrift_imports() {
   string result = string() + "#import \"TProtocol.h\"\n" + "#import \"TApplicationException.h\"\n"
-                  + "#import \"TProtocolException.h\"\n" 
+                  + "#import \"TProtocolException.h\"\n"
                   + "#import \"TProtocolUtil.h\"\n"
-                  + "#import \"TProcessor.h\"\n" 
+                  + "#import \"TProcessor.h\"\n"
                   + "#import \"TObjective-C.h\"\n"
                   + "#import \"TBase.h\"\n"
                   + "#import \"TAsyncTransport.h\"\n"
                   + "#import \"TProtocolFactory.h\"\n"
-                  + "#import \"TBaseClient.h\"\n" 
+                  + "#import \"TBaseClient.h\"\n"
                   + "\n";
 
   // Include other Thrift includes
@@ -1449,7 +1449,7 @@ void t_cocoa_generator::generate_cocoa_service_client_send_function_implementati
 void t_cocoa_generator::generate_cocoa_service_client_recv_function_implementation(ofstream& out,
                                                                                    t_function* tfunction) {
   t_struct noargs(program_);
-  t_function recv_function(tfunction->get_returntype(),
+  t_function recv_function(tfunction->get_return(),
                            string("recv_") + tfunction->get_name(),
                            &noargs,
                            tfunction->get_xceptions());
@@ -1558,7 +1558,7 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::const_iterator f_iter;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    
+
     generate_cocoa_service_client_send_function_implementation(out, *f_iter);
 
     if (!(*f_iter)->is_oneway()) {
@@ -1569,7 +1569,7 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
     indent(out) << "- " << function_signature(*f_iter) << endl;
     scope_up(out);
     generate_cocoa_service_client_send_function_invocation(out, *f_iter);
-    
+
     out << indent() << "[[outProtocol transport] flush];" << endl;
     if (!(*f_iter)->is_oneway()) {
       out << indent();
@@ -1609,7 +1609,7 @@ void t_cocoa_generator::generate_cocoa_service_client_async_implementation(ofstr
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::const_iterator f_iter;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    
+
     generate_cocoa_service_client_send_function_implementation(out, *f_iter);
 
     if (!(*f_iter)->is_oneway()) {
@@ -1629,7 +1629,7 @@ void t_cocoa_generator::generate_cocoa_service_client_async_implementation(ofstr
         << indent() << "return;" << endl;
     indent_down();
     indent(out) << "}" << endl;
-    
+
     out << indent() << "[asyncTransport flush:^{" << endl;
     indent_up();
 

@@ -1015,6 +1015,10 @@ void generate(t_program* program, const vector<string>& generator_strings) {
     for (iter = generator_strings.begin(); iter != generator_strings.end(); ++iter) {
       t_generator* generator = t_generator_registry::get_generator(program, *iter);
 
+      if (!generator->support_streaming() && program->is_streaming()) {
+        failure("Generator \"%s\" does not support streaming", iter->c_str());
+      }
+
       if (generator == NULL) {
         pwarning(1, "Unable to get a generator for \"%s\".\n", iter->c_str());
       } else {

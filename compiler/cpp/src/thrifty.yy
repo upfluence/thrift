@@ -85,6 +85,7 @@ const int struct_is_union = 1;
   t_const_value* tconstv;
   t_struct*      tstruct;
   t_service*     tservice;
+  t_return*      treturn;
   t_function*    tfunction;
   t_field*       tfield;
   char*          dtext;
@@ -160,6 +161,8 @@ const int struct_is_union = 1;
  * Function modifiers
  */
 %token tok_oneway
+%token tok_stream
+%token tok_sink
 
 /**
  * Thrift language keywords
@@ -236,6 +239,9 @@ const int struct_is_union = 1;
 %type<tstruct>   Xception
 %type<tservice>  Service
 
+%type<ttype>     Sink
+%type<ttype>     Stream
+%type<treturn>   FunctionReturn
 %type<tfunction> Function
 %type<ttype>     FunctionType
 %type<tservice>  FunctionList
@@ -930,18 +936,58 @@ FunctionList:
       $$ = new t_service(g_program);
     }
 
-Function:
-  CaptureDocText StructuredAnnotations Oneway FunctionType tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
+Stream:
+  tok_stream '<' FieldType '>'
     {
-      validate_simple_identifier($5);
-      $7->set_name(std::string($5) + "_args");
-      $$ = new t_function($4, $5, $7, $9, $3);
+      $$ = $3;
+    }
+
+Sink:
+  tok_sink '<' FieldType '>'
+    {
+      $$ = $3;
+    }
+
+
+FunctionReturn:
+  FunctionType
+    {
+      $$ = new t_return($1, false);
+    }
+| Oneway FunctionType
+    {
+      $$ = new t_return($2, $1);
+    }
+| FunctionType ',' Stream
+    {
+      $$ = new t_return($1, false);
+      $$->set_stream($3);
+    }
+| FunctionType ',' Sink
+    {
+      $$ = new t_return($1, false);
+      $$->set_sink($3);
+    }
+| FunctionType ',' Stream ',' Sink
+    {
+      $$ = new t_return($1, false);
+      $$->set_stream($3);
+      $$->set_sink($5);
+    }
+
+Function:
+  CaptureDocText StructuredAnnotations FunctionReturn tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
+    {
+      validate_simple_identifier($4);
+      $6->set_name(std::string($4) + "_args");
+      $$ = new t_function($3, $4, $6, $8);
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-      if ($10 != NULL) {
-        $$->merge($10);
-        delete $10;
+
+      if ($9!= NULL) {
+        $$->merge($9);
+        delete $9;
       }
       if ($2 != NULL) {
         $$->merge($2);
