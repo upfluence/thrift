@@ -25,8 +25,8 @@ type TClient interface {
 }
 
 type TSyncClient struct {
-	TTransport
-	sync.Mutex
+	trans TTransport
+	mu    sync.Mutex
 
 	in, out TProtocol
 
@@ -37,7 +37,7 @@ type TSyncClient struct {
 
 func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncClient {
 	return &TSyncClient{
-		TTransport: t,
+		trans:      t,
 		in:         f.GetProtocol(t),
 		out:        f.GetProtocol(t),
 		Middleware: WrapMiddlewares(ms),
@@ -114,8 +114,8 @@ func (c *TSyncClient) InProtocol() TProtocol  { return c.in }
 func (c *TSyncClient) OutProtocol() TProtocol { return c.out }
 
 func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res TResponse) error {
-	c.Lock()
-	defer c.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.seqID++
 
@@ -137,8 +137,8 @@ func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res T
 }
 
 func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error {
-	c.Lock()
-	defer c.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.seqID++
 
