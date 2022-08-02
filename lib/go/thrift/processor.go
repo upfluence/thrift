@@ -105,27 +105,32 @@ func (p *TBaseProcessorFunction) readRequest(in TProtocol) (TRequest, error) {
 	return args, nil
 }
 
-type TBinaryHandler interface {
-	Handle(Context, TRequest) (TResponse, error)
-}
+func (p *TBaseProcessorFunction) writeResponse(out TProtocol, seqID int32, res TResponse, err error) (bool, error) {
+	if err != nil {
+		tid := INTERNAL_ERROR
 
-type TBinaryProcessorFunction struct {
-	*TBaseProcessorFunction
-	handler TBinaryHandler
-}
+		if errors.IsTimeout(err) {
+			tid = INTERNAL_TIME_OUT_ERROR
+		}
 
-func NewTBinaryProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TBinaryHandler) *TBinaryProcessorFunction {
-	return &TBinaryProcessorFunction{
-		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
-		handler:                handler,
+		rerr := p.writeException(
+			out,
+			seqID,
+			int32(tid),
+			fmt.Sprintf("Internal error processing : %s: %s", p.fname, err.Error()),
+		)
+
+		return rerr == nil, err
 	}
+
+	return true, p.writeReply(out, seqID, res)
 }
 
 type protocolWriter interface {
 	Write(TProtocol) error
 }
 
-func (p *TBinaryProcessorFunction) write(out TProtocol, seqID int32, mType TMessageType, x protocolWriter) error {
+func (p *TBaseProcessorFunction) write(out TProtocol, seqID int32, mType TMessageType, x protocolWriter) error {
 	err := out.WriteMessageBegin(p.fname, mType, seqID)
 
 	if err2 := x.Write(out); err == nil && err2 != nil {
@@ -143,12 +148,28 @@ func (p *TBinaryProcessorFunction) write(out TProtocol, seqID int32, mType TMess
 	return err
 }
 
-func (p *TBinaryProcessorFunction) writeException(out TProtocol, seqID, tID int32, msg string) error {
+func (p *TBaseProcessorFunction) writeException(out TProtocol, seqID, tID int32, msg string) error {
 	return p.write(out, seqID, EXCEPTION, NewTApplicationException(tID, msg))
 }
 
-func (p *TBinaryProcessorFunction) writeReply(out TProtocol, seqID int32, resp TResponse) error {
+func (p *TBaseProcessorFunction) writeReply(out TProtocol, seqID int32, resp TResponse) error {
 	return p.write(out, seqID, REPLY, resp)
+}
+
+type TBinaryHandler interface {
+	Handle(Context, TRequest) (TResponse, error)
+}
+
+type TBinaryProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TBinaryHandler
+}
+
+func NewTBinaryProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TBinaryHandler) *TBinaryProcessorFunction {
+	return &TBinaryProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
 }
 
 func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
@@ -179,25 +200,7 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 
 	res, err := call(ctx, args)
 
-	if err != nil {
-		tid := INTERNAL_ERROR
-
-		if errors.IsTimeout(err) {
-			tid = INTERNAL_TIME_OUT_ERROR
-		}
-
-		rerr := p.writeException(
-			out,
-			seqID,
-			int32(tid),
-			fmt.Sprintf("Internal error processing : %s: %s", p.fname, err.Error()),
-		)
-
-		return rerr == nil, err
-	}
-
-	rerr := p.writeReply(out, seqID, res)
-	return rerr == nil, rerr
+	return p.writeResponse(out, seqID, res, err)
 }
 
 type TUnaryHandler interface {
