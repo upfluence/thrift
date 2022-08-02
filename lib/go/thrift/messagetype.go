@@ -28,4 +28,12 @@ const (
 	REPLY                 TMessageType = 2
 	EXCEPTION             TMessageType = 3
 	ONEWAY                TMessageType = 4
+
+	CLIENT_STREAM_MESSAGE    TMessageType = 5
+	CLIENT_STREAM_GOAWAY     TMessageType = 6
+	CLIENT_STREAM_GOAWAY_ACK TMessageType = 7
+
+	SERVER_STREAM_MESSAGE    TMessageType = 8
+	SERVER_STREAM_GOAWAY     TMessageType = 9
+	SERVER_STREAM_GOAWAY_ACK TMessageType = 10
 )
