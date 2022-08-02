@@ -24,6 +24,14 @@ type TClient interface {
 	CallUnary(Context, string, TRequest) error
 }
 
+type TStreamingClient interface {
+	TClient
+
+	StreamClient(Context, string, TRequest, TResponse) (TOutboundStream, error)
+	StreamServer(Context, string, TRequest, TResponse) (TInboundStream, error)
+	StreamBidi(Context, string, TRequest, TResponse) (TInboundStream, TOutboundStream, error)
+}
+
 type TSyncClient struct {
 	trans TTransport
 	mu    sync.Mutex
@@ -151,4 +159,65 @@ func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error 
 			return send(ctx, c.in, c.seqID, method, req, ONEWAY)
 		},
 	)
+}
+
+func (c *TSyncClient) StreamClient(ctx Context, method string, req TRequest, res TResponse) (TOutboundStream, error) {
+	c.mu.Lock()
+	c.seqID++
+
+	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
+		c.mu.Unlock()
+
+		return nil, err
+	}
+
+	if err := recv(c.out, c.seqID, method, res); err != nil {
+		c.mu.Unlock()
+
+		return nil, err
+	}
+
+	return newTClientOutboundStream(method, c.seqID, c.in, c.out, c), nil
+}
+
+func (c *TSyncClient) StreamServer(ctx Context, method string, req TRequest, res TResponse) (TInboundStream, error) {
+	c.mu.Lock()
+	c.seqID++
+
+	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
+		c.mu.Unlock()
+
+		return nil, err
+	}
+
+	if err := recv(c.out, c.seqID, method, res); err != nil {
+		c.mu.Unlock()
+
+		return nil, err
+	}
+
+	return newTClientInboundStream(method, c.seqID, c.in, c.out, c), nil
+}
+
+func (c *TSyncClient) StreamBidi(ctx Context, method string, req TRequest, res TResponse) (TInboundStream, TOutboundStream, error) {
+	c.mu.Lock()
+	c.seqID++
+
+	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
+		c.mu.Unlock()
+
+		return nil, nil, err
+	}
+
+	if err := recv(c.out, c.seqID, method, res); err != nil {
+		c.mu.Unlock()
+
+		return nil, nil, err
+	}
+
+	bs := newTClientBidiStream(method, c.seqID, c.in, c.out, c)
+
+	return &tInboundBidiStream{
+		tBidiStream: bs,
+	}, &tOutboundBidiStream{tBidiStream: bs}, nil
 }
