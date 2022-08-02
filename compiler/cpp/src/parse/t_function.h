@@ -55,6 +55,28 @@ public:
     }
   }
 
+  enum e_rpc_type { T_ONEWAY, T_REQUEST_RESPONSE, T_STREAM_CLIENT, T_STREAM_SERVER, T_STREAM_BIDI };
+
+  e_rpc_type get_rpc_type() const {
+    if (return_->is_oneway()) {
+      return T_ONEWAY;
+    }
+
+    if (return_->get_sink() != NULL && return_->get_stream() != NULL) {
+      return T_STREAM_BIDI;
+    }
+
+    if (return_->get_sink() != NULL) {
+      return T_STREAM_CLIENT;
+    }
+
+    if (return_->get_stream() != NULL) {
+      return T_STREAM_SERVER;
+    }
+
+    return T_REQUEST_RESPONSE;
+  }
+
   ~t_function() {}
 
   t_return* get_return() const { return return_; }
