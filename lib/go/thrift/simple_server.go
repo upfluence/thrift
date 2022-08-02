@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"log"
-	"runtime/debug"
 	"sync"
 	"sync/atomic"
 )
@@ -231,19 +230,6 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 		outputProtocol = p.outputProtocolFactory.GetProtocol(outputTransport)
 	}
 
-	defer func() {
-		if e := recover(); e != nil {
-			if p.errorLogger != nil {
-				if err, ok := e.(error); ok {
-					(*p.errorLogger)(err)
-				} else {
-					log.Printf("panic in processor: %s: %s", e, debug.Stack())
-				}
-			} else {
-				log.Printf("panic in processor: %s: %s", e, debug.Stack())
-			}
-		}
-	}()
 
 	if inputTransport != nil {
 		defer inputTransport.Close()

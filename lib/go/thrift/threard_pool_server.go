@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"log"
-	"runtime/debug"
 )
 
 // ThreardPool, non-concurrent server for testing.
@@ -99,8 +98,8 @@ func NewTThreardPoolServerFactory6(processorFactory TProcessorFactory, serverTra
 		outputTransportFactory: outputTransportFactory,
 		inputProtocolFactory:   inputProtocolFactory,
 		outputProtocolFactory:  outputProtocolFactory,
-		quit:        make(chan struct{}, 1),
-		requestChan: make(chan int, poolSize),
+		quit:                   make(chan struct{}, 1),
+		requestChan:            make(chan int, poolSize),
 	}
 }
 
@@ -177,11 +176,6 @@ func (p *TThreardPoolServer) processRequests(client TTransport) error {
 	outputTransport := p.outputTransportFactory.GetTransport(client)
 	inputProtocol := p.inputProtocolFactory.GetProtocol(inputTransport)
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
-	defer func() {
-		if e := recover(); e != nil {
-			log.Printf("panic in processor: %s: %s", e, debug.Stack())
-		}
-	}()
 	if inputTransport != nil {
 		defer inputTransport.Close()
 	}
