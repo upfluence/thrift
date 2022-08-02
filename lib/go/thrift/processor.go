@@ -246,3 +246,140 @@ func (p *TUnaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPro
 
 	return true, call(ctx, args)
 }
+
+type TStreamServerHandler interface {
+	Handle(Context, TRequest, TOutboundStream) (TResponse, error)
+}
+
+type TStreamServerProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TStreamServerHandler
+}
+
+func NewTStreamServerProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TStreamServerHandler) *TStreamServerProcessorFunction {
+	return &TStreamServerProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
+}
+
+func (p *TStreamServerProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
+	var args, err = p.readRequest(in)
+
+	if err != nil {
+		return false, err
+	}
+
+	stream := newTServerOutboundStream(p.fname, seqID, in, out)
+
+	res, err := p.handler.Handle(ctx, args, stream)
+	ok, err := p.writeResponse(out, seqID, res, err)
+
+	stream.ready()
+
+	defer stream.Close()
+
+	if !ok || err != nil {
+		return ok, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return true, ctx.Err()
+	case <-stream.closec:
+		return true, nil
+	}
+}
+
+type TStreamClientHandler interface {
+	Handle(Context, TRequest, TInboundStream) (TResponse, error)
+}
+
+type TStreamClientProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TStreamClientHandler
+}
+
+func NewTStreamClientProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TStreamClientHandler) *TStreamClientProcessorFunction {
+	return &TStreamClientProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
+}
+
+func (p *TStreamClientProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
+	var args, err = p.readRequest(in)
+
+	if err != nil {
+		return false, err
+	}
+
+	stream := newTServerInboundStream(p.fname, seqID, in, out)
+
+	res, err := p.handler.Handle(ctx, args, stream)
+	ok, err := p.writeResponse(out, seqID, res, err)
+
+	stream.ready()
+
+	defer stream.Close()
+
+	if !ok || err != nil {
+		return ok, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return true, ctx.Err()
+	case <-stream.closec:
+		return true, nil
+	}
+}
+
+type TStreamBidiHandler interface {
+	Handle(Context, TRequest, TInboundStream, TOutboundStream) (TResponse, error)
+}
+
+type TStreamBidiProcessorFunction struct {
+	*TBaseProcessorFunction
+	handler TStreamBidiHandler
+}
+
+func NewTStreamBidiProcessorFunction(p TProcessor, fname string, builder func() TRequest, handler TStreamBidiHandler) *TStreamBidiProcessorFunction {
+	return &TStreamBidiProcessorFunction{
+		TBaseProcessorFunction: NewTBaseProcessorFunction(p, fname, builder),
+		handler:                handler,
+	}
+}
+
+func (p *TStreamBidiProcessorFunction) Process(ctx Context, seqID int32, in, out TProtocol) (bool, TException) {
+	var args, err = p.readRequest(in)
+
+	if err != nil {
+		return false, err
+	}
+
+	bs := newTServerBidiStream(p.fname, seqID, in, out)
+
+	res, err := p.handler.Handle(
+		ctx,
+		args,
+		&tInboundBidiStream{tBidiStream: bs},
+		&tOutboundBidiStream{tBidiStream: bs},
+	)
+	ok, err := p.writeResponse(out, seqID, res, err)
+
+	bs.ready()
+
+	defer bs.Close()
+
+	if !ok || err != nil {
+		return ok, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return true, ctx.Err()
+	case <-bs.closec:
+		return true, nil
+	}
+}
