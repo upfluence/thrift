@@ -27,7 +27,9 @@ public:
   t_return(t_type* return_,
              bool oneway)
     : oneway_(oneway),
-      returntype_(return_) {
+      returntype_(return_),
+      stream_(NULL),
+      sink_(NULL) {
     if (oneway_ && (!returntype_->is_void())) {
       pwarning(1, "Oneway methods should return void.\n");
     }
@@ -36,6 +38,8 @@ public:
   ~t_return() {}
 
   t_type* get_returntype() const { return returntype_; }
+  t_type* get_sink() const  { return sink_; }
+  t_type* get_stream() const { return stream_; }
 
   bool is_oneway() const { return oneway_; }
   bool is_streaming() const { return sink_ != NULL || stream_ != NULL; }

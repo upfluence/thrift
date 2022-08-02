@@ -50,7 +50,12 @@ public:
   const std::vector<t_function*>& get_functions() const { return functions_; }
 
   bool is_streaming() const {
-    for (std::vector<t_function*>::const_iterator iter = functions_.begin(); iter != functions_.end(); ++iter) {
+    if (extends_ != NULL && extends_->is_streaming()) {
+      return true;
+    }
+
+    std::vector<t_function*>::const_iterator iter;
+    for (iter = functions_.begin(); iter != functions_.end(); ++iter) {
       if ((*iter)->get_return()->is_streaming()) {
          return true;
       }
