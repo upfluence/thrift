@@ -6,26 +6,16 @@ import (
 	"sync"
 )
 
-type TInboundStream interface {
-	io.Closer
+func newTClientInboundStream(name string, seqID int32, in, out TProtocol, cl *TSyncClient) *tInboundStream {
+	var (
+		unlockOnce sync.Once
 
-	Receive(Context, TRequest) error
-}
+		readyc = make(chan struct{})
+	)
 
-type TOutboundStream interface {
-	io.Closer
+	close(readyc)
 
-	Send(Context, TRequest) error
-}
-
-type tClientInboundStream struct {
-	tBaseStream
-}
-
-func newTClientInboundStream(name string, seqID int32, in, out TProtocol, cl *TSyncClient) *tClientInboundStream {
-	var unlockOnce sync.Once
-
-	return &tClientInboundStream{
+	return &tInboundStream{
 		tBaseStream: tBaseStream{
 			name:          name,
 			goAwayType:    SERVER_STREAM_GOAWAY,
@@ -35,58 +25,23 @@ func newTClientInboundStream(name string, seqID int32, in, out TProtocol, cl *TS
 			seqID:         seqID,
 			closec:        make(chan struct{}),
 			closerFunc:    func() { unlockOnce.Do(func() { cl.mu.Unlock() }) },
+			readyc:        readyc,
 		},
+		messageType: SERVER_STREAM_MESSAGE,
 	}
 }
 
-func (s *tClientInboundStream) Receive(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	default:
-	}
+func newTClientOutboundStream(name string, seqID int32, in, out TProtocol, cl *TSyncClient) *tOutboundStream {
+	var (
+		unlockOnce sync.Once
 
-	s.in.Transport().WriteContext(ctx)
+		readyc = make(chan struct{})
+	)
 
-	_, typeID, seqID, err := s.in.ReadMessageBegin()
+	close(readyc)
 
-	if err != nil {
-		s.close()
-
-		return parseStreamingError(err)
-	}
-
-	defer s.in.ReadMessageEnd()
-
-	if seqID != s.seqID {
-		s.close()
-		return fmt.Errorf("invalid sequence ID, expected: %d", s.seqID)
-	}
-
-	switch typeID {
-	case SERVER_STREAM_MESSAGE:
-	case SERVER_STREAM_GOAWAY:
-		s.writeGoAwayACK()
-		s.goAwayOnce.Do(func() {})
-		s.close()
-		return io.EOF
-	default:
-		return fmt.Errorf("unexpected messaege type: %v", typeID)
-	}
-
-	return req.Read(s.in)
-}
-
-type tClientOutboundStream struct {
-	tBaseStream
-}
-
-func newTClientOutboundStream(name string, seqID int32, in, out TProtocol, cl *TSyncClient) *tClientOutboundStream {
-	var unlockOnce sync.Once
-
-	cos := tClientOutboundStream{
+	cos := tOutboundStream{
+		messageType: CLIENT_STREAM_MESSAGE,
 		tBaseStream: tBaseStream{
 			name:          name,
 			goAwayType:    CLIENT_STREAM_GOAWAY,
@@ -96,6 +51,7 @@ func newTClientOutboundStream(name string, seqID int32, in, out TProtocol, cl *T
 			seqID:         seqID,
 			closec:        make(chan struct{}),
 			closerFunc:    func() { unlockOnce.Do(func() { cl.mu.Unlock() }) },
+			readyc:        readyc,
 		},
 	}
 
@@ -104,54 +60,9 @@ func newTClientOutboundStream(name string, seqID int32, in, out TProtocol, cl *T
 	return &cos
 }
 
-func (s *tClientOutboundStream) Close() error {
-	select {
-	case <-s.closec:
-		return nil
-	default:
-	}
-
-	if err := s.writeGoAway(); err != nil {
-		return err
-	}
-
-	<-s.closec
-
-	s.close()
-	return nil
-}
-
-func (s *tClientOutboundStream) Send(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	default:
-	}
-
-	if !s.out.Transport().IsOpen() {
-		s.close()
-		return io.EOF
-	}
-
-	if err := send(ctx, s.out, s.seqID, s.name, req, CLIENT_STREAM_MESSAGE); err != nil {
-		s.close()
-		return parseStreamingError(err)
-	}
-
-	return nil
-}
-
-type tServerOutboundStream struct {
-	tBaseStream
-
-	readyOnce sync.Once
-	readyc    chan struct{}
-}
-
-func newTServerOutboundStream(name string, seqID int32, in, out TProtocol) *tServerOutboundStream {
-	return &tServerOutboundStream{
+func newTServerOutboundStream(name string, seqID int32, in, out TProtocol) *tOutboundStream {
+	return &tOutboundStream{
+		messageType: SERVER_STREAM_MESSAGE,
 		tBaseStream: tBaseStream{
 			name:          name,
 			goAwayType:    SERVER_STREAM_GOAWAY,
@@ -160,68 +71,13 @@ func newTServerOutboundStream(name string, seqID int32, in, out TProtocol) *tSer
 			out:           out,
 			seqID:         seqID,
 			closec:        make(chan struct{}),
+			readyc:        make(chan struct{}),
 		},
-		readyc: make(chan struct{}, 1),
 	}
 }
 
-func (s *tServerOutboundStream) ready() {
-	s.readyOnce.Do(func() {
-		s.readyc <- struct{}{}
-		go s.readGoaway()
-	})
-}
-
-func (s *tServerOutboundStream) Close() error {
-	select {
-	case <-s.closec:
-		return nil
-	default:
-	}
-
-	if err := s.writeGoAway(); err != nil {
-		return err
-	}
-
-	<-s.closec
-
-	s.close()
-	return nil
-}
-
-func (s *tServerOutboundStream) Send(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	case <-s.readyc:
-	}
-
-	defer func() { s.readyc <- struct{}{} }()
-
-	if !s.out.Transport().IsOpen() {
-		s.close()
-		return io.EOF
-	}
-
-	if err := send(ctx, s.out, s.seqID, s.name, req, SERVER_STREAM_MESSAGE); err != nil {
-		s.close()
-		return parseStreamingError(err)
-	}
-
-	return nil
-}
-
-type tServerInboundStream struct {
-	tBaseStream
-
-	readyOnce sync.Once
-	readyc    chan struct{}
-}
-
-func newTServerInboundStream(name string, seqID int32, in, out TProtocol) *tServerInboundStream {
-	return &tServerInboundStream{
+func newTServerInboundStream(name string, seqID int32, in, out TProtocol) *tInboundStream {
+	return &tInboundStream{
 		tBaseStream: tBaseStream{
 			name:          name,
 			goAwayType:    CLIENT_STREAM_GOAWAY,
@@ -230,54 +86,10 @@ func newTServerInboundStream(name string, seqID int32, in, out TProtocol) *tServ
 			out:           out,
 			seqID:         seqID,
 			closec:        make(chan struct{}),
+			readyc:        make(chan struct{}),
 		},
-		readyc: make(chan struct{}, 1),
+		messageType: CLIENT_STREAM_MESSAGE,
 	}
-}
-
-func (s *tServerInboundStream) ready() {
-	s.readyOnce.Do(func() { s.readyc <- struct{}{} })
-}
-
-func (s *tServerInboundStream) Receive(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	case <-s.readyc:
-	}
-
-	defer func() { s.readyc <- struct{}{} }()
-
-	s.in.Transport().WriteContext(ctx)
-
-	_, typeID, seqID, err := s.in.ReadMessageBegin()
-
-	if err != nil {
-		s.close()
-		return parseStreamingError(err)
-	}
-
-	defer s.in.ReadMessageEnd()
-
-	if seqID != s.seqID {
-		s.close()
-		return fmt.Errorf("invalid sequence ID, expected: %d", s.seqID)
-	}
-
-	switch typeID {
-	case CLIENT_STREAM_MESSAGE:
-	case CLIENT_STREAM_GOAWAY:
-		s.writeGoAwayACK()
-		s.goAwayOnce.Do(func() {})
-		s.close()
-		return io.EOF
-	default:
-		return fmt.Errorf("unexpected messaege type: %v", typeID)
-	}
-
-	return req.Read(s.in)
 }
 
 type tBaseStream struct {
@@ -295,6 +107,13 @@ type tBaseStream struct {
 
 	closeOnce sync.Once
 	closec    chan struct{}
+
+	readyOnce sync.Once
+	readyc    chan struct{}
+}
+
+func (s *tBaseStream) ready() {
+	s.readyOnce.Do(func() { close(s.readyc) })
 }
 
 func (bs *tBaseStream) writeShell(mt TMessageType) error {
@@ -357,25 +176,6 @@ func (bs *tBaseStream) writeGoAwayACK() error {
 	return bs.writeShell(bs.goAwayACKType)
 }
 
-func (bs *tBaseStream) readGoaway() {
-	mt, err := bs.readShell()
-
-	if err != nil {
-		bs.close()
-		return
-	}
-
-	switch mt {
-	case bs.goAwayType:
-		bs.writeGoAwayACK()
-		bs.close()
-	case bs.goAwayACKType:
-		bs.close()
-	}
-
-	bs.close()
-}
-
 func (bs *tBaseStream) Close() error {
 	defer bs.close()
 
@@ -427,9 +227,6 @@ type tBidiStream struct {
 	outboundGoAwayType    TMessageType
 	outboundGoAwayACKType TMessageType
 
-	readyOnce sync.Once
-	readyc    chan struct{}
-
 	closingInbound  bool
 	closingOutbound bool
 	receivingc      chan struct{}
@@ -454,6 +251,7 @@ func newTClientBidiStream(name string, seqID int32, in, out TProtocol, cl *TSync
 			seqID:      seqID,
 			closec:     make(chan struct{}),
 			closerFunc: func() { unlockOnce.Do(func() { cl.mu.Unlock() }) },
+			readyc:     readyc,
 		},
 		outboundClosec:        make(chan struct{}),
 		inboundClosec:         make(chan struct{}),
@@ -463,7 +261,6 @@ func newTClientBidiStream(name string, seqID int32, in, out TProtocol, cl *TSync
 		outboundMessageType:   CLIENT_STREAM_MESSAGE,
 		outboundGoAwayType:    CLIENT_STREAM_GOAWAY,
 		outboundGoAwayACKType: CLIENT_STREAM_GOAWAY_ACK,
-		readyc:                readyc,
 		receivingc:            make(chan struct{}, 1),
 	}
 }
@@ -476,6 +273,7 @@ func newTServerBidiStream(name string, seqID int32, in, out TProtocol) *tBidiStr
 			out:    out,
 			seqID:  seqID,
 			closec: make(chan struct{}),
+			readyc: make(chan struct{}),
 		},
 		outboundClosec:        make(chan struct{}),
 		inboundClosec:         make(chan struct{}),
@@ -485,13 +283,8 @@ func newTServerBidiStream(name string, seqID int32, in, out TProtocol) *tBidiStr
 		outboundMessageType:   SERVER_STREAM_MESSAGE,
 		outboundGoAwayType:    SERVER_STREAM_GOAWAY,
 		outboundGoAwayACKType: SERVER_STREAM_GOAWAY_ACK,
-		readyc:                make(chan struct{}),
 		receivingc:            make(chan struct{}, 1),
 	}
-}
-
-func (bs *tBidiStream) ready() {
-	bs.readyOnce.Do(func() { close(bs.readyc) })
 }
 
 func (bs *tBidiStream) Close() error {
@@ -504,6 +297,40 @@ func (bs *tBidiStream) writeShell(mt TMessageType) error {
 	defer bs.writeMu.Unlock()
 
 	return bs.tBaseStream.writeShell(mt)
+}
+
+func (bs *tBidiStream) closeInbound() error {
+	bs.inboundCloseOnce.Do(func() {
+		close(bs.inboundClosec)
+
+		select {
+		case <-bs.outboundClosec:
+		default:
+			go bs.receive(bs.outboundClosec)
+		}
+	})
+
+	select {
+	case <-bs.outboundClosec:
+		bs.close()
+	default:
+	}
+
+	return io.EOF
+}
+
+func (bs *tBidiStream) closeOutbound() error {
+	bs.outboundCloseOnce.Do(func() {
+		close(bs.outboundClosec)
+	})
+
+	select {
+	case <-bs.inboundClosec:
+		bs.close()
+	default:
+	}
+
+	return nil
 }
 
 func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID int32, err error) error {
@@ -526,41 +353,9 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 			}
 		}
 
-		bs.inboundCloseOnce.Do(func() {
-			close(bs.inboundClosec)
-
-			select {
-			case <-bs.outboundClosec:
-			default:
-				go bs.receive(bs.outboundClosec)
-			}
-		})
-
-		select {
-		case <-bs.outboundClosec:
-			bs.close()
-		default:
-		}
-
-		return io.EOF
+		return bs.closeInbound()
 	case bs.inboundGoAwayACKType:
-		bs.inboundCloseOnce.Do(func() {
-			close(bs.inboundClosec)
-
-			select {
-			case <-bs.outboundClosec:
-			default:
-				go bs.receive(bs.outboundClosec)
-			}
-		})
-
-		select {
-		case <-bs.outboundClosec:
-			bs.close()
-		default:
-		}
-
-		return io.EOF
+		return bs.closeInbound()
 	case bs.outboundGoAwayType:
 		if !bs.closingOutbound {
 			if err := bs.writeShell(bs.outboundGoAwayACKType); err != nil {
@@ -569,29 +364,9 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 			}
 		}
 
-		bs.outboundCloseOnce.Do(func() {
-			close(bs.outboundClosec)
-		})
-
-		select {
-		case <-bs.inboundClosec:
-			bs.close()
-		default:
-		}
-
-		return nil
+		return bs.closeOutbound()
 	case bs.outboundGoAwayACKType:
-		bs.outboundCloseOnce.Do(func() {
-			close(bs.outboundClosec)
-		})
-
-		select {
-		case <-bs.inboundClosec:
-			bs.close()
-		default:
-		}
-
-		return nil
+		return bs.closeOutbound()
 	default:
 		return fmt.Errorf("unexpected messaege type: %v", typeID)
 	}
@@ -705,7 +480,7 @@ func (s *tInboundBidiStream) Close() error {
 		return nil
 	case <-s.closec:
 		return nil
-	default:
+	case <-s.readyc:
 	}
 
 	go s.receive(s.inboundClosec)
@@ -739,6 +514,10 @@ func (s *tInboundBidiStream) Receive(ctx Context, req TRequest) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
+	case <-s.closec:
+		return io.EOF
+	case <-s.inboundClosec:
+		return io.EOF
 	case s.receivingc <- struct{}{}:
 	}
 
