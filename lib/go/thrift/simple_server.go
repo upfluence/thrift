@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"log"
-	"runtime/debug"
 )
 
 // Simple, non-concurrent server for testing.
@@ -87,7 +86,7 @@ func NewTSimpleServerFactory6(processorFactory TProcessorFactory, serverTranspor
 		outputTransportFactory: outputTransportFactory,
 		inputProtocolFactory:   inputProtocolFactory,
 		outputProtocolFactory:  outputProtocolFactory,
-		quit: make(chan struct{}, 1),
+		quit:                   make(chan struct{}, 1),
 	}
 }
 
@@ -175,19 +174,6 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 	outputTransport := p.outputTransportFactory.GetTransport(client)
 	inputProtocol := p.inputProtocolFactory.GetProtocol(inputTransport)
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
-	defer func() {
-		if e := recover(); e != nil {
-			if p.errorLogger != nil {
-				if err, ok := e.(error); ok {
-					(*p.errorLogger)(err)
-				} else {
-					log.Printf("panic in processor: %s: %s", e, debug.Stack())
-				}
-			} else {
-				log.Printf("panic in processor: %s: %s", e, debug.Stack())
-			}
-		}
-	}()
 	if inputTransport != nil {
 		defer inputTransport.Close()
 	}
