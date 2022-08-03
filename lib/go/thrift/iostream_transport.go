@@ -155,6 +155,11 @@ func (p *StreamTransport) Flush() error {
 }
 
 func (p *StreamTransport) Read(c []byte) (n int, err error) {
+	if p.Reader == nil {
+		err = NewTTransportException(NOT_OPEN, "Cannot read from null reader")
+		return
+	}
+
 	n, err = p.Reader.Read(c)
 	if err != nil {
 		err = NewTTransportExceptionFromError(err)

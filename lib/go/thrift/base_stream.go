@@ -40,13 +40,8 @@ func newTServerBaseStream(name string, seqID int32, in, out TProtocol, goAwayTyp
 }
 
 func newTClientBaseStream(name string, seqID int32, in, out TProtocol, goAwayType TMessageType, cl *TSyncClient) tBaseStream {
-	var (
-		unlockOnce sync.Once
+	var unlockOnce sync.Once
 
-		readyc = make(chan struct{})
-	)
-
-	close(readyc)
 	return tBaseStream{
 		name:          name,
 		goAwayType:    goAwayType,
@@ -56,7 +51,7 @@ func newTClientBaseStream(name string, seqID int32, in, out TProtocol, goAwayTyp
 		seqID:         seqID,
 		closec:        make(chan struct{}),
 		closerFunc:    func() { unlockOnce.Do(func() { cl.mu.Unlock() }) },
-		readyc:        readyc,
+		readyc:        make(chan struct{}),
 	}
 }
 
@@ -67,6 +62,12 @@ func (s *tBaseStream) ready() {
 func (bs *tBaseStream) writeShell(mt TMessageType) error {
 	if !bs.out.Transport().IsOpen() {
 		return io.EOF
+	}
+
+	select {
+	case <-bs.closec:
+		return io.EOF
+	default:
 	}
 
 	if err := bs.out.WriteMessageBegin(bs.name, mt, bs.seqID); err != nil {
@@ -83,6 +84,12 @@ func (bs *tBaseStream) writeShell(mt TMessageType) error {
 func (bs *tBaseStream) readShell() (TMessageType, error) {
 	if !bs.out.Transport().IsOpen() {
 		return 0, io.EOF
+	}
+
+	select {
+	case <-bs.closec:
+		return 0, io.EOF
+	default:
 	}
 
 	name, typeID, seqID, err := bs.in.ReadMessageBegin()

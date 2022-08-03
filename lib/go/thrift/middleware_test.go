@@ -38,7 +38,7 @@ type mockResponse struct {
 func TestTMultiMiddlewareBinary(t *testing.T) {
 	var buf bytes.Buffer
 
-	_, err := TMultiMiddleware(
+	_, err := WrapMiddlewares(
 		[]TMiddleware{
 			&middleware{v: 1, w: &buf},
 			&middleware{v: 2, w: &buf},
@@ -65,7 +65,7 @@ func TestTMultiMiddlewareBinary(t *testing.T) {
 func TestTMultiMiddlewaryUnary(t *testing.T) {
 	var buf bytes.Buffer
 
-	err := TMultiMiddleware(
+	err := WrapMiddlewares(
 		[]TMiddleware{
 			&middleware{v: 1, w: &buf},
 			&middleware{v: 2, w: &buf},

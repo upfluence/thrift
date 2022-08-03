@@ -40,7 +40,7 @@ type TSyncClient struct {
 
 	seqID int32
 
-	Middleware TMiddleware
+	middleware TStreamingMiddleware
 }
 
 func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncClient {
@@ -48,7 +48,7 @@ func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncC
 		trans:      t,
 		in:         f.GetProtocol(t),
 		out:        f.GetProtocol(t),
-		Middleware: WrapMiddlewares(ms),
+		middleware: WrapMiddlewares(ms),
 	}
 }
 
@@ -127,7 +127,7 @@ func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res T
 
 	c.seqID++
 
-	_, err := c.Middleware.HandleBinaryRequest(
+	_, err := c.middleware.HandleBinaryRequest(
 		ctx,
 		method,
 		c.seqID,
@@ -150,7 +150,7 @@ func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error 
 
 	c.seqID++
 
-	return c.Middleware.HandleUnaryRequest(
+	return c.middleware.HandleUnaryRequest(
 		ctx,
 		method,
 		c.seqID,
@@ -161,63 +161,105 @@ func (c *TSyncClient) CallUnary(ctx Context, method string, req TRequest) error 
 	)
 }
 
-func (c *TSyncClient) StreamClient(ctx Context, method string, req TRequest, res TResponse) (TOutboundStream, error) {
-	c.mu.Lock()
-	c.seqID++
-
+func (c *TSyncClient) rpcStream(ctx Context, method string, req TRequest, res TResponse) error {
 	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
 		c.mu.Unlock()
 
-		return nil, err
+		return err
 	}
 
 	if err := recv(c.out, c.seqID, method, res); err != nil {
 		c.mu.Unlock()
 
-		return nil, err
+		return err
 	}
 
-	return newTClientOutboundStream(method, c.seqID, c.in, c.out, c), nil
+	return nil
+}
+
+func (c *TSyncClient) StreamClient(ctx Context, method string, req TRequest, res TResponse) (TOutboundStream, error) {
+	c.mu.Lock()
+	c.seqID++
+
+	var (
+		originalStream = newTClientOutboundStream(method, c.seqID, c.in, c.out, c)
+
+		wrappedStream TOutboundStream = originalStream
+	)
+
+	_, err := c.middleware.HandleOutboundStream(
+		ctx,
+		method,
+		c.seqID,
+		req,
+		originalStream,
+		func(ctx Context, req TRequest, s TOutboundStream) (TResponse, error) {
+			wrappedStream = s
+
+			return res, c.rpcStream(ctx, method, req, res)
+		},
+	)
+
+	originalStream.ready()
+
+	return wrappedStream, err
 }
 
 func (c *TSyncClient) StreamServer(ctx Context, method string, req TRequest, res TResponse) (TInboundStream, error) {
 	c.mu.Lock()
 	c.seqID++
 
-	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
-		c.mu.Unlock()
+	var (
+		originalStream = newTClientInboundStream(method, c.seqID, c.in, c.out, c)
 
-		return nil, err
-	}
+		wrappedStream TInboundStream = originalStream
+	)
 
-	if err := recv(c.out, c.seqID, method, res); err != nil {
-		c.mu.Unlock()
+	_, err := c.middleware.HandleInboundStream(
+		ctx,
+		method,
+		c.seqID,
+		req,
+		originalStream,
+		func(ctx Context, req TRequest, s TInboundStream) (TResponse, error) {
+			wrappedStream = s
 
-		return nil, err
-	}
+			return res, c.rpcStream(ctx, method, req, res)
+		},
+	)
 
-	return newTClientInboundStream(method, c.seqID, c.in, c.out, c), nil
+	originalStream.ready()
+
+	return wrappedStream, err
 }
 
 func (c *TSyncClient) StreamBidi(ctx Context, method string, req TRequest, res TResponse) (TInboundStream, TOutboundStream, error) {
 	c.mu.Lock()
 	c.seqID++
 
-	if err := send(ctx, c.in, c.seqID, method, req, CALL); err != nil {
-		c.mu.Unlock()
+	var (
+		bidiStream = newTClientBidiStream(method, c.seqID, c.in, c.out, c)
 
-		return nil, nil, err
-	}
+		inboundStream  TInboundStream  = &tInboundBidiStream{tBidiStream: bidiStream}
+		outboundStream TOutboundStream = &tOutboundBidiStream{tBidiStream: bidiStream}
+	)
 
-	if err := recv(c.out, c.seqID, method, res); err != nil {
-		c.mu.Unlock()
+	_, err := c.middleware.HandleBidiStream(
+		ctx,
+		method,
+		c.seqID,
+		req,
+		inboundStream,
+		outboundStream,
+		func(ctx Context, req TRequest, is TInboundStream, os TOutboundStream) (TResponse, error) {
+			inboundStream = is
+			outboundStream = os
 
-		return nil, nil, err
-	}
+			return res, c.rpcStream(ctx, method, req, res)
+		},
+	)
 
-	bs := newTClientBidiStream(method, c.seqID, c.in, c.out, c)
+	bidiStream.ready()
 
-	return &tInboundBidiStream{
-		tBidiStream: bs,
-	}, &tOutboundBidiStream{tBidiStream: bs}, nil
+	return inboundStream, outboundStream, err
 }
