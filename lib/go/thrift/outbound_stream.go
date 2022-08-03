@@ -15,14 +15,10 @@ type tOutboundStream struct {
 }
 
 func newTClientOutboundStream(name string, seqID int32, in, out TProtocol, cl *TSyncClient) *tOutboundStream {
-	cos := tOutboundStream{
+	return &tOutboundStream{
 		tBaseStream: newTClientBaseStream(name, seqID, in, out, CLIENT_STREAM_GOAWAY, cl),
 		messageType: CLIENT_STREAM_MESSAGE,
 	}
-
-	go cos.readGoaway()
-
-	return &cos
 }
 
 func newTServerOutboundStream(name string, seqID int32, in, out TProtocol) *tOutboundStream {

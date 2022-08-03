@@ -78,16 +78,16 @@ type TProcessorFunction interface {
 }
 
 type TBaseProcessorFunction struct {
-	fname       string
-	argBuilder  func() TRequest
-	middlewares []TMiddleware
+	fname      string
+	argBuilder func() TRequest
+	middleware TStreamingMiddleware
 }
 
 func NewTBaseProcessorFunction(p TProcessor, fname string, builder func() TRequest) *TBaseProcessorFunction {
 	return &TBaseProcessorFunction{
-		fname:       fname,
-		argBuilder:  builder,
-		middlewares: p.GetMiddlewares(),
+		fname:      fname,
+		argBuilder: builder,
+		middleware: WrapMiddlewares(p.GetMiddlewares()),
 	}
 }
 
@@ -179,25 +179,15 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 		return false, err
 	}
 
-	call := func(ctx Context, req TRequest) (TResponse, error) {
-		return p.handler.Handle(ctx, req)
-	}
-
-	for i := len(p.middlewares); i > 0; i-- {
-		j := i
-		next := call
-		call = func(ctx Context, req TRequest) (TResponse, error) {
-			return p.middlewares[j-1].HandleBinaryRequest(
-				ctx,
-				p.fname,
-				seqID,
-				req,
-				next,
-			)
-		}
-	}
-
-	res, err := call(ctx, args)
+	res, err := p.middleware.HandleBinaryRequest(
+		ctx,
+		p.fname,
+		seqID,
+		args,
+		func(ctx Context, req TRequest) (TResponse, error) {
+			return p.handler.Handle(ctx, req)
+		},
+	)
 
 	return p.writeResponse(out, seqID, res, err)
 }
@@ -225,25 +215,15 @@ func (p *TUnaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPro
 		return false, err
 	}
 
-	call := func(ctx Context, req TRequest) error {
-		return p.handler.Handle(ctx, req)
-	}
-
-	for i := len(p.middlewares); i > 0; i-- {
-		j := i
-		next := call
-		call = func(ctx Context, req TRequest) error {
-			return p.middlewares[j-1].HandleUnaryRequest(
-				ctx,
-				p.fname,
-				seqID,
-				req,
-				next,
-			)
-		}
-	}
-
-	return true, call(ctx, args)
+	return true, p.middleware.HandleUnaryRequest(
+		ctx,
+		p.fname,
+		seqID,
+		args,
+		func(ctx Context, req TRequest) error {
+			return p.handler.Handle(ctx, req)
+		},
+	)
 }
 
 type TStreamServerHandler interface {
@@ -271,7 +251,17 @@ func (p *TStreamServerProcessorFunction) Process(ctx Context, seqID int32, in, o
 
 	stream := newTServerOutboundStream(p.fname, seqID, in, out)
 
-	res, err := p.handler.Handle(ctx, args, stream)
+	res, err := p.middleware.HandleOutboundStream(
+		ctx,
+		p.fname,
+		seqID,
+		args,
+		stream,
+		func(ctx Context, req TRequest, s TOutboundStream) (TResponse, error) {
+			return p.handler.Handle(ctx, req, s)
+		},
+	)
+
 	ok, err := p.writeResponse(out, seqID, res, err)
 
 	stream.ready()
@@ -315,7 +305,16 @@ func (p *TStreamClientProcessorFunction) Process(ctx Context, seqID int32, in, o
 
 	stream := newTServerInboundStream(p.fname, seqID, in, out)
 
-	res, err := p.handler.Handle(ctx, args, stream)
+	res, err := p.middleware.HandleInboundStream(
+		ctx,
+		p.fname,
+		seqID,
+		args,
+		stream,
+		func(ctx Context, req TRequest, s TInboundStream) (TResponse, error) {
+			return p.handler.Handle(ctx, req, s)
+		},
+	)
 	ok, err := p.writeResponse(out, seqID, res, err)
 
 	stream.ready()
@@ -357,19 +356,24 @@ func (p *TStreamBidiProcessorFunction) Process(ctx Context, seqID int32, in, out
 		return false, err
 	}
 
-	bs := newTServerBidiStream(p.fname, seqID, in, out)
+	bidiStream := newTServerBidiStream(p.fname, seqID, in, out)
 
-	res, err := p.handler.Handle(
+	res, err := p.middleware.HandleBidiStream(
 		ctx,
+		p.fname,
+		seqID,
 		args,
-		&tInboundBidiStream{tBidiStream: bs},
-		&tOutboundBidiStream{tBidiStream: bs},
+		&tInboundBidiStream{tBidiStream: bidiStream},
+		&tOutboundBidiStream{tBidiStream: bidiStream},
+		func(ctx Context, req TRequest, is TInboundStream, os TOutboundStream) (TResponse, error) {
+			return p.handler.Handle(ctx, req, is, os)
+		},
 	)
 	ok, err := p.writeResponse(out, seqID, res, err)
 
-	bs.ready()
+	bidiStream.ready()
 
-	defer bs.Close()
+	defer bidiStream.Close()
 
 	if !ok || err != nil {
 		return ok, err
@@ -378,7 +382,7 @@ func (p *TStreamBidiProcessorFunction) Process(ctx Context, seqID int32, in, out
 	select {
 	case <-ctx.Done():
 		return true, ctx.Err()
-	case <-bs.closec:
+	case <-bidiStream.closec:
 		return true, nil
 	}
 }

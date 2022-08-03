@@ -69,6 +69,12 @@ func (bs *tBidiStream) writeShell(mt TMessageType) error {
 	bs.writeMu.Lock()
 	defer bs.writeMu.Unlock()
 
+	select {
+	case <-bs.closec:
+		return io.EOF
+	default:
+	}
+
 	return bs.tBaseStream.writeShell(mt)
 }
 
@@ -108,7 +114,7 @@ func (bs *tBidiStream) closeOutbound() error {
 
 func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID int32, err error) error {
 	if err != nil {
-		return parseStreamingError(err)
+		return err
 	}
 
 	defer bs.in.ReadMessageEnd()
@@ -119,7 +125,9 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 
 	switch typeID {
 	case bs.inboundGoAwayType:
-		if !bs.closingInbound {
+		closing := bs.closingInbound
+		bs.closingInbound = true
+		if !closing {
 			if err := bs.writeShell(bs.inboundGoAwayACKType); err != nil {
 				bs.close()
 				return err
@@ -130,7 +138,9 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 	case bs.inboundGoAwayACKType:
 		return bs.closeInbound()
 	case bs.outboundGoAwayType:
-		if !bs.closingOutbound {
+		closing := bs.closingOutbound
+		bs.closingOutbound = true
+		if !closing {
 			if err := bs.writeShell(bs.outboundGoAwayACKType); err != nil {
 				bs.close()
 				return err
@@ -140,12 +150,25 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 		return bs.closeOutbound()
 	case bs.outboundGoAwayACKType:
 		return bs.closeOutbound()
+	case bs.inboundMessageType:
+		return SkipDefaultDepth(bs.in, STRUCT)
 	default:
 		return fmt.Errorf("unexpected messaege type: %v", typeID)
 	}
 }
 
 func (bs *tBidiStream) receiveOnce() error {
+	if !bs.in.Transport().IsOpen() {
+		bs.close()
+		return io.EOF
+	}
+
+	select {
+	case <-bs.closec:
+		return nil
+	default:
+	}
+
 	name, typeID, seqID, err := bs.in.ReadMessageBegin()
 
 	if err := bs.processMessage(name, typeID, seqID, err); err != nil && err != io.EOF {
@@ -160,7 +183,6 @@ func (bs *tBidiStream) receive(ch chan struct{}) error {
 	select {
 	case bs.receivingc <- struct{}{}:
 	case <-ch:
-		bs.close()
 		return nil
 	case <-bs.closec:
 		return nil
@@ -193,7 +215,11 @@ func (s *tOutboundBidiStream) Close() error {
 		return nil
 	case <-s.closec:
 		return nil
-	default:
+	case <-s.readyc:
+	}
+
+	if s.closingOutbound {
+		return nil
 	}
 
 	go s.receive(s.outboundClosec)
@@ -224,11 +250,25 @@ func (s *tOutboundBidiStream) Send(ctx Context, req TRequest) error {
 	case <-s.readyc:
 	}
 
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-s.outboundClosec:
+		return io.EOF
+	case <-s.closec:
+		return io.EOF
+	default:
+	}
 
 	if !s.out.Transport().IsOpen() {
 		s.close()
+		return io.EOF
+	}
+
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
+	if s.closingOutbound {
 		return io.EOF
 	}
 
@@ -251,6 +291,10 @@ func (s *tInboundBidiStream) Close() error {
 	case <-s.closec:
 		return nil
 	case <-s.readyc:
+	}
+
+	if s.closingInbound {
+		return nil
 	}
 
 	go s.receive(s.inboundClosec)
@@ -294,6 +338,17 @@ func (s *tInboundBidiStream) Receive(ctx Context, req TRequest) error {
 	defer func() { <-s.receivingc }()
 
 	for {
+		if !s.in.Transport().IsOpen() {
+			s.close()
+			return io.EOF
+		}
+
+		select {
+		case <-s.closec:
+			return io.EOF
+		default:
+		}
+
 		name, typeID, seqID, err := s.in.ReadMessageBegin()
 
 		if typeID == s.inboundMessageType {
