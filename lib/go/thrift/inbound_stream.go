@@ -64,39 +64,16 @@ func (s *tInboundStream) readGoAwayACK() error {
 }
 
 func (s *tInboundStream) Receive(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	case <-s.readyc:
-	}
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	default:
-	}
-
-	s.in.Transport().WriteContext(ctx)
-
-	_, typeID, seqID, err := s.in.ReadMessageBegin()
+	var typeID, err = s.readMessageBegin(ctx)
 
 	if err != nil {
-		s.close()
-		return parseStreamingError(err)
-	}
-
-	if seqID != s.seqID {
-		s.in.ReadMessageEnd()
-		s.close()
-		return fmt.Errorf("invalid sequence ID, expected: %d", s.seqID)
+		return err
 	}
 
 	switch typeID {
 	case s.messageType:
+		defer s.in.ReadMessageEnd()
+		return req.Read(s.in)
 	case s.goAwayType:
 		s.in.ReadMessageEnd()
 		s.writeGoAwayACK()
@@ -107,7 +84,4 @@ func (s *tInboundStream) Receive(ctx Context, req TRequest) error {
 		s.in.ReadMessageEnd()
 		return fmt.Errorf("unexpected messaege type: %v", typeID)
 	}
-
-	defer s.in.ReadMessageEnd()
-	return req.Read(s.in)
 }

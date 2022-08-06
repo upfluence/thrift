@@ -64,6 +64,7 @@ func (s *tOutboundStream) Close() error {
 	}
 
 	if err := s.writeGoAway(); err != nil {
+		s.close()
 		return err
 	}
 
@@ -72,31 +73,5 @@ func (s *tOutboundStream) Close() error {
 }
 
 func (s *tOutboundStream) Send(ctx Context, req TRequest) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	case <-s.readyc:
-	}
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.closec:
-		return io.EOF
-	default:
-	}
-
-	if !s.out.Transport().IsOpen() {
-		s.close()
-		return io.EOF
-	}
-
-	if err := send(ctx, s.out, s.seqID, s.name, req, s.messageType); err != nil {
-		s.close()
-		return parseStreamingError(err)
-	}
-
-	return nil
+	return s.write(ctx, s.messageType, req)
 }

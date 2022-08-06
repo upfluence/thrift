@@ -1,6 +1,7 @@
 package thrift
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -59,37 +60,57 @@ func (s *tBaseStream) ready() {
 	s.readyOnce.Do(func() { close(s.readyc) })
 }
 
-func (bs *tBaseStream) writeShell(mt TMessageType) error {
-	if !bs.out.Transport().IsOpen() {
+func (bs *tBaseStream) write(ctx Context, typeID TMessageType, req TStruct) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-bs.closec:
 		return io.EOF
+	case <-bs.readyc:
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-bs.closec:
 		return io.EOF
 	default:
 	}
 
-	if err := bs.out.WriteMessageBegin(bs.name, mt, bs.seqID); err != nil {
+	if err := bs.out.Transport().WriteContext(ctx); err != nil {
 		return err
 	}
 
-	if err := bs.out.WriteMessageEnd(); err != nil {
-		return err
+	if err := send(ctx, bs.out, bs.seqID, bs.name, req, typeID); err != nil {
+		bs.close()
+		return parseStreamingError(err)
 	}
 
-	return bs.out.Flush()
+	return nil
 }
 
-func (bs *tBaseStream) readShell() (TMessageType, error) {
-	if !bs.out.Transport().IsOpen() {
+func (bs *tBaseStream) writeShell(mt TMessageType) error {
+	return bs.write(context.Background(), mt, nil)
+}
+func (bs *tBaseStream) readMessageBegin(ctx Context) (TMessageType, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	case <-bs.closec:
 		return 0, io.EOF
+	case <-bs.readyc:
 	}
 
 	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
 	case <-bs.closec:
 		return 0, io.EOF
 	default:
+	}
+
+	if err := bs.in.Transport().WriteContext(ctx); err != nil {
+		return 0, err
 	}
 
 	name, typeID, seqID, err := bs.in.ReadMessageBegin()
@@ -104,6 +125,16 @@ func (bs *tBaseStream) readShell() (TMessageType, error) {
 
 	if seqID != bs.seqID {
 		return 0, fmt.Errorf("invalid sequence ID, expected: %d", bs.seqID)
+	}
+
+	return typeID, nil
+}
+
+func (bs *tBaseStream) readShell() (TMessageType, error) {
+	var typeID, err = bs.readMessageBegin(context.Background())
+
+	if err != nil {
+		return 0, err
 	}
 
 	return typeID, bs.in.ReadMessageEnd()

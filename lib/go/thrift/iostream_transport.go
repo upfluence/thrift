@@ -168,6 +168,11 @@ func (p *StreamTransport) Read(c []byte) (n int, err error) {
 }
 
 func (p *StreamTransport) ReadByte() (c byte, err error) {
+	if p.Reader == nil {
+		err = NewTTransportException(NOT_OPEN, "Cannot read from null reader")
+		return
+	}
+
 	f, ok := p.Reader.(io.ByteReader)
 	if ok {
 		c, err = f.ReadByte()
@@ -181,6 +186,11 @@ func (p *StreamTransport) ReadByte() (c byte, err error) {
 }
 
 func (p *StreamTransport) Write(c []byte) (n int, err error) {
+	if p.Writer == nil {
+		err = NewTTransportException(NOT_OPEN, "Cannot write null writer")
+		return
+	}
+
 	n, err = p.Writer.Write(c)
 	if err != nil {
 		err = NewTTransportExceptionFromError(err)
@@ -189,6 +199,11 @@ func (p *StreamTransport) Write(c []byte) (n int, err error) {
 }
 
 func (p *StreamTransport) WriteByte(c byte) (err error) {
+	if p.Writer == nil {
+		err = NewTTransportException(NOT_OPEN, "Cannot write null writer")
+		return
+	}
+
 	f, ok := p.Writer.(io.ByteWriter)
 	if ok {
 		err = f.WriteByte(c)
@@ -202,6 +217,11 @@ func (p *StreamTransport) WriteByte(c byte) (err error) {
 }
 
 func (p *StreamTransport) WriteString(s string) (n int, err error) {
+	if p.Writer == nil {
+		err = NewTTransportException(NOT_OPEN, "Cannot write null writer")
+		return
+	}
+
 	f, ok := p.Writer.(stringWriter)
 	if ok {
 		n, err = f.WriteString(s)
