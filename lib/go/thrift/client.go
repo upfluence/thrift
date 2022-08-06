@@ -57,8 +57,10 @@ func send(ctx Context, oprot TProtocol, seqID int32, method string, args TReques
 		return err
 	}
 
-	if err := args.Write(oprot); err != nil {
-		return err
+	if args != nil {
+		if err := args.Write(oprot); err != nil {
+			return err
+		}
 	}
 
 	if err := oprot.WriteMessageEnd(); err != nil {

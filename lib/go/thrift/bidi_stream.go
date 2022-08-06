@@ -1,6 +1,7 @@
 package thrift
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -69,12 +70,6 @@ func (bs *tBidiStream) writeShell(mt TMessageType) error {
 	bs.writeMu.Lock()
 	defer bs.writeMu.Unlock()
 
-	select {
-	case <-bs.closec:
-		return io.EOF
-	default:
-	}
-
 	return bs.tBaseStream.writeShell(mt)
 }
 
@@ -112,16 +107,12 @@ func (bs *tBidiStream) closeOutbound() error {
 	return nil
 }
 
-func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID int32, err error) error {
+func (bs *tBidiStream) processMessage(typeID TMessageType, err error) error {
 	if err != nil {
 		return err
 	}
 
 	defer bs.in.ReadMessageEnd()
-
-	if seqID != bs.seqID {
-		return fmt.Errorf("invalid sequence ID, expected: %d", bs.seqID)
-	}
 
 	switch typeID {
 	case bs.inboundGoAwayType:
@@ -158,20 +149,9 @@ func (bs *tBidiStream) processMessage(name string, typeID TMessageType, seqID in
 }
 
 func (bs *tBidiStream) receiveOnce() error {
-	if !bs.in.Transport().IsOpen() {
-		bs.close()
-		return io.EOF
-	}
+	typeID, err := bs.readMessageBegin(context.Background())
 
-	select {
-	case <-bs.closec:
-		return nil
-	default:
-	}
-
-	name, typeID, seqID, err := bs.in.ReadMessageBegin()
-
-	if err := bs.processMessage(name, typeID, seqID, err); err != nil && err != io.EOF {
+	if err := bs.processMessage(typeID, err); err != nil && err != io.EOF {
 		bs.close()
 		return err
 	}
@@ -250,21 +230,6 @@ func (s *tOutboundBidiStream) Send(ctx Context, req TRequest) error {
 	case <-s.readyc:
 	}
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-s.outboundClosec:
-		return io.EOF
-	case <-s.closec:
-		return io.EOF
-	default:
-	}
-
-	if !s.out.Transport().IsOpen() {
-		s.close()
-		return io.EOF
-	}
-
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
@@ -272,7 +237,7 @@ func (s *tOutboundBidiStream) Send(ctx Context, req TRequest) error {
 		return io.EOF
 	}
 
-	if err := send(ctx, s.out, s.seqID, s.name, req, s.outboundMessageType); err != nil {
+	if err := s.write(ctx, s.outboundMessageType, req); err != nil {
 		s.close()
 		return parseStreamingError(err)
 	}
@@ -338,25 +303,14 @@ func (s *tInboundBidiStream) Receive(ctx Context, req TRequest) error {
 	defer func() { <-s.receivingc }()
 
 	for {
-		if !s.in.Transport().IsOpen() {
-			s.close()
-			return io.EOF
-		}
-
-		select {
-		case <-s.closec:
-			return io.EOF
-		default:
-		}
-
-		name, typeID, seqID, err := s.in.ReadMessageBegin()
+		typeID, err := s.readMessageBegin(ctx)
 
 		if typeID == s.inboundMessageType {
 			defer s.in.ReadMessageEnd()
 			return req.Read(s.in)
 		}
 
-		if err := s.processMessage(name, typeID, seqID, err); err != nil {
+		if err := s.processMessage(typeID, err); err != nil {
 			if err != io.EOF {
 				s.close()
 			}
