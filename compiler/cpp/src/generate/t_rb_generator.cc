@@ -145,7 +145,6 @@ public:
   void generate_service_interface(t_service* tservice);
   void generate_service_client(t_service* tservice);
   void generate_service_server(t_service* tservice);
-  void generate_process_function(t_service* tservice, t_function* tfunction);
 
   /**
    * Serialization constructs
@@ -232,6 +231,8 @@ public:
 
   void begin_namespace(t_rb_ofstream&, std::vector<std::string>);
   void end_namespace(t_rb_ofstream&, std::vector<std::string>);
+
+  bool support_streaming() const { return true; }
 
 private:
   /**
@@ -753,7 +754,7 @@ void t_rb_generator::generate_field_defns(t_rb_ofstream& out, t_struct* tstruct)
   }
   out.indent_down();
   out << endl;
-  out.indent() << "}" << endl << endl;
+  out.indent() << "}.freeze" << endl << endl;
 
   out.indent() << "def struct_fields; FIELDS; end" << endl << endl;
 }
@@ -891,8 +892,6 @@ void t_rb_generator::generate_service_helpers(t_service* tservice) {
   f_service_.indent() << "# HELPER FUNCTIONS AND STRUCTURES" << endl << endl;
 
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    t_struct* ts = (*f_iter)->get_arglist();
-    generate_rb_struct(f_service_, ts);
     generate_rb_function_helpers(*f_iter);
   }
 }
@@ -903,19 +902,45 @@ void t_rb_generator::generate_service_helpers(t_service* tservice) {
  * @param tfunction The function
  */
 void t_rb_generator::generate_rb_function_helpers(t_function* tfunction) {
-  t_struct result(program_, tfunction->get_name() + "_result");
-  t_field success(tfunction->get_returntype(), "success", 0);
-  if (!tfunction->get_returntype()->is_void()) {
-    result.append(&success);
-  }
+  generate_rb_struct(f_service_, tfunction->get_arglist());
 
-  t_struct* xs = tfunction->get_xceptions();
-  const vector<t_field*>& fields = xs->get_members();
-  vector<t_field*>::const_iterator f_iter;
-  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-    result.append(*f_iter);
+  if (!tfunction->is_oneway()) {
+    t_struct result(program_, tfunction->get_name() + "_result");
+    if (!tfunction->get_returntype()->is_void()) {
+      t_field success(tfunction->get_returntype(), "success", 0);
+      result.append(&success);
+    }
+
+    t_struct* xs = tfunction->get_xceptions();
+    const vector<t_field*>& fields = xs->get_members();
+    vector<t_field*>::const_iterator f_iter;
+    for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+      result.append(*f_iter);
+    }
+    generate_rb_struct(f_service_, &result);
+
+    t_type* sink(tfunction->get_return()->get_sink());
+
+    if (sink != NULL) {
+      t_struct result(program_, tfunction->get_name() + "_sink");
+      t_field arg_(sink, "arg", 0);
+      arg_.set_req(t_field::T_REQUIRED);
+      result.append(&arg_);
+
+      generate_rb_struct(f_service_, &result);
+    }
+
+    t_type* stream_(tfunction->get_return()->get_stream());
+
+    if (stream_ != NULL) {
+      t_struct result(program_, tfunction->get_name() + "_stream");
+      t_field arg_(stream_, "arg", 0);
+      arg_.set_req(t_field::T_REQUIRED);
+      result.append(&arg_);
+
+      generate_rb_struct(f_service_, &result);
+    }
   }
-  generate_rb_struct(f_service_, &result);
 }
 
 /**
@@ -962,10 +987,24 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
     f_service_.indent();
 
-    if (!(*f_iter)->is_oneway()) {
-      f_service_ << "result = ";
+    switch ((*f_iter)->get_rpc_type()) {
+    case t_function::T_ONEWAY:
+      f_service_ << "@client.call_unary(" << endl;
+      break;
+    case t_function::T_REQUEST_RESPONSE:
+      f_service_ << "result = @client.call_binary(" << endl;
+      break;
+    case t_function::T_STREAM_CLIENT:
+      f_service_ << "result, sink = @client.stream_client(" << endl;
+      break;
+    case t_function::T_STREAM_SERVER:
+      f_service_ << "result, stream = @client.stream_server(" << endl;
+      break;
+    case t_function::T_STREAM_BIDI:
+      f_service_ << "result, stream, sink = @client.stream_bidi(" << endl;
+      break;
     }
-    f_service_ << "@client.call_" << ((*f_iter)->is_oneway() ? "unary" : "binary") << "(" << endl;
+
     f_service_.indent_up();
     f_service_.indent() << "'" << funname << "'," << endl;
     f_service_.indent() << argsname << ".new(";
@@ -986,7 +1025,16 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
     if (!(*f_iter)->is_oneway()) {
       f_service_ << "," << endl;
 
-      f_service_.indent() << capitalize((*f_iter)->get_name() + "_result") << endl;
+      f_service_.indent() << capitalize((*f_iter)->get_name() + "_result") << "," << endl;
+
+      if ((*f_iter)->get_return()->get_stream() != NULL) {
+        f_service_.indent() << capitalize((*f_iter)->get_name() + "_stream") << "," << endl;
+      }
+
+      if ((*f_iter)->get_return()->get_sink() != NULL) {
+        f_service_.indent() << capitalize((*f_iter)->get_name() + "_sink")  << endl;
+      }
+
       f_service_.indent_down();
       f_service_.indent() << ")" << endl << endl;
 
@@ -1004,15 +1052,49 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
       }
 
       // Careful, only return _result if not a void function
-      if ((*f_iter)->get_returntype()->is_void()) {
-        f_service_.indent() << "nil" << endl;
-      } else {
+      if (!(*f_iter)->get_returntype()->is_void()) {
         f_service_.indent() << "raise "
                                "::Thrift::ApplicationException.new(::Thrift::ApplicationException::"
                                "MISSING_RESULT, '" << (*f_iter)->get_name()
-                            << " failed: unknown result')" << endl;
+                            << " failed: unknown result') if result.success.nil?" << endl;
 
-        f_service_.indent() << "result" << endl;
+      }
+
+      switch ((*f_iter)->get_rpc_type()) {
+      case t_function::T_ONEWAY:
+        break;
+      case t_function::T_REQUEST_RESPONSE:
+        if ((*f_iter)->get_returntype()->is_void()) {
+          f_service_.indent() << "nil" << endl;
+        } else {
+          f_service_.indent() << "result.success" << endl;
+        }
+
+        break;
+      case t_function::T_STREAM_CLIENT:
+        if ((*f_iter)->get_returntype()->is_void()) {
+          f_service_.indent() << "sink" << endl;
+        } else {
+          f_service_.indent() << "[result.success, sink]" << endl;
+        }
+
+        break;
+      case t_function::T_STREAM_SERVER:
+        if ((*f_iter)->get_returntype()->is_void()) {
+          f_service_.indent() << "stream" << endl;
+        } else {
+          f_service_.indent() << "[result.success, stream]" << endl;
+        }
+
+        break;
+      case t_function::T_STREAM_BIDI:
+        if ((*f_iter)->get_returntype()->is_void()) {
+          f_service_.indent() << "[stream, sink]" << endl;
+        } else {
+          f_service_.indent() << "[result.success, stream, sink]" << endl;
+        }
+
+        break;
       }
     } else {
       f_service_ << endl;
@@ -1072,115 +1154,80 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
   f_service_.indent() << "}.freeze" << endl << endl;
 
   // Generate the process subfunctions
+  f_service_.indent() << "METHODS = {" << endl;
+  f_service_.indent_up();
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    generate_process_function(tservice, *f_iter);
-  }
+    t_function* tfunction = *f_iter;
 
-  f_service_.indent_down();
-  f_service_.indent() << "end" << endl << endl;
-}
+    string argsname = capitalize(tfunction->get_name()) + "_args";
+    string resultname = capitalize(tfunction->get_name()) + "_result";
 
-/**
- * Generates a process function definition.
- *
- * @param tfunction The function to write a dispatcher for
- */
-void t_rb_generator::generate_process_function(t_service* tservice, t_function* tfunction) {
-  (void)tservice;
-  string resultname = capitalize(tfunction->get_name()) + "_result";
+    f_service_.indent() << "'" << tfunction->get_name() << "' => { args_klass: "
+                        << argsname;
 
-  t_struct* xs = tfunction->get_xceptions();
-  const std::vector<t_field*>& xceptions = xs->get_members();
-  vector<t_field*>::const_iterator x_iter;
+    if (!tfunction->is_oneway()) {
+      f_service_ << ", result_klass: " << resultname;
 
-  // Open function
-  f_service_.indent() << "def execute_" << tfunction->get_name() << "(args)" << endl;
-  f_service_.indent_up();
-
-  if (!tfunction->is_oneway()) {
-    f_service_.indent() << "result = " << resultname << ".new()" << endl << endl;
-  }
-
-  if (xceptions.size() > 0) {
-    f_service_.indent() << "begin" << endl;
-    f_service_.indent_up();
-  }
-
-  // Generate the function call
-  t_struct* arg_struct = tfunction->get_arglist();
-  const std::vector<t_field*>& fields = arg_struct->get_members();
-  vector<t_field*>::const_iterator f_iter;
-
-  f_service_.indent();
-  if (!tfunction->is_oneway() && !tfunction->get_returntype()->is_void()) {
-    f_service_ << "result.success = ";
-  }
-  f_service_ << "@handler." << tfunction->get_name() << "(";
-  bool first = true;
-  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-    if (first) {
-      first = false;
-    } else {
-      f_service_ << ", ";
-    }
-    f_service_ << "args." << (*f_iter)->get_name();
-  }
-  f_service_ << ")" << endl;
-
-  if (!tfunction->is_oneway() && xceptions.size() > 0) {
-    f_service_.indent_down();
-    for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
-      f_service_.indent() << "rescue " << full_type_name((*x_iter)->get_type()) << " => "
-                          << (*x_iter)->get_name() << endl;
-      if (!tfunction->is_oneway()) {
-        f_service_.indent_up();
-        f_service_.indent() << "result." << (*x_iter)->get_name() << " = " << (*x_iter)->get_name()
-                            << endl;
-        f_service_.indent_down();
+      if (tfunction->get_returntype()->is_void()) {
+        f_service_ << ", void_result: true";
       }
+
+      if (tfunction->get_return()->get_sink() != NULL) {
+        f_service_ << ", sink_klass: "
+                   << capitalize(tfunction->get_name() + "_sink");
+      }
+
+      if (tfunction->get_return()->get_stream() != NULL) {
+        f_service_ << ", stream_klass: "
+                   << capitalize(tfunction->get_name() + "_stream");
+      }
+
+      t_struct* arg_struct = tfunction->get_arglist();
+      const std::vector<t_field*>& fields = arg_struct->get_members();
+      vector<t_field*>::const_iterator a_iter;
+
+      f_service_ << ", args: [";
+      bool first = true;
+      for (a_iter = fields.begin(); a_iter != fields.end(); ++a_iter) {
+        if (first) {
+          first = false;
+        } else {
+          f_service_ << ", ";
+        }
+        f_service_ << ":" << (*a_iter)->get_name();
+      }
+      f_service_ << "]";
+
+      f_service_ << ", exceptions: {";
+      t_struct* xs = tfunction->get_xceptions();
+      const std::vector<t_field*>& xceptions = xs->get_members();
+      vector<t_field*>::const_iterator x_iter;
+
+      first = true;
+
+      for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
+        if (first) {
+          first = false;
+        } else {
+          f_service_ << ", ";
+        }
+
+        f_service_ << (*x_iter)->get_name() << ": "
+                   << full_type_name((*x_iter)->get_type());
+      }
+      f_service_ << "}";
     }
-    f_service_.indent() << "end" << endl;
-  }
 
-  f_service_.indent() << endl;
-
-  if (tfunction->is_oneway()) {
-    f_service_.indent() << "nil" << endl;
-  } else {
-    f_service_.indent() << "result" << endl;
+    f_service_ << "}," << endl;
   }
 
   f_service_.indent_down();
-  f_service_.indent() << "end" << endl << endl;
+  f_service_.indent() << "}.freeze" << endl << endl;
 
-  f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
-
-  f_service_.indent_up();
-
-  string argsname = capitalize(tfunction->get_name()) + "_args";
-
-  f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
-
-  f_service_.indent();
-
-  if (!tfunction->is_oneway()) {
-    f_service_ << "result = ";
-  }
-  f_service_ << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
-  f_service_.indent_up();
-  f_service_.indent() << "execute_" << tfunction->get_name() << "(args)" << endl;
   f_service_.indent_down();
-  f_service_.indent() << "end" << endl << endl;
-  if (!tfunction->is_oneway()) {
-    f_service_.indent() << "write_result(result, oprot, '" << tfunction->get_name() << "', seqid)"
-                        << endl;
-  }
-
-  // Close function
-  f_service_.indent_down();
-
   f_service_.indent() << "end" << endl << endl;
 }
+
 
 /**
  * Renders a function signature of the form 'type name(args)'
