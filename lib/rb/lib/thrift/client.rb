@@ -24,28 +24,9 @@ module Thrift
       @iprot = iprot
       @oprot = oprot || iprot
       @seqid = 0
-    end
-
-    def send_message(name, args_class, args = {})
-      @seqid += 1
-      @oprot.write_message_begin(name, MessageTypes::CALL, @seqid)
-      send_message_args(args_class, args)
-    end
-
-    def send_oneway_message(name, args_class, args = {})
-      @seqid += 1
-      @oprot.write_message_begin(name, MessageTypes::ONEWAY, @seqid)
-      send_message_args(args_class, args)
-    end
-
-    def send_message_args(args_class, args)
-      data = args_class.new
-
-      args.each do |k, v|
-        data.send("#{k.to_s}=", v)
-      end
-
-      send_message_instance(data)
+      @mutex = Mutex.new
+      @cond = ConditionVariable.new
+      @ready = true
     end
 
     def send_message_instance(data)
@@ -98,14 +79,92 @@ module Thrift
     include Client
 
     def call_unary(name, req)
-      @oprot.write_message_begin(name, Thrift::MessageTypes::ONEWAY, @seqid)
-      send_message_instance(req)
+      @mutex.synchronize do
+        @cond.wait(@mutex) until @ready
+
+        @seqid += 1
+        @oprot.write_message_begin(name, Thrift::MessageTypes::ONEWAY, @seqid)
+        send_message_instance(req)
+      end
     end
 
     def call_binary(name, req, resp_klass)
+      @mutex.synchronize do
+        @cond.wait(@mutex) until @ready
+
+        rpc_call(name, req, resp_klass)
+      end
+    end
+
+    def stream_client(name, req, resp_klass, sink_klass)
+      resp = stream_call(name, req, resp_klass)
+      stream = TOutboundStream.new(
+        @iprot, @oprot, name, @seqid, sink_klass,
+        MessageTypes::CLIENT_STREAM_MESSAGE,
+        method(:finish_call)
+      )
+
+      stream.ready
+
+      [resp, stream]
+    end
+
+    def stream_server(name, req, resp_klass, sink_klass)
+      resp = stream_call(name, req, resp_klass)
+      stream = TInboundStream.new(
+        @iprot, @oprot, name, @seqid, sink_klass,
+        MessageTypes::SERVER_STREAM_MESSAGE,
+        method(:finish_call)
+      )
+
+      stream.ready
+
+      [resp, stream]
+    end
+
+    def stream_bidi(name, req, resp_klass, stream_klass, sink_klass)
+      resp = stream_call(name, req, resp_klass)
+      stream = TBidiStream.new(
+        @iprot, @oprot, name, @seqid,
+        stream_klass, sink_klass,
+        MessageTypes::SERVER_STREAM_MESSAGE,
+        MessageTypes::CLIENT_STREAM_MESSAGE,
+        method(:finish_call)
+      )
+
+      stream.ready
+
+      [
+        resp,
+        TBidiInboundStream.new(stream),
+        TBidiOutboundStream.new(stream)
+      ]
+    end
+
+    private
+
+    def stream_call(name, req, resp_klass)
+      @mutex.synchronize do
+        @cond.wait(@mutex) until @ready
+
+        @ready = false
+      end
+
+      rpc_call(name, req, resp_klass)
+    end
+
+    def rpc_call(name, req, resp_klass)
+      @seqid += 1
       @oprot.write_message_begin(name, Thrift::MessageTypes::CALL, @seqid)
       send_message_instance(req)
       receive_message(resp_klass)
+    end
+
+    def finish_call
+      @mutex.synchronize do
+        @ready = true
+        @cond.signal
+      end
     end
   end
 
