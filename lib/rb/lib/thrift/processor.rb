@@ -99,79 +99,280 @@ module Thrift
       @handler = handler
       @middleware = Middleware.wrap(middlewares)
 
-      @functions = if self.class.const_defined?(:METHODS)
-        self.class::METHODS.reduce({}) do |acc, (key, args)|
-          klass = args[:oneway] ? UnaryProcessorFunction : BinaryProcessorFunction
-
-          acc.merge key => klass.new(
-            key,
-            @middleware,
-            args[:args_klass],
-            method("execute_#{key}")
-          )
-        end
-      end || {}
+      @processors = if self.class.const_defined? :METHODS
+                      self.class::METHODS.reduce({}) do |acc, (name, info)|
+                        acc.merge(name => build_processor(name, info))
+                      end
+                    else
+                      {}
+                    end
     end
 
     def process(iprot, oprot)
-      name, _type, seqid = iprot.read_message_begin
+      name, type, seqid = iprot.read_message_begin
 
-      func = @functions[name]
+      mth = "process_#{name}"
+      send(mth, seqid, iprot, oprot) if self.class.method_defined? mth
 
-      return func.process(seqid, iprot, oprot) if func
+      (
+        @processors[name] || UnkwonFunctionProcessor.new(name)
+      ).process(seqid, iprot, oprot)
+    end
 
-      # TODO: once all the stubs will be generated w thrift >=2.5 the next lines
-      # can be deleted
-      if respond_to?("process_#{name}")
-        begin
-          send("process_#{name}", seqid, iprot, oprot)
-        rescue => e
-          write_exception(e, oprot, name, seqid)
-        end
-        true
+    def build_processor(name, info)
+      if info[:result_klass].nil?
+        UnaryProcessor
+      elsif info[:stream_klass].nil? && info[:sink_klass].nil?
+        BinaryProcessor
+      elsif info[:sink_klass].nil?
+        OutboundStreamProcessor
+      elsif info[:stream_klass].nil?
+        InboundStreamProcessor
       else
+        BidiStreamProcessor
+      end.new(name, info, @middleware, @handler)
+    end
+
+    class BaseProcessor
+      def initialize(name, args_class)
+        @name = name
+        @args_class = args_class
+      end
+
+      protected
+
+      def read_args(iprot)
+        args = @args_class.new
+        args.read(iprot)
+        iprot.read_message_end
+        args
+      end
+
+      def write_exception(exception, oprot, name, seqid)
+        oprot.write_message_begin(name, MessageTypes::EXCEPTION, seqid)
+
+        unless exception.is_a? ApplicationException
+          exception = ApplicationException.new(
+            ApplicationException::INTERNAL_ERROR,
+            "Internal error processing #{name}: #{exception.class}: #{exception}"
+          )
+        end
+
+        exception.write(oprot)
+        oprot.write_message_end
+        oprot.trans.flush
+      end
+
+      def write_result(result, oprot, seqid)
+        oprot.write_message_begin(@name, MessageTypes::REPLY, seqid)
+        result.write(oprot)
+        oprot.write_message_end
+        oprot.trans.flush
+      end
+    end
+
+    class UnaryProcessor
+      def initialize(name, info, middleware, handler)
+        @middleware = middleware
+        @handler = handler
+        @arg_keys = info[:args]
+
+        super name, info[:args_klass]
+      end
+
+      def process(_seqid, iprot, _oprot)
+        @middleware.handle_unary(@name, read_args(iprot)) do |args|
+          @handler.send(@name, *@arg_keys.map { |k| args.send k })
+          nil
+        end
+
+        true
+      end
+    end
+
+    class BinaryProcessor < BaseProcessor
+      def initialize(name, info, middleware, handler)
+        @middleware = middleware
+        @handler = handler
+        @arg_keys = info[:args]
+        @void_result = info[:void_result]
+        @result_klass = info[:result_klass]
+        @exceptions = info[:exceptions]
+
+        super name, info[:args_klass]
+      end
+
+      def process(seqid, iprot, oprot)
+        res = @middleware.handle_binary(@name, read_args(iprot)) do |args|
+          execute(args)
+        end
+
+        write_result(res, oprot, seqid)
+
+        true
+      end
+
+      protected
+
+      def execute(args, *extra_args)
+        res = @result_klass.new
+
+        begin
+          s = @handler.send(
+            @name,
+            *@arg_keys.map { |k| args.send k },
+            *extra_args
+          )
+
+          res.success = s unless @void_result
+        rescue => e
+          k, = @exceptions.find { |(_, klass)| e.is_a? klass }
+
+          raise e unless k
+
+          res.send "#{k}=", e
+        end
+
+        res
+      end
+    end
+
+    class BaseStreamProcessor < BinaryProcessor
+      def initialize(name, info, middleware, handler)
+        @mutex = Mutex.new
+        @cond = ConditionVariable.new
+        @closed = false
+
+        super name, info, middleware, handler
+      end
+
+      protected
+
+      def close
+        @mutex.synchronize do
+          @closed = true
+          @cond.broadcast
+        end
+      end
+
+      def wait
+        @mutex.synchronize do
+          @cond.wait(@mutex) unless @closed
+        end
+      end
+    end
+
+    class OutboundStreamProcessor < BaseStreamProcessor
+      def initialize(name, info, middleware, handler)
+        @stream_klass = info[:stream_klass]
+
+        super name, info, middleware, handler
+      end
+
+      def process(seqid, iprot, oprot)
+        @closed = false
+        stream = TOutboundStream.new(
+          iprot, oprot, @name, seqid, @stream_klass,
+          MessageTypes::SERVER_STREAM_MESSAGE,
+          method(:close)
+        )
+        res = @middleware.handle_outbound_stream(
+          @name, read_args(iprot), stream
+        ) { |args, stream| execute(args, stream) }
+
+        write_result(res, oprot, seqid)
+        stream.ready
+
+        wait
+
+        true
+      end
+    end
+
+    class InboundStreamProcessor < BaseStreamProcessor
+      def initialize(name, info, middleware, handler)
+        @sink_klass = info[:sink_klass]
+
+        super name, info, middleware, handler
+      end
+
+      def process(seqid, iprot, oprot)
+        @closed = false
+        stream = TInboundStream.new(
+          iprot, oprot, @name, seqid, @sink_klass,
+          MessageTypes::CLIENT_STREAM_MESSAGE,
+          method(:close)
+        )
+
+        res = @middleware.handle_inbound_stream(
+          @name, read_args(iprot), stream
+        ) { |args, sink| execute(args, sink) }
+
+
+        write_result(res, oprot, seqid)
+        stream.ready
+
+        wait
+
+        true
+      end
+    end
+
+    class BidiStreamProcessor < BaseStreamProcessor
+      def initialize(name, info, middleware, handler)
+        @sink_klass = info[:sink_klass]
+        @stream_klass = info[:stream_klass]
+
+        super name, info, middleware, handler
+      end
+
+      def process(seqid, iprot, oprot)
+        @closed = false
+
+        bidi_stream = TBidiStream.new(
+          iprot, oprot, @name, seqid, @sink_klass, @stream_klass,
+          MessageTypes::CLIENT_STREAM_MESSAGE,
+          MessageTypes::SERVER_STREAM_MESSAGE,
+          method(:close)
+        )
+
+        res = @middleware.handle_bidi_stream(
+          @name, read_args(iprot),
+          TBidiInboundStream.new(bidi_stream),
+          TBidiOutboundStream.new(bidi_stream)
+        ) do |args, sink, stream|
+          execute(args, stream, sink)
+        end
+
+        write_result(res, oprot, seqid)
+        bidi_stream.ready
+
+        wait
+
+        true
+      end
+    end
+
+    class UnkwonFunctionProcessor < BaseProcessor
+      def initialize(name)
+        super name, nil
+      end
+
+      def process(seqid, iprot, oprot)
         iprot.skip(Types::STRUCT)
         iprot.read_message_end
         write_exception(
           ApplicationException.new(
             ApplicationException::UNKNOWN_METHOD,
-            'Unknown function ' + name,
+            'Unknown function ' + @name,
           ),
           oprot,
-          name,
+          @name,
           seqid
         )
+
         false
       end
-    end
-
-    def read_args(iprot, args_class)
-      args = args_class.new
-      args.read(iprot)
-      iprot.read_message_end
-      args
-    end
-
-    def write_exception(exception, oprot, name, seqid)
-      oprot.write_message_begin(name, MessageTypes::EXCEPTION, seqid)
-
-      unless exception.is_a? ApplicationException
-        exception = ApplicationException.new(
-          ApplicationException::INTERNAL_ERROR,
-          "Internal error processing #{name}: #{exception.class}: #{exception}"
-        )
-      end
-
-      exception.write(oprot)
-      oprot.write_message_end
-      oprot.trans.flush
-    end
-
-    def write_result(result, oprot, name, seqid)
-      oprot.write_message_begin(name, MessageTypes::REPLY, seqid)
-      result.write(oprot)
-      oprot.write_message_end
-      oprot.trans.flush
     end
   end
 end
