@@ -91,10 +91,18 @@ module Thrift
   end
 
   module MessageTypes
-    CALL = 1
-    REPLY = 2
+    CALL      = 1
+    REPLY     = 2
     EXCEPTION = 3
-    ONEWAY = 4
+    ONEWAY    = 4
+
+    CLIENT_STREAM_MESSAGE    = 5
+    CLIENT_STREAM_GOAWAY     = 6
+    CLIENT_STREAM_GOAWAY_ACK = 7
+
+    SERVER_STREAM_MESSAGE    = 8
+    SERVER_STREAM_GOAWAY     = 9
+    SERVER_STREAM_GOAWAY_ACK = 10
   end
 end
 
