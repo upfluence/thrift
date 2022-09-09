@@ -67,7 +67,7 @@ func (s *tInboundStream) Receive(ctx Context, req TRequest) error {
 	var typeID, err = s.readMessageBegin(ctx)
 
 	if err != nil {
-		return err
+		return parseStreamingError(err)
 	}
 
 	switch typeID {
