@@ -64,6 +64,10 @@ func (te *tTransportException) Err() error {
 	return te.err
 }
 
+func (te *tTransportException) Unwrap() error {
+	return te.err
+}
+
 func NewTTransportException(t int, e string) TTransportException {
 	return &tTransportException{typeId: t, err: errors.New(e)}
 }
