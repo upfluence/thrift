@@ -2153,7 +2153,16 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       if ((*f_iter)->get_returntype()->is_void()) {
         f_types_ << indent() << "return nil" << endl;
       } else {
-        f_types_ << indent() << "return result.GetSuccess(), nil" << endl;
+        f_types_ << indent() << "success := result.GetSuccess()" << endl << endl;
+        f_types_ << indent() << "if success == nil {" << endl;
+        indent_up();
+        f_types_ << indent() << "return res, thrift.NewTApplicationException(thrift.MISSING_RESULT, \""
+                               << (*f_iter)->get_name()
+                               << " failed: unknown result\")" << endl;
+        indent_down();
+        f_types_ << indent() << "}" << endl << endl;
+
+        f_types_ << indent() << "return success, nil" << endl;
       }
     }
 
