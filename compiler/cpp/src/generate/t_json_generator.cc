@@ -351,7 +351,21 @@ void t_json_generator::generate_program() {
     vector<t_program*>::const_iterator inc_it;
     for (inc_it = includes.begin(); inc_it != includes.end(); ++inc_it) {
       write_comma_if_needed();
-      write_string((*inc_it)->get_name());
+      start_object();
+      write_key_and_string("name", (*inc_it)->get_name());
+      write_key_and_string("path", (*inc_it)->get_include_site());
+
+      write_key_and("namespaces");
+      start_object(NO_INDENT);
+      const map<string, string>& namespaces = (*inc_it)->get_namespaces();
+      map<string, string>::const_iterator ns_it;
+      for (ns_it = namespaces.begin(); ns_it != namespaces.end(); ++ns_it) {
+        write_key_and_string(ns_it->first, ns_it->second);
+        indicate_comma_needed();
+      }
+      end_object();
+
+      end_object();
       indicate_comma_needed();
     }
     end_array();
