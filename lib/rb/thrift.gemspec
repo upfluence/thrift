@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = 'upfluence-thrift'
-  s.version     = '2.3.4'
+  s.version     = '2.4.0'
   s.authors     = ['Thrift Developers']
   s.email       = ['dev@thrift.apache.org']
   s.homepage    = 'http://thrift.apache.org'
