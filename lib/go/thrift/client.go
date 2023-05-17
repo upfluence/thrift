@@ -110,6 +110,9 @@ func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
 	return iprot.ReadMessageEnd()
 }
 
+func (c *TSyncClient) InProtocol() TProtocol  { return c.in }
+func (c *TSyncClient) OutProtocol() TProtocol { return c.out }
+
 func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res TResponse) error {
 	c.Lock()
 	defer c.Unlock()
