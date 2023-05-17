@@ -89,6 +89,8 @@ public:
   // Name accessor
   const std::string& get_name() const { return name_; }
 
+  const std::string& get_include_site() const { return include_site_; }
+
   // Namespace
   const std::string& get_namespace() const { return namespace_; }
 
@@ -131,6 +133,8 @@ public:
       out_path_.push_back('/');
     }
   }
+
+  void set_include_site(std::string include_site) { include_site_ = include_site; }
 
   // Typename collision detection
   /**
@@ -260,6 +264,8 @@ public:
   void add_include(std::string path, std::string include_site) {
     t_program* program = new t_program(path);
 
+    program->set_include_site(include_site);
+
     // include prefix for this program is the site at which it was included
     // (minus the filename)
     std::string include_prefix;
@@ -356,6 +362,9 @@ private:
 
   // Name
   std::string name_;
+
+  // Include site
+  std::string include_site_;
 
   // Output directory
   std::string out_path_;
