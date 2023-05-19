@@ -51,7 +51,7 @@ jobs:
           path: bin/
       - uses: actions/download-artifact@v2
         with:
-          name: thrift-macos-10.15
+          name: thrift-macos-12
           path: bin/
       - name: Get Package Version
         id: pkg_version
