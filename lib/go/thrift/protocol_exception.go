@@ -21,6 +21,8 @@ package thrift
 
 import (
 	"encoding/base64"
+
+	"github.com/upfluence/errors"
 )
 
 // Thrift Protocol exception
@@ -40,8 +42,8 @@ const (
 )
 
 type tProtocolException struct {
-	typeId  int
-	message string
+	typeId int
+	err    error
 }
 
 func (p *tProtocolException) TypeId() int {
@@ -49,30 +51,42 @@ func (p *tProtocolException) TypeId() int {
 }
 
 func (p *tProtocolException) String() string {
-	return p.message
+	return p.Error()
 }
 
 func (p *tProtocolException) Error() string {
-	return p.message
+	return p.err.Error()
+}
+
+func (te *tProtocolException) Unwrap() error {
+	return te.err
 }
 
 func NewTProtocolException(err error) TProtocolException {
-	if err == nil {
+	var (
+		perr TProtocolException
+		berr base64.CorruptInputError
+
+		typeID = UNKNOWN_PROTOCOL_EXCEPTION
+	)
+
+	switch {
+	case err == nil:
 		return nil
+	case errors.As(err, &perr):
+		return perr
+	case errors.As(err, &berr):
+		typeID = INVALID_DATA
+
 	}
-	if e,ok := err.(TProtocolException); ok {
-		return e
-	}
-	if _, ok := err.(base64.CorruptInputError); ok {
-		return &tProtocolException{INVALID_DATA, err.Error()}
-	}
-	return &tProtocolException{UNKNOWN_PROTOCOL_EXCEPTION, err.Error()}
+
+	return NewTProtocolExceptionWithType(typeID, err)
 }
 
 func NewTProtocolExceptionWithType(errType int, err error) TProtocolException {
 	if err == nil {
 		return nil
 	}
-	return &tProtocolException{errType, err.Error()}
-}
 
+	return &tProtocolException{typeId: errType, err: errors.WithStack(err)}
+}

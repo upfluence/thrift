@@ -20,8 +20,9 @@
 package thrift
 
 import (
-	"errors"
 	"io"
+
+	"github.com/upfluence/errors"
 )
 
 type timeoutable interface {
@@ -73,23 +74,22 @@ func NewTTransportException(t int, e string) TTransportException {
 }
 
 func NewTTransportExceptionFromError(err error) TTransportException {
-	var cause = Cause(err)
+	var (
+		terr TTransportException
 
-	switch cause {
-	case nil:
+		typeID = UNKNOWN_TRANSPORT_EXCEPTION
+	)
+
+	switch {
+	case err == nil:
 		return nil
-	case io.EOF:
-		return &tTransportException{typeId: END_OF_FILE, err: err}
+	case errors.As(err, &terr):
+		return terr
+	case errors.Is(err, io.EOF):
+		typeID = END_OF_FILE
+	case errors.IsTimeout(err):
+		typeID = TIMED_OUT
 	}
 
-	switch v := cause.(type) {
-	case TTransportException:
-		return v
-	case timeoutable:
-		if v.Timeout() {
-			return &tTransportException{typeId: TIMED_OUT, err: err}
-		}
-	}
-
-	return &tTransportException{typeId: UNKNOWN_TRANSPORT_EXCEPTION, err: err}
+	return &tTransportException{typeId: typeID, err: errors.WithStack(err)}
 }

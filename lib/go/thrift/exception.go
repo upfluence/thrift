@@ -20,7 +20,7 @@
 package thrift
 
 import (
-	"errors"
+	"github.com/upfluence/errors"
 )
 
 // Generic Thrift exception
@@ -40,22 +40,11 @@ func PrependError(prepend string, err error) error {
 		return NewTApplicationException(t.TypeId(), prepend+t.Error())
 	}
 
-	return errors.New(prepend + err.Error())
+	return errors.Wrap(err, prepend)
 }
 
 // Code taken from github.com/pkg/errors in order to allow the processing of
 // wrapped errors in the stub
 func Cause(err error) error {
-	type causer interface {
-		Cause() error
-	}
-
-	for err != nil {
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
-	}
-	return err
+	return errors.Cause(err)
 }
