@@ -91,5 +91,9 @@ func NewTTransportExceptionFromError(err error) TTransportException {
 		typeID = TIMED_OUT
 	}
 
-	return &tTransportException{typeId: typeID, err: errors.WithStack(err)}
+	return NewTTransportExceptionWithType(typeID, err)
+}
+
+func NewTTransportExceptionWithType(typeId int, err error) TTransportException {
+	return &tTransportException{typeId: typeId, err: errors.WithStack(err)}
 }

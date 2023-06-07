@@ -58,8 +58,8 @@ func (p *tProtocolException) Error() string {
 	return p.err.Error()
 }
 
-func (te *tProtocolException) Unwrap() error {
-	return te.err
+func (p *tProtocolException) Unwrap() error {
+	return p.err
 }
 
 func NewTProtocolException(err error) TProtocolException {
