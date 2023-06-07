@@ -21,6 +21,7 @@ package thrift
 
 import (
 	"github.com/upfluence/errors"
+	"github.com/upfluence/errors/base"
 )
 
 // Generic Thrift exception
@@ -28,23 +29,36 @@ type TException interface {
 	error
 }
 
-// Prepends additional information to an error without losing the Thrift exception interface
-func PrependError(prepend string, err error) error {
-	if t, ok := err.(TTransportException); ok {
-		return NewTTransportException(t.TypeId(), prepend+t.Error())
-	}
-	if t, ok := err.(TProtocolException); ok {
-		return NewTProtocolExceptionWithType(t.TypeId(), errors.New(prepend+err.Error()))
-	}
-	if t, ok := err.(TApplicationException); ok {
-		return NewTApplicationException(t.TypeId(), prepend+t.Error())
+func prependWrappedError(prepend string, err error) error {
+	var baseErr = base.UnwrapOnce(err)
+
+	if baseErr == nil {
+		baseErr = errors.New(err.Error())
 	}
 
-	return errors.Wrap(err, prepend)
+	return errors.Wrap(baseErr, prepend)
 }
 
-// Code taken from github.com/pkg/errors in order to allow the processing of
-// wrapped errors in the stub
+// Prepends additional information to an error without losing the Thrift exception interface
+func PrependError(prepend string, err error) error {
+	var (
+		terr TTransportException
+		perr TProtocolException
+		aerr TApplicationException
+	)
+
+	switch {
+	case errors.As(err, &terr):
+		return NewTTransportExceptionWithType(terr.TypeId(), prependWrappedError(prepend, err))
+	case errors.As(err, &perr):
+		return NewTProtocolExceptionWithType(perr.TypeId(), prependWrappedError(prepend, err))
+	case errors.As(err, &aerr):
+		return NewTApplicationExceptionFromError(aerr.TypeId(), prependWrappedError(prepend, err))
+	default:
+		return errors.Wrap(err, prepend)
+	}
+}
+
 func Cause(err error) error {
 	return errors.Cause(err)
 }
