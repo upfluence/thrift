@@ -42,6 +42,19 @@ type TApplicationException interface {
 type tApplicationException struct {
 	message string
 	type_   int32
+	err     error
+}
+
+func NewTApplicationException(type_ int32, message string) TApplicationException {
+	return &tApplicationException{message: message, type_: type_}
+}
+
+func NewTApplicationExceptionFromError(type_ int32, err error) TApplicationException {
+	return &tApplicationException{message: err.Error(), type_: type_, err: err}
+}
+
+func (ae tApplicationException) Unwrap() error {
+	return ae.err
 }
 
 func (ae tApplicationException) Error() string {
@@ -50,10 +63,6 @@ func (ae tApplicationException) Error() string {
 
 func (ae *tApplicationException) Timeout() bool {
 	return ae.type_ == INTERNAL_TIME_OUT_ERROR
-}
-
-func NewTApplicationException(type_ int32, message string) TApplicationException {
-	return &tApplicationException{message, type_}
 }
 
 func (ae *tApplicationException) TypeId() int32 {

@@ -21,7 +21,8 @@ package thrift
 
 import (
 	"fmt"
-	"os"
+
+	"github.com/upfluence/errors"
 )
 
 // A processor is a generic object which operates upon an input stream and
@@ -181,7 +182,7 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 	if err != nil {
 		tid := INTERNAL_ERROR
 
-		if os.IsTimeout(Cause(err)) {
+		if errors.IsTimeout(err) {
 			tid = INTERNAL_TIME_OUT_ERROR
 		}
 
