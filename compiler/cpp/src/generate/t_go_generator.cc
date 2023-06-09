@@ -1958,8 +1958,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       if ((*f_iter)->get_returntype()->is_void()) {
         f_service_ << indent() << "return nil" << endl;
       } else {
-        f_service_ << indent() << "success := result.GetSuccess()" << endl << endl;
-        f_service_ << indent() << "if success == nil {" << endl;
+        f_service_ << indent() << "if !result.IsSetSuccess() {" << endl;
         indent_up();
         f_service_ << indent() << "return res, thrift.NewTApplicationException(thrift.MISSING_RESULT, \""
                                << (*f_iter)->get_name()
@@ -1967,7 +1966,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
         indent_down();
         f_service_ << indent() << "}" << endl << endl;
 
-        f_service_ << indent() << "return success, nil" << endl;
+        f_service_ << indent() << "return result.GetSuccess(), nil" << endl;
       }
     }
 
