@@ -21,6 +21,23 @@
 require 'spec_helper'
 
 describe 'JsonProtocol' do
+  describe Thrift::SimpleJsonProtocol do
+    before(:each) do
+      @trans = Thrift::MemoryBufferTransport.new
+      @prot = Thrift::SimpleJsonProtocol.new(@trans)
+    end
+
+    it 'should pretty print object' do
+      SpecNamespace::Hello.new.write(@prot)
+
+      @trans.read(@trans.available).should == '{"greeting":"hello world"}'
+    end
+
+    it 'shound not be able to read message' do
+      @trans.write('{"greeting":"hello world"}')
+      expect {@prot.read_message_begin}.to raise_error(Thrift::ProtocolException)
+    end
+  end
 
   describe Thrift::JsonProtocol do
     before(:each) do

@@ -761,9 +761,73 @@ module Thrift
     end
   end
 
+  class SimpleJsonProtocol < JsonProtocol
+    READ_EXCEPTION = ProtocolException.new(
+      ProtocolException::NOT_IMPLEMENTED,
+      'op not implemented'
+    )
+
+    def write_message_begin(name, _type, _seqid)
+      write_json_object_start
+      write_json_string(name)
+    end
+
+    def read_message_begin
+      raise READ_EXCEPTION
+    end
+
+    def write_message_end
+      write_json_object_end
+    end
+
+    def write_field_begin(name, _type, _id)
+      write_json_string(name)
+    end
+
+    def read_field_begin
+      raise READ_EXCEPTION
+    end
+
+    def write_field_end; end
+
+    def write_map_begin(_ktype, _vtype, _size)
+      write_json_object_start
+    end
+
+    def read_map_begin
+      raise READ_EXCEPTION
+    end
+
+    def write_map_end
+      write_json_object_end
+    end
+
+    def write_list_begin(_etype, _size)
+      write_json_array_start
+    end
+
+    def read_list_begin
+      raise READ_EXCEPTION
+    end
+
+    def write_set_begin(_etype, _size)
+      write_json_array_start
+    end
+
+    def read_set_begin
+      raise READ_EXCEPTION
+    end
+  end
+
+  class SimpleJsonProtocolFactory < BaseProtocolFactory
+    def get_protocol(trans)
+      Thrift::SimpleJsonProtocol.new(trans)
+    end
+  end
+
   class JsonProtocolFactory < BaseProtocolFactory
     def get_protocol(trans)
-      return Thrift::JsonProtocol.new(trans)
+      Thrift::JsonProtocol.new(trans)
     end
   end
 end
