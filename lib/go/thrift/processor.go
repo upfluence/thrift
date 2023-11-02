@@ -186,17 +186,18 @@ func (p *TBinaryProcessorFunction) Process(ctx Context, seqID int32, in, out TPr
 			tid = INTERNAL_TIME_OUT_ERROR
 		}
 
-		p.writeException(
+		rerr := p.writeException(
 			out,
 			seqID,
 			int32(tid),
 			fmt.Sprintf("Internal error processing : %s: %s", p.fname, err.Error()),
 		)
 
-		return true, err
+		return rerr == nil, err
 	}
 
-	return true, p.writeReply(out, seqID, res)
+	rerr := p.writeReply(out, seqID, res)
+	return rerr == nil, rerr
 }
 
 type TUnaryHandler interface {
