@@ -19,13 +19,109 @@
 
 module Thrift
   module Processor
+    class BaseProcessorFunction
+      def initialize(fname, middleware, args_klass, method)
+        @fname = fname
+        @middleware = middleware
+        @args_klass = args_klass
+        @method = method
+      end
+
+      protected
+
+      def read_args(iprot)
+        args = @args_klass.new
+
+        args.read(iprot)
+        iprot.read_message_end
+
+        args
+      end
+    end
+
+    class BinaryProcessorFunction < BaseProcessorFunction
+      def process(seqid, iprot, oprot)
+        execute(seqid, iprot, oprot)
+
+        true
+      end
+
+      private
+
+      def execute(seqid, iprot, oprot)
+        args = read_args(iprot)
+
+        result = @middleware.handle_binary(@fname, args) do |args|
+          @method.call(args)
+        end
+
+        write_result(result, oprot, seqid)
+      rescue => e
+        write_exception(e, oprot, seqid)
+      end
+
+      def write_exception(exception, oprot, seqid)
+        oprot.write_message_begin(@fname, MessageTypes::EXCEPTION, seqid)
+
+        unless exception.is_a? ApplicationException
+          exception = ApplicationException.new(
+            ApplicationException::INTERNAL_ERROR,
+            "Internal error processing #{@fname}: #{exception.class}: #{exception}"
+          )
+        end
+
+        exception.write(oprot)
+        oprot.write_message_end
+        oprot.trans.flush
+      end
+
+      def write_result(result, oprot, seqid)
+        oprot.write_message_begin(@fname, MessageTypes::REPLY, seqid)
+        result.write(oprot)
+        oprot.write_message_end
+        oprot.trans.flush
+      end
+    end
+
+    class UnaryProcessorFunction < BaseProcessorFunction
+      def process(_seqid, iprot, _oprot)
+        args = read_args(iprot)
+
+        @middleware.handle_unary(@fname, args) do |args|
+          @method.call(args)
+        end
+
+        true
+      end
+    end
+
     def initialize(handler, middlewares = [])
       @handler = handler
       @middleware = Middleware.wrap(middlewares)
+
+      @functions = if self.class.const_defined?(:METHODS)
+        self.class::METHODS.reduce({}) do |acc, (key, args)|
+          klass = args[:oneway] ? UnaryProcessorFunction : BinaryProcessorFunction
+
+          acc.merge key => klass.new(
+            key,
+            @middleware,
+            args[:args_klass],
+            method("execute_#{key}")
+          )
+        end
+      end || {}
     end
 
     def process(iprot, oprot)
       name, _type, seqid = iprot.read_message_begin
+
+      func = @functions[name]
+
+      return func.process(seqid, iprot, oprot) if func
+
+      # TODO: once all the stubs will be generated w thrift >=2.5 the next lines
+      # can be deleted
       if respond_to?("process_#{name}")
         begin
           send("process_#{name}", seqid, iprot, oprot)
