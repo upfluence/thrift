@@ -826,9 +826,9 @@ void t_rb_generator::generate_service(t_service* tservice) {
   f_service_.indent() << "NAMESPACE = '" << tservice->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
   // Generate the three main parts of the service (well, two for now in PHP)
+  generate_service_helpers(tservice);
   generate_service_client(tservice);
   generate_service_server(tservice);
-  generate_service_helpers(tservice);
 
   f_service_.indent() << "::Thrift.register_service_type(self)"<< endl << endl;
 
@@ -1019,6 +1019,16 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
+  f_service_.indent() << "METHODS = {" << endl;
+  f_service_.indent_up();
+
+  for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+  f_service_.indent() << "'" << (*f_iter)->get_name() << "' => { args_klass: " << capitalize((*f_iter)->get_name()) << "_args, oneway: " << ((*f_iter)->is_oneway() ? "true" : "false") << "}," << endl;
+  }
+
+  f_service_.indent_down();
+  f_service_.indent() << "}.freeze" << endl << endl;
+
   // Generate the process subfunctions
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     generate_process_function(tservice, *f_iter);
@@ -1035,34 +1045,20 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
  */
 void t_rb_generator::generate_process_function(t_service* tservice, t_function* tfunction) {
   (void)tservice;
-  // Open function
-  f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
-
-  f_service_.indent_up();
-
-  string argsname = capitalize(tfunction->get_name()) + "_args";
   string resultname = capitalize(tfunction->get_name()) + "_result";
-
-  f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
-
-  f_service_.indent();
-
-  if (!tfunction->is_oneway()) {
-    f_service_ << "result = ";
-  }
-  f_service_ << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
-  f_service_.indent_up();
 
   t_struct* xs = tfunction->get_xceptions();
   const std::vector<t_field*>& xceptions = xs->get_members();
   vector<t_field*>::const_iterator x_iter;
 
-  // Declare result for non oneway function
+  // Open function
+  f_service_.indent() << "def execute_" << tfunction->get_name() << "(args)" << endl;
+  f_service_.indent_up();
+
   if (!tfunction->is_oneway()) {
-    f_service_.indent() << "result = " << resultname << ".new()" << endl;
+    f_service_.indent() << "result = " << resultname << ".new()" << endl << endl;
   }
 
-  // Try block for a function with exceptions
   if (xceptions.size() > 0) {
     f_service_.indent() << "begin" << endl;
     f_service_.indent_up();
@@ -1104,24 +1100,39 @@ void t_rb_generator::generate_process_function(t_service* tservice, t_function* 
     f_service_.indent() << "end" << endl;
   }
 
-  // Shortcut out here for oneway functions
+  f_service_.indent() << endl;
+
   if (tfunction->is_oneway()) {
     f_service_.indent() << "nil" << endl;
-    f_service_.indent_down();
-
-    f_service_.indent() << "end" << endl;
-    f_service_.indent_down();
-
-    f_service_.indent() << "end" << endl << endl;
-    return;
+  } else {
+    f_service_.indent() << "result" << endl;
   }
 
-
-  f_service_.indent() << "result" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
-  f_service_.indent() << "write_result(result, oprot, '" << tfunction->get_name() << "', seqid)"
-                      << endl;
+
+  f_service_.indent() << "def process_" << tfunction->get_name() << "(seqid, iprot, oprot)" << endl;
+
+  f_service_.indent_up();
+
+  string argsname = capitalize(tfunction->get_name()) + "_args";
+
+  f_service_.indent() << "args = read_args(iprot, " << argsname << ")" << endl;
+
+  f_service_.indent();
+
+  if (!tfunction->is_oneway()) {
+    f_service_ << "result = ";
+  }
+  f_service_ << "@middleware.handle_" << (tfunction->is_oneway() ? "unary" : "binary") << "('" << tfunction->get_name() << "', args) do |args|" << endl;
+  f_service_.indent_up();
+  f_service_.indent() << "execute_" << tfunction->get_name() << "(args)" << endl;
+  f_service_.indent_down();
+  f_service_.indent() << "end" << endl << endl;
+  if (!tfunction->is_oneway()) {
+    f_service_.indent() << "write_result(result, oprot, '" << tfunction->get_name() << "', seqid)"
+                        << endl;
+  }
 
   // Close function
   f_service_.indent_down();
