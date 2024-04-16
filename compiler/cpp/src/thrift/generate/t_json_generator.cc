@@ -245,7 +245,7 @@ void t_json_generator::end_array() {
 
 void t_json_generator::write_type_spec_object(const char* name, t_type* ttype) {
   ttype = ttype->get_true_type();
-  if (ttype->is_struct() || ttype->is_xception() || ttype->is_container()) {
+  if (ttype->is_struct() || ttype->is_xception() || ttype->is_container() || ttype->is_enum()) {
     write_key_and(name);
     start_object(NO_INDENT);
     write_key_and("typeId");
@@ -290,6 +290,8 @@ void t_json_generator::write_type_spec(t_type* ttype) {
     t_type* etype = ((t_set*)ttype)->get_elem_type();
     write_key_and_string("elemTypeId", get_type_name(etype));
     write_type_spec_object("elemType", etype);
+  } else if (ttype->is_enum()) {
+    write_key_and_string("class", get_qualified_name(ttype));
   }
 }
 
@@ -779,7 +781,7 @@ string t_json_generator::get_type_name(t_type* ttype) {
     return "map";
   }
   if (ttype->is_enum()) {
-    return "i32";
+    return "enum";
   }
   if (ttype->is_struct()) {
     return ((t_struct*)ttype)->is_union() ? "union" : "struct";
