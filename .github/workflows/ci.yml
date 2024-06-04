@@ -14,7 +14,7 @@ jobs:
     name: Build the thrift compiler
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        os: [ubuntu-20.04, macos-12, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -52,6 +52,10 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: thrift-macos-12
+          path: bin/
+      - uses: actions/download-artifact@v2
+        with:
+          name: thrift-macos-14
           path: bin/
       - name: Get Package Version
         id: pkg_version
