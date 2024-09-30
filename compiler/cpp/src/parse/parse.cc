@@ -19,6 +19,7 @@
 
 #include "t_type.h"
 #include "t_typedef.h"
+#include "t_program.h"
 
 #include "md5.h"
 #include "main.h"
@@ -40,4 +41,19 @@ t_type* t_type::get_true_type() {
     type = ((t_typedef*)type)->get_type();
   }
   return type;
+}
+
+t_name* t_type::get_current_name() {
+  return new t_name(false, program_->get_namespace("*"), name_);
+}
+
+std::vector<t_name*> t_type::get_program_legacy_names() {
+  std::vector<t_name*> res;
+  std::vector<std::string> names = program_->get_legacy_names();
+
+  for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
+    res.push_back(new t_name(true, *it, name_));
+  }
+
+  return res;
 }

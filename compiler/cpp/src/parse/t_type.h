@@ -25,6 +25,7 @@
 #include <cstring>
 #include <stdint.h>
 #include "t_doc.h"
+#include "t_name.h"
 
 class t_program;
 
@@ -62,7 +63,32 @@ public:
 
   const t_program* get_program() const { return program_; }
 
+  t_name* get_current_name();
+  std::vector<t_name*> get_program_legacy_names();
+
   t_type* get_true_type();
+
+  std::vector<t_name*> get_legacy_names() {
+    std::vector<t_name*> res;
+
+    if (legacy_names_ != NULL) {
+      std::vector<t_name*> names = legacy_names_->get_names();
+
+      for(std::vector<t_name*>::iterator it = names.begin(); it != names.end(); ++it) {
+        res.push_back(*it);
+      }
+    }
+
+    if (program_ != NULL) {
+      std::vector<t_name*> names = get_program_legacy_names();
+
+      for(std::vector<t_name*>::iterator it = names.begin(); it != names.end(); ++it) {
+        res.push_back(*it);
+      }
+    }
+
+    return res;
+  }
 
   // Return a string that uniquely identifies this type
   // from any other thrift type in the world, as far as
@@ -119,9 +145,12 @@ public:
     return rv;
   }
 
-  std::map<std::string, std::string> annotations_;
+  void set_legacy_name_set(t_name_set* name_set) { legacy_names_ = name_set; }
 
+  std::map<std::string, std::string> annotations_;
 protected:
+  t_name_set* legacy_names_;
+
   t_type() : program_(NULL) { memset(fingerprint_, 0, sizeof(fingerprint_)); }
 
   t_type(t_program* program) : program_(program) { memset(fingerprint_, 0, sizeof(fingerprint_)); }

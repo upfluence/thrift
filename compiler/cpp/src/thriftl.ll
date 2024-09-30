@@ -131,7 +131,11 @@ literal_begin (['\"])
 "false"              { yylval.iconst=0; return tok_int_constant; }
 "true"               { yylval.iconst=1; return tok_int_constant; }
 
-"namespace"          { return tok_namespace;            }
+"namespace"            { return tok_namespace;   }
+"name"                 { return tok_name;        }
+"@previously_known_as" { return tok_legacy_name; }
+"previously_known_as"  { return tok_namespace_legacy_name; }
+
 "cpp_namespace"      { return tok_cpp_namespace;        }
 "cpp_include"        { return tok_cpp_include;          }
 "cpp_type"           { return tok_cpp_type;             }

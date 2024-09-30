@@ -91,6 +91,8 @@ const int struct_is_union = 1;
   t_field::e_req ereq;
   t_annotation*  tannot;
   t_field_id     tfieldid;
+  t_name*        tname;
+  t_name_set*    tnameset;
 }
 
 /**
@@ -112,6 +114,9 @@ const int struct_is_union = 1;
  */
 %token tok_include
 %token tok_namespace
+%token tok_name
+%token tok_legacy_name
+%token tok_namespace_legacy_name
 %token tok_cpp_namespace
 %token tok_cpp_include
 %token tok_cpp_type
@@ -202,6 +207,9 @@ const int struct_is_union = 1;
 %type<ttype>     FieldType
 %type<tconstv>   FieldValue
 %type<tstruct>   FieldList
+%type<tname>     LegacyNameAttributes
+%type<tname>     LegacyName
+%type<tnameset>  LegacyNameList
 %type<tbool>     FieldReference
 
 %type<tenum>     Enum
@@ -296,6 +304,14 @@ Header:
   Include
     {
       pdebug("Header -> Include");
+    }
+| tok_namespace_legacy_name tok_identifier
+    {
+      pdebug("Header -> tok_namespace_legacy_name tok_identifier");
+      declare_valid_program_doctext();
+      if (g_parse_mode == PROGRAM) {
+        g_program->add_legacy_name($2);
+      }
     }
 | tok_namespace tok_identifier tok_identifier
     {
@@ -454,6 +470,41 @@ Include:
       }
     }
 
+LegacyNameAttributes:
+  tok_namespace '=' tok_literal CommaOrSemicolonOptional LegacyNameAttributes
+    {
+      $5->set_namespace_($3);
+      $$ = $5;
+    }
+| tok_name '=' tok_literal CommaOrSemicolonOptional LegacyNameAttributes
+    {
+      $5->set_name($3);
+      $$ = $5;
+    }
+|
+  {
+    $$ = new t_name(true);
+  }
+
+LegacyName:
+  tok_legacy_name '{' LegacyNameAttributes '}'
+    {
+      pdebug("LegacyName");
+      $$ = $3
+    }
+
+LegacyNameList:
+  LegacyNameList LegacyName
+     {
+        pdebug("LegacyNameList");
+        $1->append($2);
+     }
+|
+  {
+    $$ = new t_name_set();
+  }
+
+
 DefinitionList:
   DefinitionList CaptureDocText Definition
     {
@@ -476,36 +527,41 @@ Definition:
       }
       $$ = $1;
     }
-| TypeDefinition
+| LegacyNameList TypeDefinition
     {
       pdebug("Definition -> TypeDefinition");
+      $2->set_legacy_name_set($1);
+
       if (g_parse_mode == PROGRAM) {
-        g_scope->add_type($1->get_name(), $1);
+        g_scope->add_type($2->get_name(), $2);
         if (g_parent_scope != NULL) {
-          g_parent_scope->add_type(g_parent_prefix + $1->get_name(), $1);
+          g_parent_scope->add_type(g_parent_prefix + $2->get_name(), $2);
         }
-        if (! g_program->is_unique_typename($1)) {
-          yyerror("Type \"%s\" is already defined.", $1->get_name().c_str());
+        if (! g_program->is_unique_typename($2)) {
+          yyerror("Type \"%s\" is already defined.", $2->get_name().c_str());
           exit(1);
         }
       }
-      $$ = $1;
+
+      $$ = $2;
     }
-| Service
+| LegacyNameList Service
     {
       pdebug("Definition -> Service");
+      $2->set_legacy_name_set($1);
+
       if (g_parse_mode == PROGRAM) {
-        g_scope->add_service($1->get_name(), $1);
+        g_scope->add_service($2->get_name(), $2);
         if (g_parent_scope != NULL) {
-          g_parent_scope->add_service(g_parent_prefix + $1->get_name(), $1);
+          g_parent_scope->add_service(g_parent_prefix + $2->get_name(), $2);
         }
-        g_program->add_service($1);
-        if (! g_program->is_unique_typename($1)) {
-          yyerror("Type \"%s\" is already defined.", $1->get_name().c_str());
+        g_program->add_service($2);
+        if (! g_program->is_unique_typename($2)) {
+          yyerror("Type \"%s\" is already defined.", $2->get_name().c_str());
           exit(1);
         }
       }
-      $$ = $1;
+      $$ = $2;
     }
 
 TypeDefinition:
@@ -864,7 +920,7 @@ Service:
   tok_service tok_identifier Extends '{' FlagArgs FunctionList UnflagArgs '}' TypeAnnotations
     {
       pdebug("Service -> tok_service tok_identifier { FunctionList }");
-      validate_simple_identifier( $2);
+      validate_simple_identifier($2);
       $$ = $6;
       $$->set_name($2);
       $$->set_extends($3);

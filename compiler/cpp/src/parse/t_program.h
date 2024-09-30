@@ -342,6 +342,9 @@ public:
 
   const std::vector<std::string>& get_c_includes() { return c_includes_; }
 
+  void add_legacy_name(std::string name) { legacy_names_.push_back(name); }
+
+  const std::vector<std::string>& get_legacy_names() { return legacy_names_; }
 private:
   // File path
   std::string path_;
@@ -387,6 +390,7 @@ private:
 
   // C extra includes
   std::vector<std::string> c_includes_;
+  std::vector<std::string> legacy_names_;
 };
 
 #endif

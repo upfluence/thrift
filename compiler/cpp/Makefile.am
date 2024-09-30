@@ -41,6 +41,7 @@ thrift_SOURCES = src/main.cc \
                  src/logging.h \
                  src/md5.h \
                  src/parse/t_doc.h \
+                 src/parse/t_name.h \
                  src/parse/t_type.h \
                  src/parse/t_base_type.h \
                  src/parse/t_enum.h \
