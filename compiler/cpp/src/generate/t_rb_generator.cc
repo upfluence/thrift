@@ -596,6 +596,15 @@ void t_rb_generator::generate_rb_struct(t_rb_ofstream& out,
   out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
   out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
+  out.indent() << "LEGACY_NAMES = [" << endl;
+  std::vector<t_name*> legacy_names = tstruct->get_legacy_names();
+  out.indent_up();
+  for (std::vector<t_name*>::iterator it = legacy_names.begin(); it != legacy_names.end(); ++it) {
+    out.indent() << "{ namespace: '" << (*it)->get_namespace() << "', name: '" << (*it)->get_name() << "' }," << endl;
+  }
+  out.indent_down();
+  out.indent() << "].freeze" << endl << endl;
+
   generate_field_constants(out, tstruct);
   generate_field_defns(out, tstruct);
   generate_rb_struct_required_validator(out, tstruct);
@@ -622,6 +631,15 @@ void t_rb_generator::generate_rb_union(t_rb_ofstream& out,
 
   out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
   out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
+
+  out.indent() << "LEGACY_NAMES = [" << endl;
+  std::vector<t_name*> legacy_names = tstruct->get_legacy_names();
+  out.indent_up();
+  for (std::vector<t_name*>::iterator it = legacy_names.begin(); it != legacy_names.end(); ++it) {
+    out.indent() << "{ namespace: '" << (*it)->get_namespace() << "', name: '" << (*it)->get_name() << "' }," << endl;
+  }
+  out.indent_down();
+  out.indent() << "].freeze" << endl << endl;
 
   generate_field_constructors(out, tstruct);
 
@@ -825,6 +843,15 @@ void t_rb_generator::generate_service(t_service* tservice) {
   f_service_.indent() << "SERVICE = '" << tservice->get_name() << "'.freeze" << endl;
   f_service_.indent() << "NAMESPACE = '" << tservice->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
+  f_service_.indent() << "LEGACY_NAMES = [" << endl;
+  std::vector<t_name*> legacy_names = tservice->get_legacy_names();
+  f_service_.indent_up();
+  for (std::vector<t_name*>::iterator it = legacy_names.begin(); it != legacy_names.end(); ++it) {
+    f_service_.indent() << "{ namespace: '" << (*it)->get_namespace() << "', service: '" << (*it)->get_name() << "' }," << endl;
+  }
+  f_service_.indent_down();
+  f_service_.indent() << "].freeze" << endl << endl;
+
   // Generate the three main parts of the service (well, two for now in PHP)
   generate_service_helpers(tservice);
   generate_service_client(tservice);
@@ -904,7 +931,7 @@ void t_rb_generator::generate_service_client(t_service* tservice) {
 
   f_service_.indent() << "def self.from_provider(provider)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "Client.new(provider.build(NAMESPACE, SERVICE))" << endl;
+  f_service_.indent() << "Client.new(::Thrift.build_client_from_provider(" << full_type_name(tservice) << ", provider))" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
@@ -1015,7 +1042,7 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
 
   f_service_.indent() << "def self.from_provider(handler, provider)" << endl;
   f_service_.indent_up();
-  f_service_.indent() << "provider.build(NAMESPACE, SERVICE, Processor, handler)" << endl;
+  f_service_.indent() << "::Thrift.build_processor_from_provider(" << full_type_name(tservice) << ", provider, handler)" << endl;
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 

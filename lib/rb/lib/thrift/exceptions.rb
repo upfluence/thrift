@@ -27,6 +27,18 @@ module Thrift
     attr_reader :message
   end
 
+  class ClientNotDefined < Exception
+    def initialize
+      super('client not defined')
+    end
+  end
+
+  class ProcessorNotDefined < Exception
+    def initialize
+      super('client not defined')
+    end
+  end
+
   class ApplicationException < Exception
 
     UNKNOWN = 0

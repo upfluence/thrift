@@ -17,6 +17,12 @@ module Thrift
     def struct_type
       "#{namespace}.#{name}"
     end
+
+    def legacy_names
+      return [] unless @klass.const_defined? :LEGACY_NAMES
+
+      @klass::LEGACY_NAMES
+    end
   end
 
   class ServiceDefinition < StructDefinition
@@ -40,6 +46,12 @@ module Thrift
 
     def service
       @klass::SERVICE
+    end
+
+    def legacy_names
+      return [] unless @klass.const_defined? :LEGACY_NAMES
+
+      @klass::LEGACY_NAMES
     end
 
     def service_type

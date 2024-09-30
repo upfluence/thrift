@@ -174,4 +174,23 @@ module Thrift
       oprot.trans.flush
     end
   end
+
+  class << self
+    def build_processor_from_provider(klass, provider, handler)
+      sdef = ServiceDefinition.new(klass)
+
+      [
+        { namespace: sdef.namespace, service: sdef.service },
+        *sdef.legacy_names
+      ].reduce(nil) do |acc, n|
+        acc || begin
+          provider.build(
+            n[:namespace], n[:service], sdef.processor_class, handler
+          )
+        rescue ProcessorNotDefined
+          nil
+        end
+      end || raise(ProcessorNotDefined)
+    end
+  end
 end

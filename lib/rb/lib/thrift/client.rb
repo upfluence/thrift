@@ -115,5 +115,20 @@ module Thrift
 
       input
     end
+
+    def build_client_from_provider(klass, provider)
+      sdef = ServiceDefinition.new(klass)
+
+      [
+        { namespace: sdef.namespace, service: sdef.service },
+        *sdef.legacy_names
+      ].reduce(nil) do |acc, n|
+        acc || begin
+          provider.build(n[:namespace], n[:service])
+        rescue ClientNotDefined
+          nil
+        end
+      end || raise(ClientNotDefined)
+    end
   end
 end
