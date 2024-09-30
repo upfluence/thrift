@@ -120,6 +120,7 @@ private:
   void write_type_spec(t_type* ttype);
   void write_string(const string& value);
   void write_value(t_type* tvalue);
+  void write_legacy_names(t_type* ttype);
   void write_const_value(t_const_value* value, bool force_string = false);
   void write_key_and(string key);
   void write_key_and_string(string key, string val);
@@ -571,6 +572,22 @@ void t_json_generator::generate_enum(t_enum* tenum) {
   end_object();
 }
 
+void t_json_generator::write_legacy_names(t_type* ttype) {
+  start_array();
+  vector<t_name*> names = ttype->get_legacy_names();
+
+  for (vector<t_name*>::iterator it = names.begin(); it != names.end(); ++it) {
+    write_comma_if_needed();
+  start_object();
+  write_key_and_string("namespace", (*it)->get_namespace());
+  write_key_and_string("name", (*it)->get_name());
+  end_object();
+    indicate_comma_needed();
+  }
+
+  end_array();
+}
+
 void t_json_generator::generate_struct(t_struct* tstruct) {
   start_object();
 
@@ -583,6 +600,9 @@ void t_json_generator::generate_struct(t_struct* tstruct) {
   write_key_and_bool("isException", tstruct->is_xception());
 
   write_key_and_bool("isUnion", tstruct->is_union());
+
+  write_key_and("legacyNames");
+  write_legacy_names((t_type*)tstruct);
 
   write_key_and("fields");
   start_array();
@@ -610,6 +630,9 @@ void t_json_generator::generate_service(t_service* tservice) {
   if (tservice->has_doc()) {
     write_key_and_string("doc", tservice->get_doc());
   }
+
+  write_key_and("legacyNames");
+  write_legacy_names((t_type*)tservice);
 
   write_key_and("functions");
   start_array();
