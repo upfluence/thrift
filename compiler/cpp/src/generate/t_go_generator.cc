@@ -1232,8 +1232,18 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
   out << indent() << "}" << endl << endl;
   // Default values for optional fields
   out << indent() << "func (p *" << tstruct_name << ") StructDefinition() thrift.StructDefinition {" << endl;
-  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_program()->get_namespace("*") << "\", Name: \"" << tstruct->get_name() << "\"}" << endl;
+  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_current_name()->get_namespace() << "\", Name: \"" << tstruct->get_current_name()->get_name() << "\"}" << endl;
   out << indent() << "}" << endl << endl;
+
+  out << indent() << "func (p *" << tstruct_name << ") LegacyStructDefinitions() []thrift.StructDefinition {" << endl;
+  out << indent() << " return []thrift.StructDefinition{" << endl;
+  std::vector<t_name*> legacy_names = tstruct->get_legacy_names();
+  for (std::vector<t_name*>::iterator it = legacy_names.begin(); it != legacy_names.end(); ++it) {
+    out << indent() << "  {Namespace: \"" << (*it)->get_namespace() << "\", Name:\"" << (*it)->get_name() << "\"}," << endl;
+  }
+  out << indent() << " }" << endl;
+  out << indent() << "}" << endl << endl;
+
 
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
     string publicized_name;
@@ -1802,6 +1812,22 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
     }
   }
 
+  string singletonServiceName(privatize(tservice->get_name()).append("Singleton"));
+  f_service_ << indent() << "type " << singletonServiceName << " struct {} " << endl << endl;
+
+  f_service_ << indent() << "func (" << singletonServiceName << ") StructDefinition() thrift.StructDefinition {" << endl;
+  f_service_ << indent() << " return thrift.StructDefinition{Namespace: \"" << tservice->get_current_name()->get_namespace() << "\", Name: \"" << tservice->get_current_name()->get_name() << "\"}" << endl;
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_service_ << indent() << "func (" << singletonServiceName << ") LegacyStructDefinitions() []thrift.StructDefinition {" << endl;
+  f_service_ << indent() << " return []thrift.StructDefinition{" << endl;
+  std::vector<t_name*> legacy_names = tservice->get_legacy_names();
+  for (std::vector<t_name*>::iterator it = legacy_names.begin(); it != legacy_names.end(); ++it) {
+    f_service_ << indent() << "  {Namespace: \"" << (*it)->get_namespace() << "\", Name:\"" << (*it)->get_name() << "\"}," << endl;
+  }
+  f_service_ << indent() << " }" << endl;
+  f_service_ << indent() << "}" << endl << endl;
+
   f_service_ << indent() << "type " << interfaceName << " interface {" << extends_if;
   indent_up();
   generate_go_docstring(f_service_, tservice);
@@ -1832,6 +1858,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   string extends_client = "";
   string extends_client_new = "";
   string serviceName(publicize(tservice->get_name()));
+  string singletonServiceName(privatize(tservice->get_name()).append("Singleton"));
 
   if (tservice->get_extends() != NULL) {
     extends = type_name(tservice->get_extends());
@@ -1869,9 +1896,9 @@ void t_go_generator::generate_service_client(t_service* tservice) {
              << "Client, error) {" << endl;
 
   indent_up();
-  f_service_ << indent() << "cl, err := p.Build(\""
-             << tservice->get_program()->get_namespace("*") << "\", \""
-             << tservice->get_name() << "\")" << endl << endl;
+  f_service_ << indent() << "cl, err := thrift.BuildClient(p, "
+             << singletonServiceName << "{})" << endl << endl;
+
   f_service_ << indent() << "if err != nil {" << endl;
   indent_up();
   f_service_ << indent() << "return nil, err" << endl;
@@ -2008,10 +2035,12 @@ void t_go_generator::generate_service_server(t_service* tservice) {
   }
 
   string pServiceName(privatize(serviceName));
+  string singletonServiceName(privatize(tservice->get_name()).append("Singleton"));
 
   f_service_ << indent() << "func New" << serviceName << "ProcessorProvider(handler " << serviceName
              << ", provider thrift.TProcessorProvider) (thrift.TProcessor, error) {" << endl;
-  f_service_ << indent() << "p, err := provider.Build(\"" << tservice->get_program()->get_namespace("*") << "\", \"" << tservice->get_name() << "\")" << endl;
+  f_service_ << indent() << "p, err := thrift.BuildProcessor(provider, "
+             << singletonServiceName << "{})" << endl << endl;
   f_service_ << indent() << "if err != nil {" << endl;
   indent_up();
   f_service_ << indent() << "return nil, err" << endl;

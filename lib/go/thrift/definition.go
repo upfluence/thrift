@@ -53,9 +53,18 @@ func (sd StructDefinition) CanonicalName() string {
 	return fmt.Sprintf("%s.%s", sd.Namespace, sd.Name)
 }
 
+type DefinedStruct interface {
+	StructDefinition() StructDefinition
+}
+
+type FullyDefinedStruct interface {
+	DefinedStruct
+	LegacyStructDefinitions() []StructDefinition
+}
+
 type RegistrableStruct interface {
 	TStruct
-	StructDefinition() StructDefinition
+	DefinedStruct
 }
 
 func RegisterStruct(rs RegistrableStruct) {
