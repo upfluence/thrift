@@ -834,7 +834,7 @@ void t_java_generator::generate_java_union(t_struct* tstruct) {
 
   generate_java_doc(f_struct, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
   bool is_deprecated = this->is_deprecated(tstruct->annotations_);
 
   if (!suppress_generated_annotations_) {
@@ -1430,7 +1430,7 @@ void t_java_generator::generate_java_struct_definition(ostream& out,
                                                        bool is_result) {
   generate_java_doc(out, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
   bool is_deprecated = this->is_deprecated(tstruct->annotations_);
 
   if (!in_class && !suppress_generated_annotations_) {
@@ -2523,7 +2523,7 @@ void t_java_generator::generate_java_bean_boilerplate(ostream& out, t_struct* ts
       }else{
         indent(out) << " : java.nio.ByteBuffer.wrap(" << field_name << ".clone());" << endl;
       }
-                 
+
       if (!bean_style_) {
         indent(out) << "  return this;" << endl;
       }

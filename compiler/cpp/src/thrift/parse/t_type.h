@@ -25,6 +25,7 @@
 #include <cstring>
 #include <stdint.h>
 #include "thrift/parse/t_doc.h"
+#include "thrift/parse/t_annotated.h"
 
 class t_program;
 
@@ -36,7 +37,7 @@ class t_program;
  * various types.
  *
  */
-class t_type : public t_doc {
+class t_type : public t_annotated {
 public:
   ~t_type() override = default;
 
@@ -82,28 +83,31 @@ public:
     return rv;
   }
 
-  std::map<std::string, std::string> annotations_;
-
 protected:
   t_type() : program_(nullptr) { ; }
 
   t_type(t_program* program) : program_(program) { ; }
 
+<<<<<<< HEAD:compiler/cpp/src/thrift/parse/t_type.h
   t_type(t_program* program, std::string name) : program_(program), name_(name) { ; }
 
   t_type(std::string name) : program_(nullptr), name_(name) { ; }
 
   t_program* program_;
   std::string name_;
-};
+=======
+  t_type(t_program* program, std::string name) : t_annotated(name), program_(program) {
+    memset(fingerprint_, 0, sizeof(fingerprint_));
+  }
 
-/**
- * Placeholder struct for returning the key and value of an annotation
- * during parsing.
- */
-struct t_annotation {
-  std::string key;
-  std::string val;
+  t_type(std::string name) : t_annotated(name), program_(NULL) {
+    memset(fingerprint_, 0, sizeof(fingerprint_));
+  }
+
+  t_program* program_;
+
+  uint8_t fingerprint_[fingerprint_len];
+>>>>>>> b51801e6b (compiler/cpp/src/parse: Add virtual class to carry name and annotations):compiler/cpp/src/parse/t_type.h
 };
 
 #endif

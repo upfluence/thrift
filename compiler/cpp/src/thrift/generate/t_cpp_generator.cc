@@ -1141,7 +1141,7 @@ void t_cpp_generator::generate_struct_declaration(ostream& out,
     scope_down(out);
   }
 
-  if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
+  if (!tstruct->has_legacy_annotation("final")) {
     out << endl << indent() << "virtual ~" << tstruct->get_name() << "() noexcept;" << endl;
   }
 
@@ -1269,7 +1269,7 @@ void t_cpp_generator::generate_struct_definition(ostream& out,
   const vector<t_field*>& members = tstruct->get_members();
 
   // Destructor
-  if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
+  if (!tstruct->has_legacy_annotation("final")) {
     force_cpp_out << endl << indent() << tstruct->get_name() << "::~" << tstruct->get_name()
                   << "() noexcept {" << endl;
     indent_up();
@@ -1760,7 +1760,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
             << endl;
   if (gen_cob_style_) {
     f_header_ << "#include <thrift/transport/TBufferTransports.h>" << endl // TMemoryBuffer
-              << "#include <functional>" << endl 
+              << "#include <functional>" << endl
               << "namespace apache { namespace thrift { namespace async {" << endl
               << "class TAsyncChannel;" << endl << "}}}" << endl;
   }
@@ -2353,7 +2353,7 @@ void t_cpp_generator::generate_service_client(t_service* tservice, string style)
 		f_header_ << ", std::shared_ptr<::apache::thrift::async::TConcurrentClientSyncInfo> sync";
 	}
 	f_header_ << ") ";
-	
+
     if (extends.empty()) {
       if (style == "Concurrent") {
         f_header_ << ": sync_(sync)" << endl;
@@ -4241,9 +4241,8 @@ string t_cpp_generator::namespace_close(string ns) {
 string t_cpp_generator::type_name(t_type* ttype, bool in_typedef, bool arg) {
   if (ttype->is_base_type()) {
     string bname = base_type_name(((t_base_type*)ttype)->get_base());
-    std::map<string, string>::iterator it = ttype->annotations_.find("cpp.type");
-    if (it != ttype->annotations_.end()) {
-      bname = it->second;
+    if (ttype->has_legacy_annotation("cpp.type")) {
+      bname = ttype->legacy_annotation_value("cpp.type");
     }
 
     if (!arg) {

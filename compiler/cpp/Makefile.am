@@ -46,6 +46,8 @@ thrift_SOURCES = src/thrift/audit/t_audit.cpp \
                  src/thrift/main.cc \
                  src/thrift/main.h \
                  src/thrift/parse/parse.cc \
+                 src/thrift/parse/t_doc.h \
+                 src/thrift/parse/t_annotated.h \
                  src/thrift/parse/t_base_type.h \
                  src/thrift/parse/t_const.h \
                  src/thrift/parse/t_const_value.h \

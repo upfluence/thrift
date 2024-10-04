@@ -707,7 +707,7 @@ void t_csharp_generator::generate_csharp_struct_definition(ostream& out,
                 << endl; // do not make exception classes directly WCF serializable, we provide a
                          // separate "fault" for that
   }
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(out) << "public " << (is_final ? "sealed " : "") << "partial class "
               << normalize_name(tstruct->get_name()) << " : ";
@@ -893,7 +893,7 @@ void t_csharp_generator::generate_csharp_wcffault(ostream& out, t_struct* tstruc
   indent(out) << "[Serializable]" << endl;
   indent(out) << "#endif" << endl;
   indent(out) << "[DataContract]" << endl;
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(out) << "public " << (is_final ? "sealed " : "") << "partial class " << tstruct->get_name()
               << "Fault" << endl;
@@ -1799,7 +1799,7 @@ void t_csharp_generator::generate_service_client(t_service* tservice) {
         f_service_ << ", " << normalize_name((*fld_iter)->get_name());
       }
       f_service_ << ");" << endl;
-      
+
       if (!(*f_iter)->is_oneway()) {
         f_service_ << indent();
         if (!(*f_iter)->get_returntype()->is_void()) {
@@ -1814,7 +1814,7 @@ void t_csharp_generator::generate_service_client(t_service* tservice) {
 
     // synchronous invoke
     indent(f_service_) << "send_" << funname << "(";
-  
+
     first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
       if (first) {
@@ -1825,7 +1825,7 @@ void t_csharp_generator::generate_service_client(t_service* tservice) {
       f_service_ << normalize_name((*fld_iter)->get_name());
     }
     f_service_ << ");" << endl;
-  
+
     if (!(*f_iter)->is_oneway()) {
       f_service_ << indent();
       if (!(*f_iter)->get_returntype()->is_void()) {
@@ -1867,7 +1867,7 @@ void t_csharp_generator::generate_service_client(t_service* tservice) {
     f_service_ << indent() << "args.Write(oprot_);" << endl << indent()
                << "oprot_.WriteMessageEnd();" << endl;
     indent(f_service_) << "return oprot_.Transport.BeginFlush(callback, state);" << endl;
-      
+
     scope_down(f_service_);
     f_service_ << endl;
 

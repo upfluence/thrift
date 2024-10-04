@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 #include "thrift/parse/t_doc.h"
+#include "thrift/parse/t_annotated.h"
 
 /**
  * A constant. These are used inside of enum definitions. Constants are just
@@ -30,20 +31,14 @@
  * with them.
  *
  */
-class t_enum_value : public t_doc {
+class t_enum_value : public t_annotated {
 public:
-  t_enum_value(std::string name, int value) : name_(name), value_(value) {}
+  t_enum_value(std::string name, int value) : t_annotated(name), value_(value) {}
 
   ~t_enum_value() override = default;
 
-  const std::string& get_name() const { return name_; }
-
   int get_value() const { return value_; }
-
-  std::map<std::string, std::string> annotations_;
-
 private:
-  std::string name_;
   int value_;
 };
 
