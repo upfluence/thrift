@@ -6,6 +6,14 @@ module Thrift
       @klass = klass
     end
 
+    def structured_annotations
+      @klass::STRUCTURED_ANNOTATIONS
+    end
+
+    def legacy_annotations
+      @klass::LEGACY_ANNOTATIONS
+    end
+
     def namespace
       @klass::NAMESPACE
     end
@@ -20,12 +28,6 @@ module Thrift
   end
 
   class ServiceDefinition < StructDefinition
-    attr_reader :klass
-
-    def initialize(klass)
-      @klass = klass
-    end
-
     def client_class
       @klass::Client
     end
@@ -34,8 +36,8 @@ module Thrift
       @klass::Processor
     end
 
-    def namespace
-      @klass::NAMESPACE
+    def name
+      service
     end
 
     def service
