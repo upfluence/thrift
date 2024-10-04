@@ -388,7 +388,7 @@ static bool type_need_reference(t_type* type) {
 // returns false if field could not use comparison to default value as !IsSet*
 bool t_go_generator::is_pointer_field(t_field* tfield, bool in_container_value) {
   (void)in_container_value;
-  if (tfield->annotations_.count("cpp.ref") != 0) {
+  if (tfield->has_legacy_annotation("cpp.ref")) {
     return true;
   }
   t_type* type = tfield->get_type()->get_true_type();
@@ -1386,11 +1386,8 @@ void t_go_generator::generate_go_struct_definition(ostream& out,
       } else {
         gotag += "json:\"" + escape_string((*m_iter)->get_name()) + "\"";
       }
-
-      // Check for user override of db and json tags using "go.tag"
-      std::map<string, string>::iterator it = (*m_iter)->annotations_.find("go.tag");
-      if (it != (*m_iter)->annotations_.end()) {
-        gotag = it->second;
+      if ((*m_iter)->has_legacy_annotation("go.tag")) {
+        gotag = (*m_iter)->legacy_annotation_value("go.tag");
       }
       indent(out) << publicize((*m_iter)->get_name()) << " " << goType << " `thrift:\""
                   << escape_string((*m_iter)->get_name()) << "," << sorted_keys_pos;

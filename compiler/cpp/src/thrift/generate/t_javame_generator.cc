@@ -662,7 +662,7 @@ void t_javame_generator::generate_java_union(t_struct* tstruct) {
 
   generate_java_doc(f_struct, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(f_struct) << "public " << (is_final ? "final " : "") << "class " << tstruct->get_name()
                    << " extends TUnion ";
@@ -1002,7 +1002,7 @@ void t_javame_generator::generate_java_struct_definition(ostream& out,
                                                          bool is_result) {
   generate_java_doc(out, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(out) << "public " << (is_final ? "final " : "") << (in_class ? "static " : "") << "class "
               << tstruct->get_name() << " ";

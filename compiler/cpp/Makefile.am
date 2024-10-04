@@ -50,6 +50,7 @@ compiler_core =  src/thrift/common.h \
                  src/thrift/platform.h \
                  src/thrift/logging.h \
                  src/thrift/parse/t_doc.h \
+                 src/thrift/parse/t_annotated.h \
                  src/thrift/parse/t_type.h \
                  src/thrift/parse/t_base_type.h \
                  src/thrift/parse/t_enum.h \
@@ -71,7 +72,7 @@ compiler_core =  src/thrift/common.h \
                  src/thrift/parse/parse.cc \
                  src/thrift/generate/t_generator.h \
                  src/thrift/generate/t_oop_generator.h \
-                 src/thrift/generate/t_html_generator.h 
+                 src/thrift/generate/t_html_generator.h
 
 thrift_SOURCES = src/thrift/main.h \
                  src/thrift/main.cc \
@@ -155,7 +156,7 @@ include_generatedir = $(include_thriftdir)/generate
 include_generate_HEADERS = src/thrift/generate/t_generator.h \
                            src/thrift/generate/t_generator_registry.h \
                            src/thrift/generate/t_oop_generator.h \
-                           src/thrift/generate/t_html_generator.h 
+                           src/thrift/generate/t_html_generator.h
 
 include_parsedir = $(include_thriftdir)/parse
 include_parse_HEADERS = src/thrift/parse/t_service.h \
