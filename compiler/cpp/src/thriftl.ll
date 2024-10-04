@@ -188,6 +188,7 @@ literal_begin (['\"])
   return tok_oneway;
 }
 "&"                  { return tok_reference;            }
+"@"                  { return tok_at;            }
 
 
 "BEGIN"              { thrift_reserved_keyword(yytext); }
