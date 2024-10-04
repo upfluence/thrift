@@ -32,6 +32,7 @@
 
 #include "thrift/platform.h"
 #include "thrift/generate/t_generator.h"
+#include "thrift/parse/t_annotated.h"
 
 using std::map;
 using std::ofstream;
@@ -120,6 +121,7 @@ private:
   void merge_includes(t_program*);
 
   void generate_constant(t_const* con);
+  void generate_annotated_fields(t_annotated* tannot);
 
   void write_type_spec_entry(const char* name, t_type* ttype);
   void write_type_spec_object(const char* name, t_type* ttype);
@@ -464,20 +466,9 @@ void t_json_generator::generate_program() {
 
 void t_json_generator::generate_typedef(t_typedef* ttypedef) {
   start_object();
-  write_key_and_string("name", get_qualified_name(ttypedef));
+  generate_annotated_fields((t_annotated*)ttypedef);
   write_key_and_string("typeId", get_type_name(ttypedef->get_true_type()));
   write_type_spec_object("type", ttypedef->get_true_type());
-  if (ttypedef->has_doc()) {
-    write_key_and_string("doc", ttypedef->get_doc());
-  }
-  if (ttypedef->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : ttypedef->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
-  }
   end_object();
 }
 
@@ -571,11 +562,7 @@ void t_json_generator::generate_constant(t_const* con) {
 void t_json_generator::generate_enum(t_enum* tenum) {
   start_object();
 
-  write_key_and_string("name", tenum->get_name());
-
-  if (tenum->has_doc()) {
-    write_key_and_string("doc", tenum->get_doc());
-  }
+  generate_annotated_fields((t_annotated*)tenum);
 
   if (tenum->annotations_.size() > 0) {
       write_key_and("annotations");
@@ -610,11 +597,7 @@ void t_json_generator::generate_enum(t_enum* tenum) {
 void t_json_generator::generate_struct(t_struct* tstruct) {
   start_object();
 
-  write_key_and_string("name", tstruct->get_name());
-
-  if (tstruct->has_doc()) {
-    write_key_and_string("doc", tstruct->get_doc());
-  }
+  generate_annotated_fields((t_annotated*)tstruct);
 
   if (tstruct->annotations_.size() > 0) {
     write_key_and("annotations");
@@ -646,23 +629,10 @@ void t_json_generator::generate_struct(t_struct* tstruct) {
 void t_json_generator::generate_service(t_service* tservice) {
   start_object();
 
-  write_key_and_string("name", get_qualified_name(tservice));
+  generate_annotated_fields((t_annotated*)tservice);
 
   if (tservice->get_extends()) {
     write_key_and_string("extends", get_qualified_name(tservice->get_extends()));
-  }
-
-  if (tservice->has_doc()) {
-    write_key_and_string("doc", tservice->get_doc());
-  }
-
-  if (tservice->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : tservice->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
   }
 
   write_key_and("functions");
@@ -682,16 +652,13 @@ void t_json_generator::generate_service(t_service* tservice) {
 void t_json_generator::generate_function(t_function* tfunc) {
   start_object();
 
-  write_key_and_string("name", tfunc->get_name());
+  generate_annotated_fields((t_annotated*)tfunc);
 
   write_key_and_string("returnTypeId", get_type_name(tfunc->get_returntype()));
   write_type_spec_object("returnType", tfunc->get_returntype());
 
   write_key_and_bool("oneway", tfunc->is_oneway());
 
-  if (tfunc->has_doc()) {
-    write_key_and_string("doc", tfunc->get_doc());
-  }
 
   if (tfunc->annotations_.size() > 0) {
     write_key_and("annotations");
@@ -727,17 +694,46 @@ void t_json_generator::generate_function(t_function* tfunc) {
   end_object();
 }
 
+void t_json_generator::generate_annotated_fields(t_annotated* tannot) {
+  write_key_and_string("name", tannot->get_name());
+
+  if (tannot->has_doc()) {
+    write_key_and_string("doc", tannot->get_doc());
+  }
+
+  write_key_and("legacy_annotations");
+  start_object();
+  const map<string, string>& annotations = tannot->legacy_annotations();
+  for (map<string, string>::const_iterator ns_it = annotations.begin(); ns_it != annotations.end(); ++ns_it) {
+    write_comma_if_needed();
+    write_key_and_string(ns_it->first, ns_it->second);
+    indicate_comma_needed();
+  }
+  end_object();
+
+  write_key_and("structured_annotations");
+  start_array();
+  vector<t_structured_annotation*> sannotations = tannot->structured_annotations();
+  for (vector<t_structured_annotation*>::const_iterator it = sannotations.begin(); it != sannotations.end(); it++) {
+    write_comma_if_needed();
+    start_object();
+    write_type_spec_object("type", (*it)->type_);
+    write_key_and("value");
+    write_const_value((*it)->value_);
+    end_object();
+    indicate_comma_needed();
+  }
+  end_array();
+}
+
 void t_json_generator::generate_field(t_field* field) {
   start_object();
 
+  generate_annotated_fields((t_annotated*)field);
   write_key_and_integer("key", field->get_key());
-  write_key_and_string("name", field->get_name());
   write_key_and_string("typeId", get_type_name(field->get_type()));
   write_type_spec_object("type", field->get_type());
 
-  if (field->has_doc()) {
-    write_key_and_string("doc", field->get_doc());
-  }
 
   if (field->annotations_.size() > 0) {
     write_key_and("annotations");
