@@ -20,7 +20,10 @@
 AC_PREREQ(2.65)
 AC_CONFIG_MACRO_DIR([./aclocal])
 
-AC_INIT([thrift], [2.5.1-upfluence])
+AC_ARG_VAR([REPO_VERSION], [])
+AS_IF([test "x$REPO_VERSION" = x], [REPO_VERSION="dirty"])
+
+AC_INIT([thrift], [1.0.0])
 
 AC_CONFIG_AUX_DIR([.])
 

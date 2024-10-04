@@ -31,10 +31,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/build/
 # TODO: add `git rev-parse --short HEAD`
 # Read the version information from the Autoconf file
 file (STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/configure.ac" CONFIGURE_AC REGEX "AC_INIT\\(.*\\)" )
+option (THRIFT_VERSION "VERSION" ${CONFIGURE_AC})
 
 # The following variable is used in the version.h.in file
-string(REGEX REPLACE "AC_INIT\\(\\[.*\\], \\[([0-9]+\\.[0-9]+\\.[0-9]+(-upfluence)?)\\]\\)" "\\1" PACKAGE_VERSION ${CONFIGURE_AC})
+string(REGEX REPLACE "AC_INIT\\(\\[.*\\], \\[([0-9]+\\.[0-9]+\\.[0-9]+(-upfluence)?)\\]\\)" "\\1" PACKAGE_VERSION ${THRIFT_VERSION})
 message(STATUS "Parsed Thrift package version: ${PACKAGE_VERSION}")
+
+set(REPO_VERSION "${THRIFT_VERSION}")
 
 # These are internal to CMake
 string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-upfluence)?" "\\1" thrift_VERSION ${PACKAGE_VERSION})
