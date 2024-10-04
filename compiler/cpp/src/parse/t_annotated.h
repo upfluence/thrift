@@ -56,6 +56,7 @@ public:
   }
 
   const std::map<std::string, std::string>& legacy_annotations() { return legacy_annotations_; }
+  const std::vector<t_structured_annotation*>& structured_annotations() { return structured_annotations_; }
 
   const std::string& get_name() const { return name_; }
 
