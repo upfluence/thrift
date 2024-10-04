@@ -237,7 +237,7 @@ public:
                              const char* subheader);
 
   void generate_go_docstring(std::ofstream& out, t_doc* tdoc);
-
+  void generate_go_annotated_definition(ofstream& out, t_annotated* tannotated);
   /**
    * Helper rendering functions
    */
@@ -723,16 +723,9 @@ void t_go_generator::init_generator() {
 
   f_consts_ << go_autogen_comment() << go_package() << render_includes();
 
+  f_consts_ << "const Namespace = \"" << program_->get_namespace("*") << "\"" << endl << endl;
+
   f_const_values_ << endl << "func init() {" << endl;
-
-
-  const vector<t_struct*>& structs = program_->get_structs();
-
-  for (size_t i = 0; i < structs.size(); ++i) {
-    f_const_values_ << "  thrift.RegisterStruct((*"
-                    << publicize(structs[i]->get_name(), false)
-                    << ")(nil))"<< endl;
-  }
 }
 
 /**
@@ -1129,6 +1122,37 @@ void t_go_generator::generate_go_struct_initializer(ofstream& out,
   out << "}" << endl;
 }
 
+void t_go_generator::generate_go_annotated_definition(ofstream& out,
+                                                      t_annotated* tannotated) {
+
+  out << indent() << "AnnotatedDefinition: thrift.AnnotatedDefinition{" << endl;
+  indent_up();
+  out << indent() << "Name: \"" << tannotated->get_name() << "\"," << endl;
+  out << indent() << "LegacyAnnotations: map[string]string{" << endl;
+
+  indent_up();
+  const map<string, string>& annotations = tannotated->legacy_annotations();
+  for (map<string, string>::const_iterator ns_it = annotations.begin(); ns_it != annotations.end(); ++ns_it) {
+    out << indent() << "\"" << escape_string(ns_it->first) << "\" : \"" << escape_string(ns_it->second)<< "\"," << endl;
+  }
+  indent_down();
+
+  out << indent() << "}," << endl;
+  out << indent() << "StructuredAnnotations: []thrift.RegistrableStruct{" << endl;
+
+  indent_up();
+  vector<t_structured_annotation*> sannotations = tannotated->structured_annotations();
+  for (vector<t_structured_annotation*>::const_iterator it = sannotations.begin(); it != sannotations.end(); it++) {
+    out << indent() << render_const_value((*it)->type_, (*it)->value_, "") << "," << endl;
+  }
+  indent_down();
+
+  out << indent() << "}," << endl;
+  indent_down();
+
+  out << indent() << "}," << endl;
+}
+
 /**
  * Generates a struct definition for a thrift data type.
  *
@@ -1145,6 +1169,11 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
 
   std::string tstruct_name(publicize(tstruct->get_name(), is_args || is_result));
   generate_go_docstring(out, tstruct);
+
+  f_const_values_ << "  thrift.RegisterStruct((*"
+                  << tstruct_name
+                  << ")(nil))"<< endl;
+
   out << indent() << "type " << tstruct_name << " struct {" << endl;
   /*
      Here we generate the structure specification for the fastbinary codec.
@@ -1230,8 +1259,41 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
   generate_go_struct_initializer(out, tstruct, is_result || is_args);
   out << indent() << "}" << endl << endl;
   // Default values for optional fields
+  std::string def_name(privatize(tstruct_name + "StructDefinition"));
+
+  out << indent() << "var " << def_name << " = thrift.StructDefinition{" << endl;
+  indent_up();
+
+  out << indent() << "Namespace: Namespace, " << endl;
+
+  if (tstruct->is_xception()) {
+    out << indent() << "IsException: true," << endl;
+  }
+
+  if (tstruct->is_union()) {
+    out << indent() << "IsUnion: true," << endl;
+  }
+
+  generate_go_annotated_definition(out, tstruct);
+
+  out << indent() << "Fields: []thrift.FieldDefinition{" << endl;
+  indent_up();
+  for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
+    out << indent() << "{" << endl;
+    indent_up();
+
+    generate_go_annotated_definition(out, *m_iter);
+
+    indent_down();
+    out << indent() << "}," << endl << endl;
+  }
+  indent_down();
+  out << indent() << "}," << endl << endl;
+
+  indent_down();
+  out << indent() << "}" << endl << endl;
   out << indent() << "func (p *" << tstruct_name << ") StructDefinition() thrift.StructDefinition {" << endl;
-  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_program()->get_namespace("*") << "\", Name: \"" << tstruct->get_name() << "\"}" << endl;
+  out << indent() << " return  " << def_name << endl;
   out << indent() << "}" << endl << endl;
 
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
@@ -1818,6 +1880,46 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
 
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
+
+
+  std::string def_name(privatize(serviceName + "ServiceDefinition"));
+
+  f_service_ << indent() << "var " << def_name << " = thrift.ServiceDefinition{" << endl;
+  indent_up();
+
+  f_service_ << indent() << "Namespace: Namespace, " << endl;
+
+
+  generate_go_annotated_definition(f_service_, tservice);
+
+  if (!functions.empty()) {
+    vector<t_function*>::iterator f_iter;
+    f_service_ << indent() << "Functions: []thrift.FunctionDefinition{" << endl;
+
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ << indent() << "{" << endl;
+      indent_up();
+      if ((*f_iter)->is_oneway()) {
+        f_service_ << indent() << "IsOneway: true," << endl;
+      } else {
+        f_service_ << indent() << "Result: &" <<   privatize(publicize((*f_iter)->get_name() + "_result", true) + "StructDefinition") << "," << endl;
+      }
+
+      f_service_ << indent() << "Args: " <<   privatize(publicize((*f_iter)->get_name() + "_args", true) + "StructDefinition") << "," << endl;
+
+      generate_go_annotated_definition(f_service_, *f_iter);
+
+      indent_down();
+      f_service_ << indent() << "}," << endl << endl;
+    }
+
+    indent_down();
+    f_service_ << indent() << "}," << endl << endl;
+  }
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_const_values_ << "  thrift.RegisterService(" << def_name << ")" << endl;
 }
 
 /**
