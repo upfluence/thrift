@@ -23,7 +23,7 @@
 #include <string>
 #include <sstream>
 
-#include "t_doc.h"
+#include "t_annotated.h"
 
 // Forward declare for xsd_attrs
 class t_struct;
@@ -33,11 +33,11 @@ class t_struct;
  * a symbolic name, and a numeric identifier.
  *
  */
-class t_field : public t_doc {
+class t_field : public t_annotated {
 public:
   t_field(t_type* type, std::string name)
-    : type_(type),
-      name_(name),
+    : t_annotated(name),
+      type_(type),
       key_(0),
       value_(NULL),
       xsd_optional_(false),
@@ -46,8 +46,8 @@ public:
       reference_(false) {}
 
   t_field(t_type* type, std::string name, int32_t key)
-    : type_(type),
-      name_(name),
+    : t_annotated(name),
+      type_(type),
       key_(key),
       req_(T_OPT_IN_REQ_OUT),
       value_(NULL),
@@ -106,15 +106,12 @@ public:
     }
   };
 
-  std::map<std::string, std::string> annotations_;
-
   bool get_reference() { return reference_; }
 
   void set_reference(bool reference) { reference_ = reference; }
 
 private:
   t_type* type_;
-  std::string name_;
   int32_t key_;
   e_req req_;
   t_const_value* value_;

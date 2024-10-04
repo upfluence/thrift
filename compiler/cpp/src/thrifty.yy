@@ -89,8 +89,11 @@ const int struct_is_union = 1;
   t_field*       tfield;
   char*          dtext;
   t_field::e_req ereq;
-  t_annotation*  tannot;
+  t_annotated*   tannotated;
   t_field_id     tfieldid;
+
+  t_legacy_annotation*     tlannot;
+  t_structured_annotation* tsannot;
 }
 
 /**
@@ -186,15 +189,21 @@ const int struct_is_union = 1;
 %type<ttype>     SetType
 %type<ttype>     ListType
 
-%type<tdoc>      Definition
-%type<ttype>     TypeDefinition
+%type<tannotated> Definition
+%type<ttype>      TypeDefinition
 
 %type<ttypedef>  Typedef
 
-%type<ttype>     TypeAnnotations
-%type<ttype>     TypeAnnotationList
-%type<tannot>    TypeAnnotation
-%type<id>        TypeAnnotationValue
+%type<tannotated> TypeAnnotations
+%type<tannotated> TypeAnnotationList
+%type<tlannot>    TypeAnnotation
+%type<id>         TypeAnnotationValue
+
+%type<tannotated> StructuredAnnotations
+%type<tsannot>    StructuredAnnotation
+%type<tconstv>    StructuredAnnotationScalarValue
+%type<tconstv>    StructuredAnnotationValue
+
 
 %type<tfield>    Field
 %type<tfieldid>  FieldIdentifier
@@ -561,7 +570,7 @@ Typedef:
       t_typedef *td = new t_typedef(g_program, $2, $3);
       $$ = td;
       if ($4 != NULL) {
-        $$->annotations_ = $4->annotations_;
+        $$->merge($4);
         delete $4;
       }
     }
@@ -574,7 +583,7 @@ Enum:
       validate_simple_identifier( $2);
       $$->set_name($2);
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($4);
         delete $6;
       }
 
@@ -616,8 +625,8 @@ EnumDef:
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-	  if ($3 != NULL) {
-        $$->annotations_ = $3->annotations_;
+      if ($3 != NULL) {
+        $$->merge($3);
         delete $3;
       }
     }
@@ -656,7 +665,7 @@ Senum:
       validate_simple_identifier( $2);
       $$ = new t_typedef(g_program, $4, $2);
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($6);
         delete $6;
       }
     }
@@ -795,13 +804,13 @@ Struct:
   StructHead tok_identifier XsdAll '{' FieldList '}' TypeAnnotations
     {
       pdebug("Struct -> tok_struct tok_identifier { FieldList }");
-      validate_simple_identifier( $2);
+      validate_simple_identifier($2);
       $5->set_xsd_all($3);
       $5->set_union($1 == struct_is_union);
       $$ = $5;
       $$->set_name($2);
       if ($7 != NULL) {
-        $$->annotations_ = $7->annotations_;
+        $$->merge($7);
         delete $7;
       }
     }
@@ -855,7 +864,7 @@ Xception:
       $4->set_xception(true);
       $$ = $4;
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($6);
         delete $6;
       }
     }
@@ -869,7 +878,7 @@ Service:
       $$->set_name($2);
       $$->set_extends($3);
       if ($9 != NULL) {
-        $$->annotations_ = $9->annotations_;
+        $$->merge($9);
         delete $9;
       }
     }
@@ -1141,7 +1150,7 @@ BaseType: SimpleBaseType TypeAnnotations
       pdebug("BaseType -> SimpleBaseType TypeAnnotations");
       if ($2 != NULL) {
         $$ = new t_base_type(*static_cast<t_base_type*>($1));
-        $$->annotations_ = $2->annotations_;
+        $$->merge($2);
         delete $2;
       } else {
         $$ = $1;
@@ -1200,7 +1209,7 @@ ContainerType: SimpleContainerType TypeAnnotations
       pdebug("ContainerType -> SimpleContainerType TypeAnnotations");
       $$ = $1;
       if ($2 != NULL) {
-        $$->annotations_ = $2->annotations_;
+        $$->merge($2);
         delete $2;
       }
     }
@@ -1279,20 +1288,19 @@ TypeAnnotationList:
     {
       pdebug("TypeAnnotationList -> TypeAnnotationList , TypeAnnotation");
       $$ = $1;
-      $$->annotations_[$2->key] = $2->val;
-      delete $2;
+      $$->append_legacy_annotation($2);
     }
 |
     {
       /* Just use a dummy structure to hold the annotations. */
-      $$ = new t_struct(g_program);
+      $$ = new t_annotated();
     }
 
 TypeAnnotation:
   tok_identifier TypeAnnotationValue CommaOrSemicolonOptional
     {
       pdebug("TypeAnnotation -> TypeAnnotationValue");
-      $$ = new t_annotation;
+      $$ = new t_legacy_annotation;
       $$->key = $1;
       $$->val = $2;
     }

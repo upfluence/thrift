@@ -679,7 +679,7 @@ void t_as3_generator::generate_as3_struct_definition(ofstream& out,
                                                      bool is_result) {
   generate_as3_doc(out, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
   bool bindable = !is_exception && !in_class && bindable_;
 
   indent(out) << (in_class ? "" : "public ") << (is_final ? "final " : "") << "class "

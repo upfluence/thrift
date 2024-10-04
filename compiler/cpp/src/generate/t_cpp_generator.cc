@@ -1014,7 +1014,7 @@ void t_cpp_generator::generate_struct_declaration(ofstream& out,
     scope_down(out);
   }
 
-  if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
+  if (!tstruct->has_legacy_annotation("final")) {
     out << endl << indent() << "virtual ~" << tstruct->get_name() << "() throw();" << endl;
   }
 
@@ -1134,7 +1134,7 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
   const vector<t_field*>& members = tstruct->get_members();
 
   // Destructor
-  if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
+  if (!tstruct->has_legacy_annotation("final")) {
     force_cpp_out << endl << indent() << tstruct->get_name() << "::~" << tstruct->get_name()
                   << "() throw() {" << endl;
     indent_up();
@@ -4017,9 +4017,8 @@ string t_cpp_generator::namespace_close(string ns) {
 string t_cpp_generator::type_name(t_type* ttype, bool in_typedef, bool arg) {
   if (ttype->is_base_type()) {
     string bname = base_type_name(((t_base_type*)ttype)->get_base());
-    std::map<string, string>::iterator it = ttype->annotations_.find("cpp.type");
-    if (it != ttype->annotations_.end()) {
-      bname = it->second;
+    if (ttype->has_legacy_annotation("cpp.type")) {
+      bname = ttype->legacy_annotation_value("cpp.type");
     }
 
     if (!arg) {

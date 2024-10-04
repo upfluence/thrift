@@ -1623,7 +1623,7 @@ void t_delphi_generator::generate_delphi_struct_definition(ostream& out,
                                                            bool in_class,
                                                            bool is_result,
                                                            bool is_x_factory) {
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
   string struct_intf_name;
   string struct_name;
   string isset_name;
