@@ -1,27 +1,37 @@
 name: ci
 
 on:
-  pull_request:
   push:
     branches:
-      - 'v1.x'
       - 'master'
-    tags:
-      - v*
+  pull_request:
 
 jobs:
+  compute-version:
+    runs-on: ubuntu-20.04
+    outputs:
+      version: ${{ steps.bump-version.outputs.version }}
+    steps:
+      - name: Bump version
+        id: bump-version
+        uses: upfluence/actions/bump-version@master
+
   build:
     name: Build the thrift compiler
+    needs: compute-version
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-12, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Generate build configuration
+        env:
+          THRIFT_VERSION: ${{needs.compute-version.outputs.version}}
         run: |
           cmake \
+            -DTHRIFT_VERSION=${THRIFT_VERSION#v}-upfluence \
             -DBUILD_COMPILER=ON \
             -DBUILD_LIBRARIES=OFF \
             -DBUILD_TESTING=OFF \
@@ -32,39 +42,40 @@ jobs:
           cmake --build . --config Release
           mv bin/thrift bin/thrift-${{ matrix.os }}
       - name: Upload Binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: thrift-${{ matrix.os }}
-          retention-days: 1
-          path: |
-            bin/*
+          retention-days: 2
+          path: bin/*
 
   release:
     name: "Release binaries"
     runs-on: ubuntu-20.04
-    needs: build
-    if: contains(github.ref, 'refs/tags/v')
+    needs:
+      - compute-version
+      - build
+    if: contains('refs/heads/master', github.ref)
     steps:
-      - uses: actions/download-artifact@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: actions/download-artifact@v4
         with:
           name: thrift-ubuntu-20.04
-          path: bin/
+          path: dist/
       - uses: actions/download-artifact@v2
         with:
           name: thrift-macos-12
-          path: bin/
+          path: dist/
       - uses: actions/download-artifact@v2
         with:
           name: thrift-macos-14
-          path: bin/
-      - name: Get Package Version
-        id: pkg_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
-      - name: Create a new Release
-        uses: marvinpinto/action-automatic-releases@v1.2.1
+          path: dist/
+      - name: tar types
+        run: |
+          tar -cvf dist/types.tar types
+      - name: Create release
+        uses: upfluence/actions/create-github-release@master
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: false
-          title: ${{ steps.pkg_version.outputs.VERSION }}
-          files: |
-            bin/*
+          attachments: dist/*
+          version: ${{needs.compute-version.outputs.version}}
+
