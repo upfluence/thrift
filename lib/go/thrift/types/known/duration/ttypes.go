@@ -27,8 +27,34 @@ func NewDuration() *Duration {
 	return &Duration{}
 }
 
+var durationStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "Duration",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "seconds",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "nanos",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *Duration) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.known.duration", Name: "Duration"}
+	return durationStructDefinition
 }
 
 func (p *Duration) GetSeconds() int64 {

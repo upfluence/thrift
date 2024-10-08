@@ -18,12 +18,30 @@ module Thrift
           NAME = 'Duration'.freeze
           NAMESPACE = 'types.known.duration'.freeze
 
+          LEGACY_ANNOTATIONS = {
+          }.freeze
+
+          STRUCTURED_ANNOTATIONS = [
+          ].freeze
+
           THRIFT_FIELD_INDEX_SECONDS = 1
           THRIFT_FIELD_INDEX_NANOS = 2
 
+          THRIFT_FIELD_SECONDS_LEGACY_ANNOTATIONS = {
+          }.freeze
+
+          THRIFT_FIELD_SECONDS_STRUCTURED_ANNOTATIONS = [
+          ].freeze
+
+          THRIFT_FIELD_NANOS_LEGACY_ANNOTATIONS = {
+          }.freeze
+
+          THRIFT_FIELD_NANOS_STRUCTURED_ANNOTATIONS = [
+          ].freeze
+
           FIELDS = {
-            THRIFT_FIELD_INDEX_SECONDS => {type: ::Thrift::Types::I64, name: 'seconds'},
-            THRIFT_FIELD_INDEX_NANOS => {type: ::Thrift::Types::I32, name: 'nanos'}
+            THRIFT_FIELD_INDEX_SECONDS => {type: ::Thrift::Types::I64, name: 'seconds', legacy_annotations: THRIFT_FIELD_SECONDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SECONDS_STRUCTURED_ANNOTATIONS},
+            THRIFT_FIELD_INDEX_NANOS => {type: ::Thrift::Types::I32, name: 'nanos', legacy_annotations: THRIFT_FIELD_NANOS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NANOS_STRUCTURED_ANNOTATIONS}
           }
 
           def struct_fields; FIELDS; end

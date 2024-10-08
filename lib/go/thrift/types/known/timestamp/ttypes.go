@@ -27,8 +27,34 @@ func NewTimestamp() *Timestamp {
 	return &Timestamp{}
 }
 
+var timestampStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "Timestamp",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "seconds",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "nanos",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *Timestamp) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.known.timestamp", Name: "Timestamp"}
+	return timestampStructDefinition
 }
 
 func (p *Timestamp) GetSeconds() int64 {

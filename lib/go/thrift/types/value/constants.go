@@ -14,6 +14,8 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
+const Namespace = "types.value"
+
 func init() {
 	thrift.RegisterStruct((*NullValue)(nil))
 	thrift.RegisterStruct((*ListValue)(nil))

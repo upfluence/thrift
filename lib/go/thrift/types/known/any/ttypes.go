@@ -27,8 +27,34 @@ func NewAny() *Any {
 	return &Any{}
 }
 
+var anyStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "Any",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "type",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *Any) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.known.any", Name: "Any"}
+	return anyStructDefinition
 }
 
 func (p *Any) GetType() string {

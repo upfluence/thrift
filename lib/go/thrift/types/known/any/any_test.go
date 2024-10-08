@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/known/duration"
 	"github.com/upfluence/thrift/lib/go/thrift/types/known/timestamp"
 )
@@ -14,7 +13,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 
-		in thrift.RegistrableStruct
+		in RegistrableStruct
 
 		wantType  string
 		wantValue string
@@ -54,7 +53,7 @@ func TestNewJSON(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 
-		in thrift.RegistrableStruct
+		in RegistrableStruct
 
 		wantType  string
 		wantValue string
