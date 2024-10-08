@@ -9,11 +9,16 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift"
 )
 
-func New(s thrift.RegistrableStruct) (*Any, error) {
+type RegistrableStruct interface {
+	thrift.RegistrableStruct
+	thrift.TStruct
+}
+
+func New(s RegistrableStruct) (*Any, error) {
 	return NewWithEncoding(s, "", DefaultEncoding)
 }
 
-func NewWithEncoding(s thrift.RegistrableStruct, n string, e Encoding) (*Any, error) {
+func NewWithEncoding(s RegistrableStruct, n string, e Encoding) (*Any, error) {
 	var buf bytes.Buffer
 
 	if err := e.Encoder(&buf).Encode(s); err != nil {

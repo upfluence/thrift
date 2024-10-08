@@ -32,7 +32,7 @@ install:
 	@echo '##############################################################'
 	@echo '##############################################################'
 
-TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+TYPE_FILES = ../../types/*.thrift ../../types/*/*.thrift
 
 $(TYPE_FILES):
 	$(THRIFT) -gen go --out thrift $@

@@ -27,6 +27,12 @@ module Thrift
         NAME = 'NullValue'.freeze
         NAMESPACE = 'types.value'.freeze
 
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
 
         FIELDS = {
 
@@ -47,10 +53,22 @@ module Thrift
         NAME = 'ListValue'.freeze
         NAMESPACE = 'types.value'.freeze
 
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         THRIFT_FIELD_INDEX_VALUES = 1
 
+        THRIFT_FIELD_VALUES_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_VALUES_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
-          THRIFT_FIELD_INDEX_VALUES => {type: ::Thrift::Types::LIST, name: 'values', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value}}
+          THRIFT_FIELD_INDEX_VALUES => {type: ::Thrift::Types::LIST, name: 'values', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD__STRUCTURED_ANNOTATIONS}, legacy_annotations: THRIFT_FIELD_VALUES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUES_STRUCTURED_ANNOTATIONS}
         }
 
         def struct_fields; FIELDS; end
@@ -69,12 +87,30 @@ module Thrift
         NAME = 'MapEntry'.freeze
         NAMESPACE = 'types.value'.freeze
 
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         THRIFT_FIELD_INDEX_KEY = 1
         THRIFT_FIELD_INDEX_VALUE = 2
 
+        THRIFT_FIELD_KEY_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_KEY_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
-          THRIFT_FIELD_INDEX_KEY => {type: ::Thrift::Types::STRUCT, name: 'key', class: ::Thrift::Types::Value::Value},
-          THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRUCT, name: 'value', class: ::Thrift::Types::Value::Value}
+          THRIFT_FIELD_INDEX_KEY => {type: ::Thrift::Types::STRUCT, name: 'key', class: ::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD_KEY_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_KEY_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRUCT, name: 'value', class: ::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
         }
 
         def struct_fields; FIELDS; end
@@ -94,10 +130,22 @@ module Thrift
         NAME = 'MapValue'.freeze
         NAMESPACE = 'types.value'.freeze
 
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         THRIFT_FIELD_INDEX_ENTRIES = 1
 
+        THRIFT_FIELD_ENTRIES_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_ENTRIES_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
-          THRIFT_FIELD_INDEX_ENTRIES => {type: ::Thrift::Types::LIST, name: 'entries', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::MapEntry}}
+          THRIFT_FIELD_INDEX_ENTRIES => {type: ::Thrift::Types::LIST, name: 'entries', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::MapEntry, legacy_annotations: THRIFT_FIELD__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD__STRUCTURED_ANNOTATIONS}, legacy_annotations: THRIFT_FIELD_ENTRIES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ENTRIES_STRUCTURED_ANNOTATIONS}
         }
 
         def struct_fields; FIELDS; end
@@ -116,10 +164,22 @@ module Thrift
         NAME = 'StructValue'.freeze
         NAMESPACE = 'types.value'.freeze
 
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         THRIFT_FIELD_INDEX_FIELDS = 1
 
+        THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
-          THRIFT_FIELD_INDEX_FIELDS => {type: ::Thrift::Types::MAP, name: 'fields', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value}}
+          THRIFT_FIELD_INDEX_FIELDS => {type: ::Thrift::Types::MAP, name: 'fields', key: {type: ::Thrift::Types::STRING, legacy_annotations: THRIFT_FIELD__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD__STRUCTURED_ANNOTATIONS}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD__STRUCTURED_ANNOTATIONS}, legacy_annotations: THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS}
         }
 
         def struct_fields; FIELDS; end
@@ -137,6 +197,12 @@ module Thrift
 
         NAME = 'Value'.freeze
         NAMESPACE = 'types.value'.freeze
+
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
 
         class << self
           def null_value(val)
@@ -186,16 +252,70 @@ module Thrift
         THRIFT_FIELD_INDEX_MAP_VALUE = 8
         THRIFT_FIELD_INDEX_STRUCT_VALUE = 9
 
+        THRIFT_FIELD_NULL_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_NULL_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_STRING_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_STRING_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_BINARY_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_BINARY_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_INTEGER_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_INTEGER_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_DOUBLE_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_DOUBLE_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_BOOL_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_BOOL_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_LIST_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_LIST_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_MAP_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_MAP_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_STRUCT_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_STRUCT_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
-          THRIFT_FIELD_INDEX_NULL_VALUE => {type: ::Thrift::Types::STRUCT, name: 'null_value', class: ::Thrift::Types::Value::NullValue},
-          THRIFT_FIELD_INDEX_STRING_VALUE => {type: ::Thrift::Types::STRING, name: 'string_value'},
-          THRIFT_FIELD_INDEX_BINARY_VALUE => {type: ::Thrift::Types::STRING, name: 'binary_value', binary: true},
-          THRIFT_FIELD_INDEX_INTEGER_VALUE => {type: ::Thrift::Types::I64, name: 'integer_value'},
-          THRIFT_FIELD_INDEX_DOUBLE_VALUE => {type: ::Thrift::Types::DOUBLE, name: 'double_value'},
-          THRIFT_FIELD_INDEX_BOOL_VALUE => {type: ::Thrift::Types::BOOL, name: 'bool_value'},
-          THRIFT_FIELD_INDEX_LIST_VALUE => {type: ::Thrift::Types::STRUCT, name: 'list_value', class: ::Thrift::Types::Value::ListValue},
-          THRIFT_FIELD_INDEX_MAP_VALUE => {type: ::Thrift::Types::STRUCT, name: 'map_value', class: ::Thrift::Types::Value::MapValue},
-          THRIFT_FIELD_INDEX_STRUCT_VALUE => {type: ::Thrift::Types::STRUCT, name: 'struct_value', class: ::Thrift::Types::Value::StructValue}
+          THRIFT_FIELD_INDEX_NULL_VALUE => {type: ::Thrift::Types::STRUCT, name: 'null_value', class: ::Thrift::Types::Value::NullValue, legacy_annotations: THRIFT_FIELD_NULL_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NULL_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_STRING_VALUE => {type: ::Thrift::Types::STRING, name: 'string_value', legacy_annotations: THRIFT_FIELD_STRING_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STRING_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_BINARY_VALUE => {type: ::Thrift::Types::STRING, name: 'binary_value', binary: true, legacy_annotations: THRIFT_FIELD_BINARY_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_BINARY_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_INTEGER_VALUE => {type: ::Thrift::Types::I64, name: 'integer_value', legacy_annotations: THRIFT_FIELD_INTEGER_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_INTEGER_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_DOUBLE_VALUE => {type: ::Thrift::Types::DOUBLE, name: 'double_value', legacy_annotations: THRIFT_FIELD_DOUBLE_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_DOUBLE_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_BOOL_VALUE => {type: ::Thrift::Types::BOOL, name: 'bool_value', legacy_annotations: THRIFT_FIELD_BOOL_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_BOOL_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_LIST_VALUE => {type: ::Thrift::Types::STRUCT, name: 'list_value', class: ::Thrift::Types::Value::ListValue, legacy_annotations: THRIFT_FIELD_LIST_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LIST_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_MAP_VALUE => {type: ::Thrift::Types::STRUCT, name: 'map_value', class: ::Thrift::Types::Value::MapValue, legacy_annotations: THRIFT_FIELD_MAP_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_MAP_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_STRUCT_VALUE => {type: ::Thrift::Types::STRUCT, name: 'struct_value', class: ::Thrift::Types::Value::StructValue, legacy_annotations: THRIFT_FIELD_STRUCT_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STRUCT_VALUE_STRUCTURED_ANNOTATIONS}
         }
 
         def struct_fields; FIELDS; end

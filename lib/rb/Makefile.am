@@ -38,7 +38,7 @@ check-local: all
 
 endif
 
-TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+TYPE_FILES = ../../types/*.thrift ../../types/*/*.thrift
 
 $(TYPE_FILES):
 	mkdir -p lib/thrift/$(patsubst ../../%,%,$(dir $@))
