@@ -278,3 +278,5 @@ test-driver
 /CPack*.cmake
 /compile_commands.json
 /install_manifest.txt
+**/*.cmake
+**/CMakeFiles

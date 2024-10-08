@@ -94,4 +94,10 @@ EXTRA_DIST = \
 
 precross-%:
 	$(MAKE) -C $* precross
+
 precross: precross-nodejs precross-csharp precross-java
+
+generate-types-%:
+	$(MAKE) -C $* generate-types
+
+generate-types: generate-types-go generate-types-rb generate-types-cpp

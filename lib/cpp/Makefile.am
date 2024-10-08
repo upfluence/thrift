@@ -271,3 +271,13 @@ EXTRA_DIST = \
 
 style-local:
 	$(CPPSTYLE_CMD)
+
+TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+
+$(TYPE_FILES):
+	mkdir -p src/thrift/$(patsubst ../../%,%,$(dir $@))
+	$(THRIFT) -gen cpp --out src/thrift/$(patsubst ../../%,%,$(dir $@)) $@
+
+generate-types: $(TYPE_FILES)
+
+.PHONY: generate-types $(TYPE_FILES)
