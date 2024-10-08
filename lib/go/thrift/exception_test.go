@@ -30,8 +30,8 @@ func TestPrependError(t *testing.T) {
 	if !ok {
 		t.Fatal("Couldn't cast error TApplicationException")
 	}
-	if err2.Error() != "Prepend: original error" {
-		t.Fatal("Unexpected error string")
+	if err2.Error() != "Prepend: : original error" {
+		t.Fatalf("Unexpected error string, has %q", err2.Error())
 	}
 	if err2.TypeId() != INTERNAL_ERROR {
 		t.Fatal("Unexpected type error")
@@ -42,7 +42,7 @@ func TestPrependError(t *testing.T) {
 	if !ok {
 		t.Fatal("Couldn't cast error TProtocolException")
 	}
-	if err4.Error() != "Prepend: original error" {
+	if err4.Error() != "Prepend: : original error" {
 		t.Fatal("Unexpected error string")
 	}
 	if err4.TypeId() != INVALID_DATA {
@@ -54,7 +54,7 @@ func TestPrependError(t *testing.T) {
 	if !ok {
 		t.Fatal("Couldn't cast error TTransportException")
 	}
-	if err6.Error() != "Prepend: original error" {
+	if err6.Error() != "Prepend: : original error" {
 		t.Fatal("Unexpected error string")
 	}
 	if err6.TypeId() != TIMED_OUT {
@@ -63,7 +63,7 @@ func TestPrependError(t *testing.T) {
 
 	err7 := errors.New("original error")
 	err8 := PrependError("Prepend: ", err7)
-	if err8.Error() != "Prepend: original error" {
+	if err8.Error() != "Prepend: : original error" {
 		t.Fatal("Unexpected error string")
 	}
 }
