@@ -19,6 +19,7 @@
 
 SUBDIRS = json xml
 PRECROSS_TARGET =
+GENERATE_TYPES_TARGET =
 
 if WITH_AS3
 SUBDIRS += as3
@@ -26,6 +27,7 @@ endif
 
 if WITH_CPP
 SUBDIRS += cpp
+GENERATE_TYPES_TARGET += generate-types-cpp
 endif
 
 if WITH_C_GLIB
@@ -54,6 +56,7 @@ endif
 
 if WITH_RUBY
 SUBDIRS += rb
+GENERATE_TYPES_TARGET += generate-types-rb
 endif
 
 if WITH_HASKELL
@@ -79,6 +82,7 @@ endif
 
 if WITH_GO
 SUBDIRS += go
+GENERATE_TYPES_TARGET += generate-types-go
 endif
 
 if WITH_D
@@ -124,4 +128,10 @@ EXTRA_DIST = \
 
 precross-%:
 	$(MAKE) -C $* precross
+
 precross: $(PRECROSS_TARGET)
+
+generate-types-%:
+	$(MAKE) -C $* generate-types
+
+generate-types: $(GENERATE_TYPES_TARGET)
