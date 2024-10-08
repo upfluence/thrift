@@ -134,7 +134,8 @@ public:
                            t_type* field_type,
                            const std::string& field_name,
                            t_const_value* field_value,
-                           bool optional);
+                           bool optional,
+                           bool embed_annotations);
 
   /**
    * Service-level generation functions
@@ -747,7 +748,8 @@ void t_rb_generator::generate_field_defns(t_rb_ofstream& out, t_struct* tstruct)
                         (*f_iter)->get_type(),
                         (*f_iter)->get_name(),
                         (*f_iter)->get_value(),
-                        (*f_iter)->get_req() == t_field::T_OPTIONAL);
+                        (*f_iter)->get_req() == t_field::T_OPTIONAL,
+                        true);
   }
   out.indent_down();
   out << endl;
@@ -760,7 +762,8 @@ void t_rb_generator::generate_field_data(t_rb_ofstream& out,
                                          t_type* field_type,
                                          const std::string& field_name = "",
                                          t_const_value* field_value = NULL,
-                                         bool optional = false) {
+                                         bool optional = false,
+                                         bool embed_annotations = false) {
   field_type = get_true_type(field_type);
 
   // Begin this field's defn
@@ -804,8 +807,10 @@ void t_rb_generator::generate_field_data(t_rb_ofstream& out,
     out << ", enum_class: " << full_type_name(field_type);
   }
 
-  out << ", legacy_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_LEGACY_ANNOTATIONS";
-  out << ", structured_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_STRUCTURED_ANNOTATIONS";
+  if (embed_annotations) {
+    out << ", legacy_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_LEGACY_ANNOTATIONS";
+    out << ", structured_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_STRUCTURED_ANNOTATIONS";
+  }
 
   // End of this field's defn
   out << "}";
