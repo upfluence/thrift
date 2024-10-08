@@ -1,4 +1,12 @@
 module Thrift
+  class DefaultCanonicalNameExtractor
+    class << self
+      def extract(definition)
+        [definition.struct_type]
+      end
+    end
+  end
+
   class StructDefinition
     attr_reader :klass
 
@@ -24,6 +32,12 @@ module Thrift
 
     def struct_type
       "#{namespace}.#{name}"
+    end
+
+    def canonical_names
+      CANONICAL_NAME_EXTRACTORS.reduce([]) do |acc, cur|
+        acc + cur.extract(self)
+      end
     end
   end
 
@@ -51,6 +65,7 @@ module Thrift
 
   STRUCT_DEFINITIONS = {}
   SERVICE_DEFINITIONS = {}
+  CANONICAL_NAME_EXTRACTORS = [DefaultCanonicalNameExtractor]
 
   class << self
     def register_struct_type(klass)
@@ -61,6 +76,10 @@ module Thrift
     def register_service_type(klass)
       definition = ServiceDefinition.new(klass)
       SERVICE_DEFINITIONS[definition.service_type] = definition
+    end
+
+    def register_canonical_name_extractor(klass)
+      CANONICAL_NAME_EXTRACTORS << klass
     end
   end
 end
