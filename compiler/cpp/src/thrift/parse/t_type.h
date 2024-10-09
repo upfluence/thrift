@@ -88,26 +88,11 @@ protected:
 
   t_type(t_program* program) : program_(program) { ; }
 
-<<<<<<< HEAD:compiler/cpp/src/thrift/parse/t_type.h
-  t_type(t_program* program, std::string name) : program_(program), name_(name) { ; }
+  t_type(t_program* program, std::string name) : t_annotated(name), program_(program) { ; }
 
-  t_type(std::string name) : program_(nullptr), name_(name) { ; }
-
-  t_program* program_;
-  std::string name_;
-=======
-  t_type(t_program* program, std::string name) : t_annotated(name), program_(program) {
-    memset(fingerprint_, 0, sizeof(fingerprint_));
-  }
-
-  t_type(std::string name) : t_annotated(name), program_(NULL) {
-    memset(fingerprint_, 0, sizeof(fingerprint_));
-  }
+  t_type(std::string name) : t_annotated(name), program_(nullptr) { ; }
 
   t_program* program_;
-
-  uint8_t fingerprint_[fingerprint_len];
->>>>>>> b51801e6b (compiler/cpp/src/parse: Add virtual class to carry name and annotations):compiler/cpp/src/parse/t_type.h
 };
 
 #endif

@@ -348,8 +348,8 @@ public:
            || ttype->is_enum();
   }
 
-  bool is_deprecated(const std::map<std::string, std::string>& annotations) {
-    return annotations.find("deprecated") != annotations.end();
+  bool is_deprecated(t_annotated* annotated) {
+    return annotated->has_legacy_annotation("deprecated") ;
   }
 
   bool is_enum_set(t_type* ttype) {
@@ -488,7 +488,7 @@ void t_java_generator::generate_typedef(t_typedef* ttypedef) {
  * @param tenum The enumeration
  */
 void t_java_generator::generate_enum(t_enum* tenum) {
-  bool is_deprecated = this->is_deprecated(tenum->annotations_);
+  bool is_deprecated = this->is_deprecated(tenum);
   // Make output file
   string f_enum_name = package_dir_ + "/" + make_valid_java_filename(tenum->get_name()) + ".java";
   ofstream_with_content_based_conditional_update f_enum;
@@ -522,7 +522,7 @@ void t_java_generator::generate_enum(t_enum* tenum) {
     }
 
     generate_java_doc(f_enum, *c_iter);
-    if (this->is_deprecated((*c_iter)->annotations_)) {
+    if (this->is_deprecated((*c_iter))) {
       indent(f_enum) << "@Deprecated" << endl;
     }
     indent(f_enum) << (*c_iter)->get_name() << "(" << value << ")";
@@ -835,7 +835,7 @@ void t_java_generator::generate_java_union(t_struct* tstruct) {
   generate_java_doc(f_struct, tstruct);
 
   bool is_final = tstruct->has_legacy_annotation("final");
-  bool is_deprecated = this->is_deprecated(tstruct->annotations_);
+  bool is_deprecated = this->is_deprecated(tstruct);
 
   if (!suppress_generated_annotations_) {
     generate_javax_generated_annotation(f_struct);
@@ -979,7 +979,7 @@ void t_java_generator::generate_union_getters_and_setters(ostream& out, t_struct
     t_field* field = (*m_iter);
     t_type* type = field->get_type();
     std::string cap_name = get_cap_name(field->get_name());
-    bool is_deprecated = this->is_deprecated(field->annotations_);
+    bool is_deprecated = this->is_deprecated(field);
 
     generate_java_doc(out, field);
     if (type->is_binary()) {
@@ -1431,7 +1431,7 @@ void t_java_generator::generate_java_struct_definition(ostream& out,
   generate_java_doc(out, tstruct);
 
   bool is_final = tstruct->has_legacy_annotation("final");
-  bool is_deprecated = this->is_deprecated(tstruct->annotations_);
+  bool is_deprecated = this->is_deprecated(tstruct);
 
   if (!in_class && !suppress_generated_annotations_) {
     generate_javax_generated_annotation(out);
@@ -2302,7 +2302,7 @@ void t_java_generator::generate_java_bean_boilerplate(ostream& out, t_struct* ts
     std::string field_name = field->get_name();
     std::string cap_name = get_cap_name(field_name);
     bool optional = use_option_type_ && field->get_req() == t_field::T_OPTIONAL;
-    bool is_deprecated = this->is_deprecated(field->annotations_);
+    bool is_deprecated = this->is_deprecated(field);
 
     if (type->is_container()) {
       // Method to return the size of the collection
@@ -5366,7 +5366,6 @@ void t_java_generator::generate_java_struct_tuple_writer(ostream& out, t_struct*
     }
 
     indent(out) << "oprot.writeBitSet(optionals, " << optional_count << ");" << endl;
-    int j = 0;
     for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
       if ((*f_iter)->get_req() == t_field::T_OPTIONAL
           || (*f_iter)->get_req() == t_field::T_OPT_IN_REQ_OUT) {
@@ -5375,7 +5374,6 @@ void t_java_generator::generate_java_struct_tuple_writer(ostream& out, t_struct*
         generate_serialize_field(out, (*f_iter), "struct.", false);
         indent_down();
         indent(out) << "}" << endl;
-        j++;
       }
     }
   }

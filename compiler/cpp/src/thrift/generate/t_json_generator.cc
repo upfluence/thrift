@@ -266,15 +266,6 @@ void t_json_generator::write_type_spec(t_type* ttype) {
 
   write_string(get_type_name(ttype));
 
-  if (ttype->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : ttype->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
-  }
-
   if (ttype->is_struct() || ttype->is_xception()) {
     write_key_and_string("class", get_qualified_name(ttype));
   } else if (ttype->is_map()) {
@@ -564,15 +555,6 @@ void t_json_generator::generate_enum(t_enum* tenum) {
 
   generate_annotated_fields((t_annotated*)tenum);
 
-  if (tenum->annotations_.size() > 0) {
-      write_key_and("annotations");
-      start_object();
-      for (auto & annotation : tenum->annotations_) {
-        write_key_and_string(annotation.first, annotation.second);
-      }
-      end_object();
-  }
-
   write_key_and("members");
   start_array();
   vector<t_enum_value*> values = tenum->get_constants();
@@ -598,15 +580,6 @@ void t_json_generator::generate_struct(t_struct* tstruct) {
   start_object();
 
   generate_annotated_fields((t_annotated*)tstruct);
-
-  if (tstruct->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : tstruct->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
-  }
 
   write_key_and_bool("isException", tstruct->is_xception());
 
@@ -658,16 +631,6 @@ void t_json_generator::generate_function(t_function* tfunc) {
   write_type_spec_object("returnType", tfunc->get_returntype());
 
   write_key_and_bool("oneway", tfunc->is_oneway());
-
-
-  if (tfunc->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : tfunc->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
-  }
 
   write_key_and("arguments");
   start_array();
@@ -734,15 +697,6 @@ void t_json_generator::generate_field(t_field* field) {
   write_key_and_string("typeId", get_type_name(field->get_type()));
   write_type_spec_object("type", field->get_type());
 
-
-  if (field->annotations_.size() > 0) {
-    write_key_and("annotations");
-    start_object();
-    for (auto & annotation : field->annotations_) {
-      write_key_and_string(annotation.first, annotation.second);
-    }
-    end_object();
-  }
 
   write_key_and("required");
   switch (field->get_req()) {

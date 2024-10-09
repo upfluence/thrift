@@ -94,7 +94,7 @@ public:
   void generate_service(t_service* tservice) override;
   void generate_struct(t_struct* tstruct) override;
 
-  void generate_annotations(std::map<std::string, std::string> annotations);
+  void generate_annotations(t_annotated* tannotated);
 
 private:
   bool should_merge_includes_;
@@ -321,7 +321,6 @@ void t_xml_generator::iterate_program(t_program* program) {
     write_element_start("namespace");
     write_attribute("name", ns_it->first);
     write_attribute("value", ns_it->second);
-    generate_annotations(program->get_namespace_annotations(ns_it->first));
     write_element_end();
   }
 
@@ -380,7 +379,7 @@ void t_xml_generator::generate_typedef(t_typedef* ttypedef) {
   write_attribute("name", ttypedef->get_name());
   write_doc(ttypedef);
   write_type(ttypedef->get_true_type());
-  generate_annotations(ttypedef->annotations_);
+  generate_annotations(ttypedef);
   write_element_end();
   return;
 }
@@ -431,8 +430,8 @@ void t_xml_generator::write_doc(t_doc* tdoc) {
   }
 }
 
-void t_xml_generator::generate_annotations(
-    std::map<std::string, std::string> annotations) {
+void t_xml_generator::generate_annotations(t_annotated* tannotated) {
+  std::map<std::string, std::string> annotations = tannotated->legacy_annotations();
   std::map<std::string, std::string>::iterator iter;
   for (iter = annotations.begin(); iter != annotations.end(); ++iter) {
     write_element_start("annotation");
@@ -522,11 +521,11 @@ void t_xml_generator::generate_enum(t_enum* tenum) {
     write_attribute("name", val->get_name());
     write_int_attribute("value", val->get_value());
     write_doc(val);
-    generate_annotations(val->annotations_);
+    generate_annotations(val);
     write_element_end();
   }
 
-  generate_annotations(tenum->annotations_);
+  generate_annotations(tenum);
 
   write_element_end();
 
@@ -552,7 +551,7 @@ void t_xml_generator::generate_struct(t_struct* tstruct) {
     write_element_end();
   }
 
-  generate_annotations(tstruct->annotations_);
+  generate_annotations(tstruct);
 
   write_element_end();
 
@@ -583,7 +582,7 @@ void t_xml_generator::generate_field(t_field* field) {
     write_const_value(field->get_value());
     write_element_end();
   }
-  generate_annotations(field->annotations_);
+  generate_annotations(field);
 }
 
 void t_xml_generator::generate_service(t_service* tservice) {
@@ -615,7 +614,7 @@ void t_xml_generator::generate_service(t_service* tservice) {
     generate_function(*fn_iter);
   }
 
-  generate_annotations(tservice->annotations_);
+  generate_annotations(tservice);
 
   write_element_end();
 
@@ -652,7 +651,7 @@ void t_xml_generator::generate_function(t_function* tfunc) {
     write_element_end();
   }
 
-  generate_annotations(tfunc->annotations_);
+  generate_annotations(tfunc);
 
   write_element_end();
 

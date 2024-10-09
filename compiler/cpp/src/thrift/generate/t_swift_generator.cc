@@ -235,7 +235,7 @@ private:
 
   bool field_is_optional(t_field* tfield) {
     bool opt = tfield->get_req() == t_field::T_OPTIONAL;
-    if (tfield->annotations_.find("swift.nullable") != tfield->annotations_.end() && tfield->get_req() != t_field::T_REQUIRED) {
+    if (tfield->has_legacy_annotation("swift.nullable") && tfield->get_req() != t_field::T_REQUIRED) {
       opt = true;
     }
     if (gen_cocoa_) { // Backwards compatibility, only if its actually "optional"
