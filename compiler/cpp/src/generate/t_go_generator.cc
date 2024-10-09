@@ -114,7 +114,7 @@ public:
   void generate_xception(t_struct* txception);
   void generate_service(t_service* tservice);
 
-  std::string render_const_value(t_type* type, t_const_value* value, const string& name);
+  std::string render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional = false);
 
   /**
    * Struct generation code
@@ -942,45 +942,73 @@ void t_go_generator::generate_const(t_const* tconst) {
  * is NOT performed in this function as it is always run beforehand using the
  * validate_types method in main.cc
  */
-string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name) {
+string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional) {
   type = get_true_type(type);
   std::ostringstream out;
 
   if (type->is_base_type()) {
     t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
+    std::ostringstream go_value;
+    std::string ptr_method;
+
+    if (is_optional) {
+      out << "thrift.";
+    }
+
 
     switch (tbase) {
     case t_base_type::TYPE_STRING:
       if (((t_base_type*)type)->is_binary()) {
-        out << "[]byte(\"" << get_escaped_string(value) << "\")";
+        ptr_method = "ByteSlicePtr";
+        go_value << "[]byte(\"" << get_escaped_string(value) << "\")";
       } else {
-        out << '"' << get_escaped_string(value) << '"';
+        ptr_method = "StringPtr";
+        go_value << '"' << get_escaped_string(value) << '"';
       }
 
       break;
 
     case t_base_type::TYPE_BOOL:
-      out << (value->get_integer() > 0 ? "true" : "false");
+      ptr_method = "BoolPtr";
+      go_value << (value->get_integer() > 0 ? "true" : "false");
       break;
 
     case t_base_type::TYPE_BYTE:
+      ptr_method = "Int8Ptr";
     case t_base_type::TYPE_I16:
+      ptr_method = "Int16Ptr";
     case t_base_type::TYPE_I32:
+      ptr_method = "Int32Ptr";
     case t_base_type::TYPE_I64:
-      out << value->get_integer();
+      if (ptr_method == "") {
+        ptr_method = "Int64Ptr";
+      }
+
+      go_value << value->get_integer();
       break;
 
     case t_base_type::TYPE_DOUBLE:
+      ptr_method = "Float64Ptr";
       if (value->get_type() == t_const_value::CV_INTEGER) {
-        out << value->get_integer();
+        go_value << value->get_integer();
       } else {
-        out << value->get_double();
+        go_value << value->get_double();
       }
 
       break;
 
     default:
       throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase);
+    }
+
+    if (is_optional) {
+      out << ptr_method << "(";
+    }
+
+    out << go_value.str();
+
+    if (is_optional) {
+      out << ")";
     }
   } else if (type->is_enum()) {
     indent(out) << value->get_integer();
@@ -993,21 +1021,24 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
     map<t_const_value*, t_const_value*>::const_iterator v_iter;
 
     for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-      t_type* field_type = NULL;
+      t_field* field = NULL;
 
       for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
         if ((*f_iter)->get_name() == v_iter->first->get_string()) {
-          field_type = (*f_iter)->get_type();
+          field = *f_iter;
+
         }
       }
 
-      if (field_type == NULL) {
+      if (field == NULL) {
         throw "type error: " + type->get_name() + " has no field " + v_iter->first->get_string();
       }
 
+      t_type* field_type = field->get_type();
+
       if (field_type->is_base_type() || field_type->is_enum()) {
         out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
-            << render_const_value(field_type, v_iter->second, name) << ",";
+            << render_const_value(field_type, v_iter->second, name, field->get_req() == t_field::e_req::T_OPTIONAL) << ",";
       } else {
         string k(tmp("k"));
         string v(tmp("v"));
@@ -1017,7 +1048,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
       }
     }
 
-    out << "}";
+    out << endl << "}";
 
     indent_down();
   } else if (type->is_map()) {

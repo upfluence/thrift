@@ -32,6 +32,9 @@ endif
 include_types_knowndir = ${TYPES_PREFIX}/types/known
 include_types_known_HEADERS = types/known/*.thrift
 
+include_types_knowndir = ${TYPES_PREFIX}/types/annotation
+include_types_known_HEADERS = types/annotation/*.thrift
+
 include_typesdir = ${TYPES_PREFIX}/types
 include_types_HEADERS = types/*.thrift
 
