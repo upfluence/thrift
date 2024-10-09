@@ -42,8 +42,8 @@ TYPE_FILES = ../../types/*.thrift ../../types/*/*.thrift
 
 $(TYPE_FILES):
 	mkdir -p lib/thrift/$(patsubst ../../%,%,$(dir $@))
-	$(THRIFT) -gen rb:namespace_wrapper=thrift \
-		     --out lib/thrift/$(patsubst ../../%,%,$(dir $@)) $@
+	$(THRIFT) -gen rb:namespaced,namespace_wrapper=thrift \
+		     --out lib/ $@
 
 generate-types: $(TYPE_FILES)
 

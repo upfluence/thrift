@@ -5,7 +5,7 @@
 #
 
 require 'thrift'
-require 'any_types'
+require 'thrift/types/known/any/any_types'
 
 module Thrift
   module Types

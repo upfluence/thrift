@@ -1,4 +1,4 @@
-require 'thrift/types/known/timestamp_types'
+require 'thrift/types/known/timestamp/timestamp_types'
 
 module Thrift
   module Types

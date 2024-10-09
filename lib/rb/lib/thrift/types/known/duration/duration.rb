@@ -1,4 +1,4 @@
-require 'thrift/types/known/duration_types'
+require 'thrift/types/known/duration/duration_types'
 
 module Thrift
   module Types
