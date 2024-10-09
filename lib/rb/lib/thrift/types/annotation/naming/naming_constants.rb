@@ -5,12 +5,12 @@
 #
 
 require 'thrift'
-require 'duration_types'
+require 'thrift/types/annotation/naming/naming_types'
 
 module Thrift
   module Types
-    module Known
-      module Duration
+    module Annotation
+      module Naming
       end
     end
   end
