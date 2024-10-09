@@ -81,8 +81,6 @@ public:
                  const std::string& option_string)
     : t_oop_generator(program) {
     (void)option_string;
-    std::map<std::string, std::string>::const_iterator iter;
-
     require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
     namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
 
@@ -202,7 +200,7 @@ public:
   std::string type_to_enum(t_type* ttype);
   std::string rb_namespace_to_path_prefix(std::string rb_namespace);
 
-  std::vector<std::string> ruby_modules(t_program* p) {
+  std::vector<std::string> ruby_modules(const t_program* p) {
     std::string ns;
 
     if (namespace_wrapper_ != "") {

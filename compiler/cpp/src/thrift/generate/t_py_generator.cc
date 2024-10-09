@@ -224,7 +224,7 @@ public:
   }
 
   static bool is_immutable(t_type* ttype) {
-    return ttype->annotations_.find("python.immutable") != ttype->annotations_.end();
+    return ttype->has_legacy_annotation("python.immutable");
   }
 
 private:
@@ -239,7 +239,6 @@ private:
   */
   bool gen_dynamic_;
 
-  bool gen_dynbase_;
   std::string gen_dynbaseclass_;
   std::string gen_dynbaseclass_frozen_;
   std::string gen_dynbaseclass_exc_;
@@ -1318,13 +1317,7 @@ void t_py_generator::generate_service_client(t_service* tservice) {
     vector<t_field*>::const_iterator fld_iter;
     string funname = (*f_iter)->get_name();
 
-<<<<<<< HEAD:compiler/cpp/src/thrift/generate/t_py_generator.cc
     f_service_ << endl;
-=======
-    if (gen_tornado_ && gen_metrics_) {
-      indent(f_service_) << "@metrics.instrument(\"" << tservice->get_name() << "." << funname << ".client\")" << endl;
-    }
->>>>>>> deee3b5c9 (Add some instrumentation of the tornado lib):compiler/cpp/src/generate/t_py_generator.cc
     // Open function
     indent(f_service_) << "def " << function_signature(*f_iter, false) << ":" << endl;
     indent_up();

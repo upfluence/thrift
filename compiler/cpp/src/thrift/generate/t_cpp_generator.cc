@@ -286,7 +286,7 @@ public:
    */
   bool has_custom_ostream(t_type* ttype) const {
     return (gen_no_ostream_operators_) ||
-           (ttype->annotations_.find("cpp.customostream") != ttype->annotations_.end());
+           ttype->has_legacy_annotation("cpp.customostream");
   }
 
 private:

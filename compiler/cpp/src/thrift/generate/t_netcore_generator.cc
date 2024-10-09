@@ -717,7 +717,7 @@ void t_netcore_generator::generate_netcore_struct_definition(ostream& out, t_str
         out << indent() << "[DataContract(Namespace=\"" << wcf_namespace_ << "\")]" << endl;
     }
 
-    bool is_final = tstruct->annotations_.find("final") != tstruct->annotations_.end();
+    bool is_final = tstruct->has_legacy_annotation("final");
 
     string sharp_struct_name = check_and_correct_struct_name(normalize_name(tstruct->get_name()));
 
@@ -934,7 +934,7 @@ void t_netcore_generator::generate_netcore_wcffault(ostream& out, t_struct* tstr
     out << endl;
     out << indent() << "[DataContract]" << endl;
 
-    bool is_final = tstruct->annotations_.find("final") != tstruct->annotations_.end();
+    bool is_final = tstruct->has_legacy_annotation("final");
 
     out << indent() << "public " << (is_final ? "sealed " : "") << "partial class " << tstruct->get_name() << "Fault" << endl
         << indent() << "{" << endl;

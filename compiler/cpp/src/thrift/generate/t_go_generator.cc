@@ -77,7 +77,7 @@ public:
     std::map<std::string, std::string>::const_iterator iter;
 
 
-    gen_thrift_import_ = DEFAULT_THRIFT_IMPORT;
+    gen_thrift_import_ = default_thrift_import;
     gen_package_prefix_ = "";
     package_flag = "";
     read_write_private_ = false;
@@ -138,7 +138,7 @@ public:
   void generate_xception(t_struct* txception);
   void generate_service(t_service* tservice);
 
-  std::string render_const_value(t_type* type, t_const_value* value, const string& name, bool opt = false);
+  std::string render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional = false);
 
   /**
    * Struct generation code
@@ -157,15 +157,15 @@ public:
                               t_struct* tstruct,
                               const string& tstruct_name,
                               bool is_result = false);
-  void generate_countsetfields_helper(std::ofstream& out,
+  void generate_countsetfields_helper(std::ostream& out,
                               t_struct* tstruct,
                               const string& tstruct_name,
                               bool is_result = false);
-  void generate_interface_helper(std::ofstream& out,
+  void generate_interface_helper(std::ostream& out,
                               t_struct* tstruct,
                               const string& tstruct_name,
                               bool is_result = false);
-  void generate_go_struct_reader(std::ofstream& out,
+  void generate_go_struct_reader(std::ostream& out,
                                  t_struct* tstruct,
                                  const string& tstruct_name,
                                  bool is_result = false);
@@ -259,8 +259,8 @@ public:
                              t_struct* tstruct,
                              const char* subheader);
 
-  void generate_go_docstring(std::ofstream& out, t_doc* tdoc);
-  void generate_go_annotated_definition(ofstream& out, t_annotated* tannotated);
+  void generate_go_docstring(std::ostream& out, t_doc* tdoc);
+  void generate_go_annotated_definition(std::ostream& out, t_annotated* tannotated);
   /**
    * Helper rendering functions
    */
@@ -897,6 +897,7 @@ string t_go_generator::go_imports_begin(bool consts) {
       "\t\"database/sql/driver\"\n"
       "\t\"errors\"\n";
   }
+
   return string(
       "import (\n"
       "\t\"bytes\"\n"
@@ -905,8 +906,6 @@ string t_go_generator::go_imports_begin(bool consts) {
       + extra +
       "\t\"fmt\"\n"
       "\t\"" + gen_thrift_import_ + "\"\n");
-
-  return r;
 }
 
 /**
@@ -948,7 +947,6 @@ void t_go_generator::close_generator() {
  * @param ttypedef The type definition
  */
 void t_go_generator::generate_typedef(t_typedef* ttypedef) {
-  generate_go_docstring(f_types_, ttypedef);
   string new_type_name(publicize(ttypedef->get_symbolic()));
   string base_type(type_to_go_type(ttypedef->get_type()));
 
@@ -1079,96 +1077,66 @@ void t_go_generator::generate_const(t_const* tconst) {
  * is NOT performed in this function as it is always run beforehand using the
  * validate_types method in main.cc
  */
-string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name, bool opt) {
+string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional) {
   type = get_true_type(type);
   std::ostringstream out;
 
   if (type->is_base_type()) {
     t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
+    std::ostringstream go_value;
+    std::string ptr_method;
 
-    if (opt) {
-      out << "&(&struct{x ";
-      switch (tbase) {
-        case t_base_type::TYPE_BOOL:
-          out << "bool}{";
-          out << (value->get_integer() > 0 ? "true" : "false");
-          break;
+    if (is_optional) {
+      out << "thrift.";
+    }
 
-        case t_base_type::TYPE_I8:
-          out << "int8}{";
-          out << value->get_integer();
-          break;
-        case t_base_type::TYPE_I16:
-          out << "int16}{";
-          out << value->get_integer();
-          break;
-        case t_base_type::TYPE_I32:
-          out << "int32}{";
-          out << value->get_integer();
-          break;
-        case t_base_type::TYPE_I64:
-          out << "int64}{";
-          out << value->get_integer();
-          break;
-
-        case t_base_type::TYPE_DOUBLE:
-          out << "float64}{";
-          if (value->get_type() == t_const_value::CV_INTEGER) {
-            out << value->get_integer();
-          } else {
-            out << value->get_double();
-          }
-          break;
-
-        case t_base_type::TYPE_STRING:
-          out << "string}{";
-          out << '"' + get_escaped_string(value) + '"';
-          break;
-
-        default:
-          throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase);
+    switch (tbase) {
+    case t_base_type::TYPE_VOID:
+    case t_base_type::TYPE_STRING:
+      if (((t_base_type*)type)->is_binary()) {
+        ptr_method = "ByteSlicePtr";
+        go_value << "[]byte(\"" << get_escaped_string(value) << "\")";
+      } else {
+        ptr_method = "StringPtr";
+        go_value << '"' << get_escaped_string(value) << '"';
       }
-      out << "}).x";
-    } else {
-      switch (tbase) {
-        case t_base_type::TYPE_STRING:
-          if (type->is_binary()) {
-            out << "[]byte(\"" << get_escaped_string(value) << "\")";
-          } else {
-            out << '"' << get_escaped_string(value) << '"';
-          }
 
-          break;
+    case t_base_type::TYPE_BOOL:
+      ptr_method = "BoolPtr";
+      go_value << (value->get_integer() > 0 ? "true" : "false");
+      break;
 
-        case t_base_type::TYPE_BOOL:
-          out << (value->get_integer() > 0 ? "true" : "false");
-          break;
-
-        case t_base_type::TYPE_I8:
-        case t_base_type::TYPE_I16:
-        case t_base_type::TYPE_I32:
-        case t_base_type::TYPE_I64:
-          if (opt) {
-            out << "&(&struct{x int}{";
-          }
-          out << value->get_integer();
-          if (opt) {
-            out << "}).x";
-          }
-          break;
-
-        case t_base_type::TYPE_DOUBLE:
-          if (value->get_type() == t_const_value::CV_INTEGER) {
-            out << value->get_integer();
-          } else {
-            out << value->get_double();
-          }
-
-          break;
-
-        default:
-          throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase);
+    case t_base_type::TYPE_I8:
+      ptr_method = "Int8Ptr";
+    case t_base_type::TYPE_I16:
+      ptr_method = "Int16Ptr";
+    case t_base_type::TYPE_I32:
+      ptr_method = "Int32Ptr";
+    case t_base_type::TYPE_I64:
+      if (ptr_method == "") {
+        ptr_method = "Int64Ptr";
       }
+
+      go_value << value->get_integer();
+      break;
+
+    case t_base_type::TYPE_DOUBLE:
+      ptr_method = "Float64Ptr";
+      if (value->get_type() == t_const_value::CV_INTEGER) {
+        go_value << value->get_integer();
+      } else {
+        go_value << value->get_double();
+      }
+    }
+
+    if (is_optional) {
+      out << ptr_method << "(";
+    }
+
+    out << go_value.str();
+
+    if (is_optional) {
+      out << ")";
     }
   } else if (type->is_enum()) {
     indent(out) << value->get_integer();
@@ -1181,24 +1149,34 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
     map<t_const_value*, t_const_value*, t_const_value::value_compare>::const_iterator v_iter;
 
     for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-      t_type* field_type = NULL;
-      bool is_optional = false;
+      t_field* field = NULL;
+
       for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
         if ((*f_iter)->get_name() == v_iter->first->get_string()) {
-          field_type = (*f_iter)->get_type();
-          is_optional = is_pointer_field(*f_iter);
+          field = *f_iter;
+
         }
       }
 
-      if (field_type == NULL) {
+      if (field == NULL) {
         throw "type error: " + type->get_name() + " has no field " + v_iter->first->get_string();
       }
-      out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
-          << render_const_value(field_type, v_iter->second, name, is_optional) << "," << endl;
+
+      t_type* field_type = field->get_type();
+
+      if (field_type->is_base_type() || field_type->is_enum()) {
+        out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
+            << render_const_value(field_type, v_iter->second, name, field->get_req() == t_field::e_req::T_OPTIONAL) << ",";
+      } else {
+        string k(tmp("k"));
+        string v(tmp("v"));
+        out << endl << indent() << v << " := " << render_const_value(field_type, v_iter->second, v)
+            << endl << indent() << name << "." << publicize(v_iter->first->get_string()) << " = "
+            << v;
+      }
     }
 
-    indent_down();
-    out << "}";
+    out << endl << "}";
 
   } else if (type->is_map()) {
     t_type* ktype = ((t_map*)type)->get_key_type();
@@ -1281,7 +1259,7 @@ void t_go_generator::get_publicized_name_and_def_value(t_field* tfield,
   *OUT_def_value = tfield->get_value();
 }
 
-void t_go_generator::generate_go_struct_initializer(ostream& out,
+void t_go_generator::generate_go_struct_initializer(std::ostream& out,
                                                     t_struct* tstruct,
                                                     bool is_args_or_result) {
   out << publicize(type_name(tstruct), is_args_or_result) << "{";
@@ -1302,7 +1280,7 @@ void t_go_generator::generate_go_struct_initializer(ostream& out,
   out << "}" << endl;
 }
 
-void t_go_generator::generate_go_annotated_definition(ofstream& out,
+void t_go_generator::generate_go_annotated_definition(std::ostream& out,
                                                       t_annotated* tannotated) {
 
   out << indent() << "AnnotatedDefinition: thrift.AnnotatedDefinition{" << endl;
@@ -1338,7 +1316,7 @@ void t_go_generator::generate_go_annotated_definition(ofstream& out,
  *
  * @param tstruct The struct definition
  */
-void t_go_generator::generate_go_struct_definition(ostream& out,
+void t_go_generator::generate_go_struct_definition(std::ostream& out,
                                                    t_struct* tstruct,
                                                    bool is_exception,
                                                    bool is_result,
@@ -1572,7 +1550,7 @@ void t_go_generator::generate_go_struct_definition(ostream& out,
 /**
  * Generates the IsSet helper methods for a struct
  */
-void t_go_generator::generate_isset_helpers(ostream& out,
+void t_go_generator::generate_isset_helpers(std::ostream& out,
                                             t_struct* tstruct,
                                             const string& tstruct_name,
                                             bool is_result) {
@@ -1611,7 +1589,7 @@ void t_go_generator::generate_isset_helpers(ostream& out,
 /**
  * Generates the CountSetFields helper method for a struct
  */
-void t_go_generator::generate_interface_helper(ofstream& out,
+void t_go_generator::generate_interface_helper(std::ostream& out,
                                             t_struct* tstruct,
                                             const string& tstruct_name,
                                             bool is_result) {
@@ -1642,7 +1620,7 @@ void t_go_generator::generate_interface_helper(ofstream& out,
   out << indent() << "}" << endl << endl;
 }
 
-void t_go_generator::generate_countsetfields_helper(ostream& out,
+void t_go_generator::generate_countsetfields_helper(std::ostream& out,
                                                     t_struct* tstruct,
                                                     const string& tstruct_name,
                                                     bool is_result) {
@@ -1681,7 +1659,7 @@ void t_go_generator::generate_countsetfields_helper(ostream& out,
 /**
  * Generates the read method for a struct
  */
-void t_go_generator::generate_go_struct_reader(ostream& out,
+void t_go_generator::generate_go_struct_reader(std::ostream& out,
                                                t_struct* tstruct,
                                                const string& tstruct_name,
                                                bool is_result) {
@@ -2201,7 +2179,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     f_types_ << indent() << "args := " << argsname << "{" << endl;
 
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      f_types_ << indent() << argsName << "." << publicize((*fld_iter)->get_name())
+      f_types_ << indent() << argsname << "." << publicize((*fld_iter)->get_name())
                << " = " << variable_name_to_go_name((*fld_iter)->get_name()) << endl;
     }
     f_types_ << indent() << "}" << endl;
@@ -2228,7 +2206,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
         for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
           const std::string pubname = publicize((*x_iter)->get_name());
-          const std::string field = resultName + "." + pubname;
+          const std::string field = resultname + "." + pubname;
           f_types_ << indent() << "case " << field << "!= nil:" << endl;
           indent_up();
 
@@ -2263,11 +2241,9 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     indent_down();
     f_types_ << indent() << "}" << endl << endl;
   }
-    indent_down();
-    f_types_ << "}" << endl << endl;
-  }
 }
 
+/*
  * Generates a service server definition.
  *
  * @param tservice The service to generate a server for.
@@ -2460,16 +2436,18 @@ void t_go_generator::generate_process_function(t_service* tservice, t_function* 
       }
       f_types_ << indent() << "}" << endl;
     }
-  f_types_ << indent() << "  return true, err2" << endl;
 
-  if (!x_fields.empty()) {
-    f_types_ << indent() << "}" << endl;
+    f_types_ << indent() << "  return true, err2" << endl;
+
+    if (!x_fields.empty()) {
+      f_types_ << indent() << "}" << endl;
+    }
   }
 
   if (!tfunction->is_oneway()) {
     if (!tfunction->get_returntype()->is_void()) {
       f_types_ << indent() << "result.Success = ";
-      if (need_reference) {
+      if (type_need_reference(tfunction->get_returntype())) {
         f_types_ << "&";
       }
       f_types_ << "retval" << endl;
@@ -2513,8 +2491,7 @@ void t_go_generator::generate_deserialize_field(ostream& out,
   } else if (type->is_base_type() || type->is_enum()) {
 
     if (declare) {
-      t_type* actual_type = use_true_type ? tfield->get_type()->get_true_type()
-                                          : tfield->get_type();
+      t_type* actual_type = tfield->get_type();
 
       string type_name = inkey ? type_to_go_key_type(actual_type)
                                : type_to_go_type(actual_type);
@@ -3372,11 +3349,10 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=  Package prefix for generated files.\n" \
-                          "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
                           "                     Disable automatic spelling correction of initialisms (e.g. \"URL\")\n" \
-                          "    read_write_private\n"
-                          "                     Make read/write methods private, default is public Read/Write\n")
-                          "    metrics:         Generate code with endpoint monitoring.\n"
+                          "    read_write_private\n" \
+                          "                     Make read/write methods private, default is public Read/Write\n" \
+                          "    metrics:         Generate code with endpoint monitoring.\n" \
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n")

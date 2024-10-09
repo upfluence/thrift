@@ -312,7 +312,7 @@ Header:
         g_program->set_namespace($2, $3);
       }
       if ($4 != NULL) {
-        g_program->set_namespace_annotations($2, $4->annotations_);
+        g_program->set_namespace_annotations($2, $4->legacy_annotations());
         delete $4;
       }
     }
