@@ -695,7 +695,7 @@ void t_csharp_generator::generate_csharp_struct_definition(ofstream& out,
                 << endl; // do not make exception classes directly WCF serializable, we provide a
                          // separate "fault" for that
   }
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(out) << "public " << (is_final ? "sealed " : "") << "partial class "
               << normalize_name(tstruct->get_name()) << " : ";
@@ -881,7 +881,7 @@ void t_csharp_generator::generate_csharp_wcffault(ofstream& out, t_struct* tstru
   indent(out) << "[Serializable]" << endl;
   indent(out) << "#endif" << endl;
   indent(out) << "[DataContract]" << endl;
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(out) << "public " << (is_final ? "sealed " : "") << "partial class " << tstruct->get_name()
               << "Fault" << endl;
@@ -2512,11 +2512,11 @@ void t_csharp_generator::prepare_member_name_mapping(void* scope,
   // current C# generator policy:
   // - prop names are always rendered with an Uppercase first letter
   // - struct names are used as given
-  
-  
+
+
   // prevent name conflicts with struct (CS0542 error)
   used_member_names.insert(structname);
-  
+
   // prevent name conflicts with known methods (THRIFT-2942)
   used_member_names.insert("Read");
   used_member_names.insert("Write");

@@ -5,13 +5,11 @@
 #
 
 require 'thrift'
-require 'duration_types'
+require 'thrift/types/value/value_types'
 
 module Thrift
   module Types
-    module Known
-      module Duration
-      end
+    module Value
     end
   end
 end

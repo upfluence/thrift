@@ -114,7 +114,7 @@ public:
   void generate_xception(t_struct* txception);
   void generate_service(t_service* tservice);
 
-  std::string render_const_value(t_type* type, t_const_value* value, const string& name);
+  std::string render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional = false);
 
   /**
    * Struct generation code
@@ -237,7 +237,7 @@ public:
                              const char* subheader);
 
   void generate_go_docstring(std::ofstream& out, t_doc* tdoc);
-
+  void generate_go_annotated_definition(ofstream& out, t_annotated* tannotated);
   /**
    * Helper rendering functions
    */
@@ -360,7 +360,7 @@ static bool type_need_reference(t_type* type) {
 // returns false if field could not use comparison to default value as !IsSet*
 bool t_go_generator::is_pointer_field(t_field* tfield, bool in_container_value) {
   (void)in_container_value;
-  if (tfield->annotations_.count("cpp.ref") != 0) {
+  if (tfield->has_legacy_annotation("cpp.ref")) {
     return true;
   }
   t_type* type = tfield->get_type()->get_true_type();
@@ -723,16 +723,9 @@ void t_go_generator::init_generator() {
 
   f_consts_ << go_autogen_comment() << go_package() << render_includes();
 
+  f_consts_ << "const Namespace = \"" << program_->get_namespace("*") << "\"" << endl << endl;
+
   f_const_values_ << endl << "func init() {" << endl;
-
-
-  const vector<t_struct*>& structs = program_->get_structs();
-
-  for (size_t i = 0; i < structs.size(); ++i) {
-    f_const_values_ << "  thrift.RegisterStruct((*"
-                    << publicize(structs[i]->get_name(), false)
-                    << ")(nil))"<< endl;
-  }
 }
 
 /**
@@ -949,45 +942,73 @@ void t_go_generator::generate_const(t_const* tconst) {
  * is NOT performed in this function as it is always run beforehand using the
  * validate_types method in main.cc
  */
-string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name) {
+string t_go_generator::render_const_value(t_type* type, t_const_value* value, const string& name, bool is_optional) {
   type = get_true_type(type);
   std::ostringstream out;
 
   if (type->is_base_type()) {
     t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
+    std::ostringstream go_value;
+    std::string ptr_method;
+
+    if (is_optional) {
+      out << "thrift.";
+    }
+
 
     switch (tbase) {
     case t_base_type::TYPE_STRING:
       if (((t_base_type*)type)->is_binary()) {
-        out << "[]byte(\"" << get_escaped_string(value) << "\")";
+        ptr_method = "ByteSlicePtr";
+        go_value << "[]byte(\"" << get_escaped_string(value) << "\")";
       } else {
-        out << '"' << get_escaped_string(value) << '"';
+        ptr_method = "StringPtr";
+        go_value << '"' << get_escaped_string(value) << '"';
       }
 
       break;
 
     case t_base_type::TYPE_BOOL:
-      out << (value->get_integer() > 0 ? "true" : "false");
+      ptr_method = "BoolPtr";
+      go_value << (value->get_integer() > 0 ? "true" : "false");
       break;
 
     case t_base_type::TYPE_BYTE:
+      ptr_method = "Int8Ptr";
     case t_base_type::TYPE_I16:
+      ptr_method = "Int16Ptr";
     case t_base_type::TYPE_I32:
+      ptr_method = "Int32Ptr";
     case t_base_type::TYPE_I64:
-      out << value->get_integer();
+      if (ptr_method == "") {
+        ptr_method = "Int64Ptr";
+      }
+
+      go_value << value->get_integer();
       break;
 
     case t_base_type::TYPE_DOUBLE:
+      ptr_method = "Float64Ptr";
       if (value->get_type() == t_const_value::CV_INTEGER) {
-        out << value->get_integer();
+        go_value << value->get_integer();
       } else {
-        out << value->get_double();
+        go_value << value->get_double();
       }
 
       break;
 
     default:
       throw "compiler error: no const of base type " + t_base_type::t_base_name(tbase);
+    }
+
+    if (is_optional) {
+      out << ptr_method << "(";
+    }
+
+    out << go_value.str();
+
+    if (is_optional) {
+      out << ")";
     }
   } else if (type->is_enum()) {
     indent(out) << value->get_integer();
@@ -1000,21 +1021,24 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
     map<t_const_value*, t_const_value*>::const_iterator v_iter;
 
     for (v_iter = val.begin(); v_iter != val.end(); ++v_iter) {
-      t_type* field_type = NULL;
+      t_field* field = NULL;
 
       for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
         if ((*f_iter)->get_name() == v_iter->first->get_string()) {
-          field_type = (*f_iter)->get_type();
+          field = *f_iter;
+
         }
       }
 
-      if (field_type == NULL) {
+      if (field == NULL) {
         throw "type error: " + type->get_name() + " has no field " + v_iter->first->get_string();
       }
 
+      t_type* field_type = field->get_type();
+
       if (field_type->is_base_type() || field_type->is_enum()) {
         out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
-            << render_const_value(field_type, v_iter->second, name) << ",";
+            << render_const_value(field_type, v_iter->second, name, field->get_req() == t_field::e_req::T_OPTIONAL) << ",";
       } else {
         string k(tmp("k"));
         string v(tmp("v"));
@@ -1024,7 +1048,7 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
       }
     }
 
-    out << "}";
+    out << endl << "}";
 
     indent_down();
   } else if (type->is_map()) {
@@ -1129,6 +1153,37 @@ void t_go_generator::generate_go_struct_initializer(ofstream& out,
   out << "}" << endl;
 }
 
+void t_go_generator::generate_go_annotated_definition(ofstream& out,
+                                                      t_annotated* tannotated) {
+
+  out << indent() << "AnnotatedDefinition: thrift.AnnotatedDefinition{" << endl;
+  indent_up();
+  out << indent() << "Name: \"" << tannotated->get_name() << "\"," << endl;
+  out << indent() << "LegacyAnnotations: map[string]string{" << endl;
+
+  indent_up();
+  const map<string, string>& annotations = tannotated->legacy_annotations();
+  for (map<string, string>::const_iterator ns_it = annotations.begin(); ns_it != annotations.end(); ++ns_it) {
+    out << indent() << "\"" << escape_string(ns_it->first) << "\" : \"" << escape_string(ns_it->second)<< "\"," << endl;
+  }
+  indent_down();
+
+  out << indent() << "}," << endl;
+  out << indent() << "StructuredAnnotations: []thrift.RegistrableStruct{" << endl;
+
+  indent_up();
+  vector<t_structured_annotation*> sannotations = tannotated->structured_annotations();
+  for (vector<t_structured_annotation*>::const_iterator it = sannotations.begin(); it != sannotations.end(); it++) {
+    out << indent() << render_const_value((*it)->type_, (*it)->value_, "") << "," << endl;
+  }
+  indent_down();
+
+  out << indent() << "}," << endl;
+  indent_down();
+
+  out << indent() << "}," << endl;
+}
+
 /**
  * Generates a struct definition for a thrift data type.
  *
@@ -1145,6 +1200,11 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
 
   std::string tstruct_name(publicize(tstruct->get_name(), is_args || is_result));
   generate_go_docstring(out, tstruct);
+
+  f_const_values_ << "  thrift.RegisterStruct((*"
+                  << tstruct_name
+                  << ")(nil))"<< endl;
+
   out << indent() << "type " << tstruct_name << " struct {" << endl;
   /*
      Here we generate the structure specification for the fastbinary codec.
@@ -1201,9 +1261,8 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
       } else {
         gotag = "json:\"" + escape_string((*m_iter)->get_name()) + "\"";
       }
-      std::map<string, string>::iterator it = (*m_iter)->annotations_.find("go.tag");
-      if (it != (*m_iter)->annotations_.end()) {
-        gotag = it->second;
+      if ((*m_iter)->has_legacy_annotation("go.tag")) {
+        gotag = (*m_iter)->legacy_annotation_value("go.tag");
       }
       indent(out) << publicize((*m_iter)->get_name()) << " " << goType
                   << " `thrift:\"" << escape_string((*m_iter)->get_name()) << ","
@@ -1231,8 +1290,41 @@ void t_go_generator::generate_go_struct_definition(ofstream& out,
   generate_go_struct_initializer(out, tstruct, is_result || is_args);
   out << indent() << "}" << endl << endl;
   // Default values for optional fields
+  std::string def_name(privatize(tstruct_name + "StructDefinition"));
+
+  out << indent() << "var " << def_name << " = thrift.StructDefinition{" << endl;
+  indent_up();
+
+  out << indent() << "Namespace: Namespace, " << endl;
+
+  if (tstruct->is_xception()) {
+    out << indent() << "IsException: true," << endl;
+  }
+
+  if (tstruct->is_union()) {
+    out << indent() << "IsUnion: true," << endl;
+  }
+
+  generate_go_annotated_definition(out, tstruct);
+
+  out << indent() << "Fields: []thrift.FieldDefinition{" << endl;
+  indent_up();
+  for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
+    out << indent() << "{" << endl;
+    indent_up();
+
+    generate_go_annotated_definition(out, *m_iter);
+
+    indent_down();
+    out << indent() << "}," << endl << endl;
+  }
+  indent_down();
+  out << indent() << "}," << endl << endl;
+
+  indent_down();
+  out << indent() << "}" << endl << endl;
   out << indent() << "func (p *" << tstruct_name << ") StructDefinition() thrift.StructDefinition {" << endl;
-  out << indent() << " return thrift.StructDefinition{Namespace: \"" << tstruct->get_program()->get_namespace("*") << "\", Name: \"" << tstruct->get_name() << "\"}" << endl;
+  out << indent() << " return  " << def_name << endl;
   out << indent() << "}" << endl << endl;
 
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
@@ -1819,6 +1911,46 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
 
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
+
+
+  std::string def_name(privatize(serviceName + "ServiceDefinition"));
+
+  f_service_ << indent() << "var " << def_name << " = thrift.ServiceDefinition{" << endl;
+  indent_up();
+
+  f_service_ << indent() << "Namespace: Namespace, " << endl;
+
+
+  generate_go_annotated_definition(f_service_, tservice);
+
+  if (!functions.empty()) {
+    vector<t_function*>::iterator f_iter;
+    f_service_ << indent() << "Functions: []thrift.FunctionDefinition{" << endl;
+
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ << indent() << "{" << endl;
+      indent_up();
+      if ((*f_iter)->is_oneway()) {
+        f_service_ << indent() << "IsOneway: true," << endl;
+      } else {
+        f_service_ << indent() << "Result: &" <<   privatize(publicize((*f_iter)->get_name() + "_result", true) + "StructDefinition") << "," << endl;
+      }
+
+      f_service_ << indent() << "Args: " <<   privatize(publicize((*f_iter)->get_name() + "_args", true) + "StructDefinition") << "," << endl;
+
+      generate_go_annotated_definition(f_service_, *f_iter);
+
+      indent_down();
+      f_service_ << indent() << "}," << endl << endl;
+    }
+
+    indent_down();
+    f_service_ << indent() << "}," << endl << endl;
+  }
+  indent_down();
+  f_service_ << indent() << "}" << endl << endl;
+
+  f_const_values_ << "  thrift.RegisterService(" << def_name << ")" << endl;
 }
 
 /**

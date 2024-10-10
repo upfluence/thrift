@@ -1,67 +1,34 @@
 package thrift
 
 import (
-	"fmt"
 	"reflect"
-	"sync"
+
+	"github.com/upfluence/thrift/lib/go/thrift/internal/reflection"
 )
 
-var defaultStructTypeRegistry = &structTypeRegistry{
-	types: make(map[string]reflect.Type),
-	defs:  make(map[string]StructDefinition),
+type AnnotatedDefinition = reflection.AnnotatedDefinition
+type FieldDefinition = reflection.FieldDefinition
+type StructDefinition = reflection.StructDefinition
+type FunctionDefinition = reflection.FunctionDefinition
+type ServiceDefinition = reflection.ServiceDefinition
+type RegistrableStruct = reflection.RegistrableStruct
+
+func RegisterService(def ServiceDefinition) {
+	reflection.RegisterService(def)
 }
 
-type structTypeRegistry struct {
-	sync.RWMutex
-
-	defs  map[string]StructDefinition
-	types map[string]reflect.Type
-}
-
-func (str *structTypeRegistry) registerStructType(rs RegistrableStruct) {
-	t := reflect.TypeOf(rs)
-
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	sd := rs.StructDefinition()
-	n := sd.CanonicalName()
-
-	str.Lock()
-	defer str.Unlock()
-
-	str.types[n] = t
-	str.defs[n] = sd
-}
-
-func (str *structTypeRegistry) structType(n string) (reflect.Type, bool) {
-	str.Lock()
-	defer str.Unlock()
-
-	t, ok := str.types[n]
-
-	return t, ok
-}
-
-type StructDefinition struct {
-	Namespace string
-	Name      string
-}
-
-func (sd StructDefinition) CanonicalName() string {
-	return fmt.Sprintf("%s.%s", sd.Namespace, sd.Name)
-}
-
-type RegistrableStruct interface {
-	TStruct
-	StructDefinition() StructDefinition
+func GetServiceDefinition(n string) (ServiceDefinition, bool) {
+	return reflection.GetServiceDefinition(n)
 }
 
 func RegisterStruct(rs RegistrableStruct) {
-	defaultStructTypeRegistry.registerStructType(rs)
+	reflection.RegisterStruct(rs)
 }
 
 func StructType(n string) (reflect.Type, bool) {
-	return defaultStructTypeRegistry.structType(n)
+	return reflection.StructType(n)
+}
+
+func ExtractCanonicalNames(ns string, def AnnotatedDefinition) []string {
+	return reflection.ExtractCanonicalNames(ns, def)
 }

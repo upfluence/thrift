@@ -5,12 +5,12 @@
 #
 
 require 'thrift'
-require 'any_types'
+require 'thrift/types/known/timestamp/timestamp_types'
 
 module Thrift
   module Types
     module Known
-      module Any
+      module Timestamp
       end
     end
   end

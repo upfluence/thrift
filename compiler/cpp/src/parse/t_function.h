@@ -23,7 +23,7 @@
 #include <string>
 #include "t_type.h"
 #include "t_struct.h"
-#include "t_doc.h"
+#include "t_annotated.h"
 
 /**
  * Representation of a function. Key parts are return type, function name,
@@ -31,10 +31,10 @@
  * struct.
  *
  */
-class t_function : public t_doc {
+class t_function : public t_annotated {
 public:
   t_function(t_type* returntype, std::string name, t_struct* arglist, bool oneway = false)
-    : returntype_(returntype), name_(name), arglist_(arglist), oneway_(oneway) {
+    : t_annotated(name), returntype_(returntype), arglist_(arglist), oneway_(oneway) {
     xceptions_ = new t_struct(NULL);
     if (oneway_ && (!returntype_->is_void())) {
       pwarning(1, "Oneway methods should return void.\n");
@@ -46,8 +46,8 @@ public:
              t_struct* arglist,
              t_struct* xceptions,
              bool oneway = false)
-    : returntype_(returntype),
-      name_(name),
+    : t_annotated(name),
+      returntype_(returntype),
       arglist_(arglist),
       xceptions_(xceptions),
       oneway_(oneway) {
@@ -63,19 +63,13 @@ public:
 
   t_type* get_returntype() const { return returntype_; }
 
-  const std::string& get_name() const { return name_; }
-
   t_struct* get_arglist() const { return arglist_; }
 
   t_struct* get_xceptions() const { return xceptions_; }
 
   bool is_oneway() const { return oneway_; }
-
-  std::map<std::string, std::string> annotations_;
-
 private:
   t_type* returntype_;
-  std::string name_;
   t_struct* arglist_;
   t_struct* xceptions_;
   bool oneway_;

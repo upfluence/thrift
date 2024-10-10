@@ -1,4 +1,4 @@
-require 'thrift/types/known/any_types'
+require 'thrift/types/known/any/any_types'
 require 'json'
 require 'yaml'
 

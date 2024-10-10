@@ -272,7 +272,7 @@ EXTRA_DIST = \
 style-local:
 	$(CPPSTYLE_CMD)
 
-TYPE_FILES = ../../types/*.thrift ../../types/known/*.thrift
+TYPE_FILES = ../../types/*.thrift ../../types/*/*.thrift
 
 $(TYPE_FILES):
 	mkdir -p src/thrift/$(patsubst ../../%,%,$(dir $@))

@@ -14,6 +14,8 @@ var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
 
+const Namespace = "types.known.duration"
+
 func init() {
 	thrift.RegisterStruct((*Duration)(nil))
 }

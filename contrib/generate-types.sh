@@ -2,7 +2,8 @@
 
 set -x
 
-tag=$(git describe --tag)
+git_tag=$(git describe --tag)
+tag=${TAG:-$git_tag}
 
 ./bootstrap.sh
 

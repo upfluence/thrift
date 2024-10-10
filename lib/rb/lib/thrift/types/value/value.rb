@@ -1,4 +1,4 @@
-require 'thrift/types/value_types'
+require 'thrift/types/value/value_types'
 
 module Thrift
   module Types

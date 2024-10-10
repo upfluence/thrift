@@ -89,8 +89,11 @@ const int struct_is_union = 1;
   t_field*       tfield;
   char*          dtext;
   t_field::e_req ereq;
-  t_annotation*  tannot;
+  t_annotated*   tannotated;
   t_field_id     tfieldid;
+
+  t_legacy_annotation*     tlannot;
+  t_structured_annotation* tsannot;
 }
 
 /**
@@ -174,6 +177,8 @@ const int struct_is_union = 1;
 %token tok_union
 %token tok_reference
 
+%token tok_at
+
 /**
  * Grammar nodes
  */
@@ -186,15 +191,21 @@ const int struct_is_union = 1;
 %type<ttype>     SetType
 %type<ttype>     ListType
 
-%type<tdoc>      Definition
-%type<ttype>     TypeDefinition
+%type<tannotated> Definition
+%type<ttype>      TypeDefinition
 
 %type<ttypedef>  Typedef
 
-%type<ttype>     TypeAnnotations
-%type<ttype>     TypeAnnotationList
-%type<tannot>    TypeAnnotation
-%type<id>        TypeAnnotationValue
+%type<tannotated> TypeAnnotations
+%type<tannotated> TypeAnnotationList
+%type<tlannot>    TypeAnnotation
+%type<id>         TypeAnnotationValue
+
+%type<tannotated> StructuredAnnotations
+%type<tsannot>    StructuredAnnotation
+%type<tconstv>    StructuredAnnotationScalarValue
+%type<tconstv>    StructuredAnnotationValue
+
 
 %type<tfield>    Field
 %type<tfieldid>  FieldIdentifier
@@ -455,11 +466,15 @@ Include:
     }
 
 DefinitionList:
-  DefinitionList CaptureDocText Definition
+  DefinitionList CaptureDocText StructuredAnnotations Definition
     {
       pdebug("DefinitionList -> DefinitionList Definition");
-      if ($2 != NULL && $3 != NULL) {
-        $3->set_doc($2);
+      if ($2 != NULL && $4 != NULL) {
+        $4->set_doc($2);
+      }
+
+      if ($3 != NULL && $4 != NULL) {
+        $4->merge($3);
       }
     }
 |
@@ -561,7 +576,7 @@ Typedef:
       t_typedef *td = new t_typedef(g_program, $2, $3);
       $$ = td;
       if ($4 != NULL) {
-        $$->annotations_ = $4->annotations_;
+        $$->merge($4);
         delete $4;
       }
     }
@@ -574,7 +589,7 @@ Enum:
       validate_simple_identifier( $2);
       $$->set_name($2);
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($4);
         delete $6;
       }
 
@@ -616,8 +631,8 @@ EnumDef:
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-	  if ($3 != NULL) {
-        $$->annotations_ = $3->annotations_;
+      if ($3 != NULL) {
+        $$->merge($3);
         delete $3;
       }
     }
@@ -656,7 +671,7 @@ Senum:
       validate_simple_identifier( $2);
       $$ = new t_typedef(g_program, $4, $2);
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($6);
         delete $6;
       }
     }
@@ -795,13 +810,13 @@ Struct:
   StructHead tok_identifier XsdAll '{' FieldList '}' TypeAnnotations
     {
       pdebug("Struct -> tok_struct tok_identifier { FieldList }");
-      validate_simple_identifier( $2);
+      validate_simple_identifier($2);
       $5->set_xsd_all($3);
       $5->set_union($1 == struct_is_union);
       $$ = $5;
       $$->set_name($2);
       if ($7 != NULL) {
-        $$->annotations_ = $7->annotations_;
+        $$->merge($7);
         delete $7;
       }
     }
@@ -855,7 +870,7 @@ Xception:
       $4->set_xception(true);
       $$ = $4;
       if ($6 != NULL) {
-        $$->annotations_ = $6->annotations_;
+        $$->merge($6);
         delete $6;
       }
     }
@@ -869,7 +884,7 @@ Service:
       $$->set_name($2);
       $$->set_extends($3);
       if ($9 != NULL) {
-        $$->annotations_ = $9->annotations_;
+        $$->merge($9);
         delete $9;
       }
     }
@@ -916,17 +931,21 @@ FunctionList:
     }
 
 Function:
-  CaptureDocText Oneway FunctionType tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
+  CaptureDocText StructuredAnnotations Oneway FunctionType tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
     {
-      validate_simple_identifier( $4);
-      $6->set_name(std::string($4) + "_args");
-      $$ = new t_function($3, $4, $6, $8, $2);
+      validate_simple_identifier($5);
+      $7->set_name(std::string($5) + "_args");
+      $$ = new t_function($4, $5, $7, $9, $3);
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-      if ($9 != NULL) {
-        $$->annotations_ = $9->annotations_;
-        delete $9;
+      if ($10 != NULL) {
+        $$->merge($10);
+        delete $10;
+      }
+      if ($2 != NULL) {
+        $$->merge($2);
+        delete $2;
       }
     }
 
@@ -973,36 +992,40 @@ FieldList:
     }
 
 Field:
-  CaptureDocText FieldIdentifier FieldRequiredness FieldType FieldReference tok_identifier FieldValue XsdOptional XsdNillable XsdAttributes TypeAnnotations CommaOrSemicolonOptional
+  CaptureDocText StructuredAnnotations FieldIdentifier FieldRequiredness FieldType FieldReference tok_identifier FieldValue XsdOptional XsdNillable XsdAttributes TypeAnnotations CommaOrSemicolonOptional
     {
       pdebug("tok_int_constant : Field -> FieldType tok_identifier");
-      if ($2.auto_assigned) {
+      if ($3.auto_assigned) {
         pwarning(1, "No field key specified for %s, resulting protocol may have conflicts or not be backwards compatible!\n", $6);
         if (g_strict >= 192) {
           yyerror("Implicit field keys are deprecated and not allowed with -strict");
           exit(1);
         }
       }
-      validate_simple_identifier($6);
-      $$ = new t_field($4, $6, $2.value);
-      $$->set_reference($5);
-      $$->set_req($3);
-      if ($7 != NULL) {
-        g_scope->resolve_const_value($7, $4);
-        validate_field_value($$, $7);
-        $$->set_value($7);
+      validate_simple_identifier($7);
+      $$ = new t_field($5, $7, $3.value);
+      $$->set_reference($6);
+      $$->set_req($4);
+      if ($8 != NULL) {
+        g_scope->resolve_const_value($8, $5);
+        validate_field_value($$, $8);
+        $$->set_value($8);
       }
-      $$->set_xsd_optional($8);
-      $$->set_xsd_nillable($9);
+      $$->set_xsd_optional($9);
+      $$->set_xsd_nillable($10);
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-      if ($10 != NULL) {
-        $$->set_xsd_attrs($10);
-      }
       if ($11 != NULL) {
-        $$->annotations_ = $11->annotations_;
-        delete $11;
+        $$->set_xsd_attrs($11);
+      }
+      if ($12 != NULL) {
+        $$->merge($12);
+        delete $12;
+      }
+      if ($2 != NULL) {
+        $$->merge($2);
+        delete $2;
       }
     }
 
@@ -1141,7 +1164,7 @@ BaseType: SimpleBaseType TypeAnnotations
       pdebug("BaseType -> SimpleBaseType TypeAnnotations");
       if ($2 != NULL) {
         $$ = new t_base_type(*static_cast<t_base_type*>($1));
-        $$->annotations_ = $2->annotations_;
+        $$->merge($2);
         delete $2;
       } else {
         $$ = $1;
@@ -1200,7 +1223,7 @@ ContainerType: SimpleContainerType TypeAnnotations
       pdebug("ContainerType -> SimpleContainerType TypeAnnotations");
       $$ = $1;
       if ($2 != NULL) {
-        $$->annotations_ = $2->annotations_;
+        $$->merge($2);
         delete $2;
       }
     }
@@ -1263,6 +1286,79 @@ CppType:
       $$ = NULL;
     }
 
+StructuredAnnotation:
+  tok_at tok_identifier StructuredAnnotationValue
+    {
+      pdebug("StructuredAnnotation -> @ tok_identifier StructuredAnnotationValue");
+      $$ = new t_structured_annotation();
+      $$->type_ = g_scope->get_type($2);
+
+      if (g_parse_mode == PROGRAM) {
+        if ($$->type_ == NULL) {
+          yyerror("Type \"%s\" does not exist.", $2);
+          exit(1);
+        }
+
+        g_scope->resolve_const_value($3, $$->type_);
+      }
+
+      $$->value_ = $3;
+    }
+
+StructuredAnnotationValue:
+  ConstMap
+    {
+      $$ = $1;
+    }
+| ConstList
+    {
+      $$ = $1;
+    }
+| '(' StructuredAnnotationScalarValue ')'
+    {
+      $$ = $2;
+    }
+
+StructuredAnnotationScalarValue:
+  tok_int_constant
+    {
+      pdebug("StructuredAnnotationScalarValue => tok_int_constant");
+      $$ = new t_const_value();
+      $$->set_integer($1);
+      if (!g_allow_64bit_consts && ($1 < INT32_MIN || $1 > INT32_MAX)) {
+        pwarning(1, "64-bit constant \"%" PRIi64"\" may not work in all languages.\n", $1);
+      }
+    }
+| tok_dub_constant
+    {
+      pdebug("StructuredAnnotationScalarValue => tok_dub_constant");
+      $$ = new t_const_value();
+      $$->set_double($1);
+    }
+| tok_literal
+    {
+      pdebug("StructuredAnnotationScalarValue => tok_literal");
+      $$ = new t_const_value($1);
+    }
+| tok_identifier
+    {
+      pdebug("StructuredAnnotationScalarValue => tok_identifier");
+      $$ = new t_const_value();
+      $$->set_identifier($1);
+    }
+
+StructuredAnnotations:
+  StructuredAnnotations StructuredAnnotation
+    {
+      pdebug("StructuredAnnotations -> StructuredAnnotations StructuredAnnotation");
+      $$ = $1;
+      $$->append_structured_annotation($2);
+    }
+|
+    {
+      $$ = new t_annotated();
+    }
+
 TypeAnnotations:
   '(' TypeAnnotationList ')'
     {
@@ -1279,20 +1375,19 @@ TypeAnnotationList:
     {
       pdebug("TypeAnnotationList -> TypeAnnotationList , TypeAnnotation");
       $$ = $1;
-      $$->annotations_[$2->key] = $2->val;
-      delete $2;
+      $$->append_legacy_annotation($2);
     }
 |
     {
       /* Just use a dummy structure to hold the annotations. */
-      $$ = new t_struct(g_program);
+      $$ = new t_annotated();
     }
 
 TypeAnnotation:
   tok_identifier TypeAnnotationValue CommaOrSemicolonOptional
     {
       pdebug("TypeAnnotation -> TypeAnnotationValue");
-      $$ = new t_annotation;
+      $$ = new t_legacy_annotation;
       $$->key = $1;
       $$->val = $2;
     }

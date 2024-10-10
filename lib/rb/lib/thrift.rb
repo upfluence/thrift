@@ -68,3 +68,8 @@ require 'thrift/server/threaded_server'
 require 'thrift/server/thread_pool_server'
 
 require 'thrift/thrift_native'
+
+require 'thrift/types/known/any/any'
+require 'thrift/types/known/timestamp/timestamp'
+require 'thrift/types/known/duration/duration'
+require 'thrift/types/annotation/naming/naming'

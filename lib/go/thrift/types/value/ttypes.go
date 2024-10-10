@@ -22,8 +22,18 @@ func NewNullValue() *NullValue {
 	return &NullValue{}
 }
 
+var nullValueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "NullValue",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{},
+}
+
 func (p *NullValue) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "NullValue"}
+	return nullValueStructDefinition
 }
 
 func (p *NullValue) Read(iprot thrift.TProtocol) error {
@@ -84,8 +94,26 @@ func NewListValue() *ListValue {
 	return &ListValue{}
 }
 
+var listValueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "ListValue",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "values",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *ListValue) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "ListValue"}
+	return listValueStructDefinition
 }
 
 func (p *ListValue) GetValues() []*Value {
@@ -213,8 +241,34 @@ func NewMapEntry() *MapEntry {
 	return &MapEntry{}
 }
 
+var mapEntryStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "MapEntry",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "key",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *MapEntry) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "MapEntry"}
+	return mapEntryStructDefinition
 }
 
 var MapEntry_Key_DEFAULT *Value
@@ -380,8 +434,26 @@ func NewMapValue() *MapValue {
 	return &MapValue{}
 }
 
+var mapValueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "MapValue",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "entries",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *MapValue) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "MapValue"}
+	return mapValueStructDefinition
 }
 
 func (p *MapValue) GetEntries() []*MapEntry {
@@ -507,8 +579,26 @@ func NewStructValue() *StructValue {
 	return &StructValue{}
 }
 
+var structValueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "StructValue",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "fields",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *StructValue) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "StructValue"}
+	return structValueStructDefinition
 }
 
 func (p *StructValue) GetFields() map[string]*Value {
@@ -659,8 +749,91 @@ func NewValue() *Value {
 	return &Value{}
 }
 
+var valueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	IsUnion:   true,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "Value",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "null_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "string_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "binary_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "integer_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "double_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "bool_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "list_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "map_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "struct_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
 func (p *Value) StructDefinition() thrift.StructDefinition {
-	return thrift.StructDefinition{Namespace: "types.value", Name: "Value"}
+	return valueStructDefinition
 }
 
 var Value_NullValue_DEFAULT *NullValue

@@ -768,7 +768,7 @@ void t_java_generator::generate_java_union(t_struct* tstruct) {
 
   generate_java_doc(f_struct, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   indent(f_struct) << "public " << (is_final ? "final " : "") << "class " << tstruct->get_name()
                    << " extends org.apache.thrift.TUnion<" << tstruct->get_name() << ", "
@@ -1325,7 +1325,7 @@ void t_java_generator::generate_java_struct_definition(ofstream& out,
                                                        bool is_result) {
   generate_java_doc(out, tstruct);
 
-  bool is_final = (tstruct->annotations_.find("final") != tstruct->annotations_.end());
+  bool is_final = tstruct->has_legacy_annotation("final");
 
   if (!in_class) {
     generate_javax_generated_annotation(out);

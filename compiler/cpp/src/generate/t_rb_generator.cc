@@ -134,7 +134,8 @@ public:
                            t_type* field_type,
                            const std::string& field_name,
                            t_const_value* field_value,
-                           bool optional);
+                           bool optional,
+                           bool embed_annotations);
 
   /**
    * Service-level generation functions
@@ -183,6 +184,8 @@ public:
   void generate_serialize_list_element(t_rb_ofstream& out, t_list* tlist, std::string iter);
 
   void generate_rdoc(t_rb_ofstream& out, t_doc* tdoc);
+
+  void generate_rb_annotations(t_rb_ofstream& out, t_annotated* tannotated, std::string key_prefix);
 
   /**
    * Helper rendering functions
@@ -596,6 +599,7 @@ void t_rb_generator::generate_rb_struct(t_rb_ofstream& out,
   out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
   out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
+  generate_rb_annotations(out, tstruct, "");
   generate_field_constants(out, tstruct);
   generate_field_defns(out, tstruct);
   generate_rb_struct_required_validator(out, tstruct);
@@ -607,6 +611,28 @@ void t_rb_generator::generate_rb_struct(t_rb_ofstream& out,
   out.indent() << "end" << endl << endl;
 }
 
+
+void t_rb_generator::generate_rb_annotations(t_rb_ofstream& out,
+                                       t_annotated* tannotated,
+                                       std::string key_prefix) {
+  out.indent() << key_prefix << "LEGACY_ANNOTATIONS = {" << endl;
+  out.indent_up();
+  const map<string, string>& annotations = tannotated->legacy_annotations();
+  for (map<string, string>::const_iterator ns_it = annotations.begin(); ns_it != annotations.end(); ++ns_it) {
+    out << indent() << "%q\"" << escape_string(ns_it->first) << "\" => %q\"" << escape_string(ns_it->second)<< "\"," << endl;
+  }
+  out.indent_down();
+  out.indent() << "}.freeze" << endl << endl;
+
+  out.indent() << key_prefix << "STRUCTURED_ANNOTATIONS = [" << endl;
+  out.indent_up();
+  vector<t_structured_annotation*> sannotations = tannotated->structured_annotations();
+  for (vector<t_structured_annotation*>::const_iterator it = sannotations.begin(); it != sannotations.end(); it++) {
+    render_const_value(out.indent(), (*it)->type_, (*it)->value_) << "," << endl;
+  }
+  out.indent_down();
+  out.indent() << "].freeze" << endl << endl;
+}
 /**
  * Generates a ruby union
  */
@@ -623,8 +649,8 @@ void t_rb_generator::generate_rb_union(t_rb_ofstream& out,
   out.indent() << "NAME = '" << tstruct->get_name() << "'.freeze" << endl;
   out.indent() << "NAMESPACE = '" << tstruct->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
+  generate_rb_annotations(out, tstruct, "");
   generate_field_constructors(out, tstruct);
-
   generate_field_constants(out, tstruct);
   generate_field_defns(out, tstruct);
   generate_rb_union_validator(out, tstruct);
@@ -702,6 +728,10 @@ void t_rb_generator::generate_field_defns(t_rb_ofstream& out, t_struct* tstruct)
   const vector<t_field*>& fields = tstruct->get_members();
   vector<t_field*>::const_iterator f_iter;
 
+  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    generate_rb_annotations(out, *f_iter, "THRIFT_FIELD_" + upcase_string((*f_iter)->get_name())  + "_");
+  }
+
   out.indent() << "FIELDS = {" << endl;
   out.indent_up();
   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
@@ -718,7 +748,8 @@ void t_rb_generator::generate_field_defns(t_rb_ofstream& out, t_struct* tstruct)
                         (*f_iter)->get_type(),
                         (*f_iter)->get_name(),
                         (*f_iter)->get_value(),
-                        (*f_iter)->get_req() == t_field::T_OPTIONAL);
+                        (*f_iter)->get_req() == t_field::T_OPTIONAL,
+                        true);
   }
   out.indent_down();
   out << endl;
@@ -731,7 +762,8 @@ void t_rb_generator::generate_field_data(t_rb_ofstream& out,
                                          t_type* field_type,
                                          const std::string& field_name = "",
                                          t_const_value* field_value = NULL,
-                                         bool optional = false) {
+                                         bool optional = false,
+                                         bool embed_annotations = false) {
   field_type = get_true_type(field_type);
 
   // Begin this field's defn
@@ -773,6 +805,11 @@ void t_rb_generator::generate_field_data(t_rb_ofstream& out,
 
   if (field_type->is_enum()) {
     out << ", enum_class: " << full_type_name(field_type);
+  }
+
+  if (embed_annotations) {
+    out << ", legacy_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_LEGACY_ANNOTATIONS";
+    out << ", structured_annotations: THRIFT_FIELD_" << upcase_string(field_name)  << "_STRUCTURED_ANNOTATIONS";
   }
 
   // End of this field's defn
@@ -826,6 +863,7 @@ void t_rb_generator::generate_service(t_service* tservice) {
   f_service_.indent() << "NAMESPACE = '" << tservice->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
 
   // Generate the three main parts of the service (well, two for now in PHP)
+  generate_rb_annotations(f_service_, tservice, "");
   generate_service_helpers(tservice);
   generate_service_client(tservice);
   generate_service_server(tservice);
@@ -1019,11 +1057,15 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
   f_service_.indent_down();
   f_service_.indent() << "end" << endl << endl;
 
+  for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+    generate_rb_annotations(f_service_, *f_iter, "THRIFT_METHOD_" + upcase_string((*f_iter)->get_name())  + "_");
+  }
+
   f_service_.indent() << "METHODS = {" << endl;
   f_service_.indent_up();
 
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-  f_service_.indent() << "'" << (*f_iter)->get_name() << "' => { args_klass: " << capitalize((*f_iter)->get_name()) << "_args, oneway: " << ((*f_iter)->is_oneway() ? "true" : "false") << "}," << endl;
+  f_service_.indent() << "'" << (*f_iter)->get_name() << "' => { args_klass: " << capitalize((*f_iter)->get_name()) << "_args, oneway: " << ((*f_iter)->is_oneway() ? "true" : "false") << ", legacy_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS}," << endl;
   }
 
   f_service_.indent_down();
