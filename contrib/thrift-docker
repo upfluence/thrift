@@ -1,3 +1,4 @@
 TAG=${TAG:-"latest"}
+PULL_STRATEGY=${PULL_STRATEGY:-"missing"}
 
-exec docker run --pull always -v "${PWD}:/data" --rm ghcr.io/upfluence/thrift:${TAG} $@
+exec docker run --pull ${PULL_STRATEGY} -q -v "${PWD}:/data" --rm ghcr.io/upfluence/thrift:${TAG} $@
