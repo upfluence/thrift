@@ -1227,6 +1227,11 @@ string t_rb_generator::type_name(const t_type* ttype) {
 
 string t_rb_generator::full_type_name(const t_type* ttype) {
   string prefix = "::";
+
+  if (ttype->get_program()->is_std_path()) {
+    prefix += "Thrift::";
+  }
+
   vector<std::string> modules = ruby_modules(ttype->get_program());
   for (auto & module : modules) {
     prefix += module + "::";
