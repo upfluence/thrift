@@ -130,9 +130,20 @@ private:
 };
 
 void t_json_generator::init_generator() {
-  MKDIR(get_out_dir().c_str());
+  string subdir = get_out_dir();
 
-  string f_json_name = get_out_dir() + program_->get_name() + ".json";
+  MKDIR(subdir.c_str());
+
+  std::string dir = program_->get_namespace("json");
+  string::size_type loc;
+
+  while ((loc = dir.find(".")) != string::npos) {
+    subdir = subdir + underscore(dir.substr(0, loc)) + "/";
+    MKDIR(subdir.c_str());
+    dir = dir.substr(loc + 1);
+  }
+
+  string f_json_name = subdir + program_->get_name() + ".json";
   f_json_.open(f_json_name.c_str());
 
   // Merge all included programs into this one so we can output one big file.
