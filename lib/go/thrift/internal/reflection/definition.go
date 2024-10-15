@@ -103,6 +103,11 @@ func (str *structTypeRegistry) registerStructType(rs RegistrableStruct) {
 	}
 
 	sd := rs.StructDefinition()
+
+	if sd.AnnotatedDefinition.Name == "" {
+		sd.AnnotatedDefinition.Name = sd.Name
+	}
+
 	ns := str.ext.Extract(sd.Namespace, sd.AnnotatedDefinition)
 
 	str.mu.Lock()
