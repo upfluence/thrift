@@ -59,11 +59,11 @@
 class t_program : public t_doc {
 public:
   t_program(std::string path, std::string name)
-    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false) {
+    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH) {
     scope_ = new t_scope();
   }
 
-  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false) {
+  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH)  {
     name_ = program_name(path);
     scope_ = new t_scope();
   }
@@ -76,7 +76,7 @@ public:
   }
 
   bool is_std_path() const {
-    return path_.rfind(THRIFT_TYPES_NESTED_PATH, 0) == 0;
+    return path_.rfind(std_path_ + "/types", 0) == 0;
   }
 
   // Path accessor
@@ -125,6 +125,8 @@ public:
 
   // Programs to include
   const std::vector<t_program*>& get_includes() const { return includes_; }
+
+  void set_std_path(std::string std_path) { std_path_ = std_path; }
 
   void set_out_path(std::string out_path, bool out_path_is_absolute) {
     out_path_ = out_path;
@@ -366,6 +368,8 @@ private:
 
   // Include prefix for this program, if any
   std::string include_prefix_;
+
+  std::string std_path_;
 
   // Identifier lookup scope
   t_scope* scope_;

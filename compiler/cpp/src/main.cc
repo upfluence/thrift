@@ -28,6 +28,7 @@
  */
 
 #include <cassert>
+#include <cstdlib>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -1053,7 +1054,13 @@ int main(int argc, char** argv) {
   // Set the current path to a dummy value to make warning messages clearer.
   g_curpath = "arguments";
 
-  g_incl_searchpath.push_back(THRIFT_TYPES_PATH);
+  std::string types_path = THRIFT_TYPES_PATH;
+
+  if (const char* env_path = std::getenv("THRIFT_TYPES_PATH")) {
+    types_path = std::string(env_path);
+  }
+
+  g_incl_searchpath.push_back(types_path);
 
   // Hacky parameter handling... I didn't feel like using a library sorry!
   for (i = 1; i < argc - 1; i++) {
@@ -1175,6 +1182,7 @@ int main(int argc, char** argv) {
   }
 
   program->set_include_prefix(include_prefix);
+  program->set_std_path(types_path);
 
   // Initialize global types
   g_type_void = new t_base_type("void", t_base_type::TYPE_VOID);
