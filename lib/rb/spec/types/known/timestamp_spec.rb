@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'thrift/types/known/timestamp'
+require 'thrift/types/known/timestamp/timestamp'
 
 describe 'Thrift::Types::Known::Timestamp' do
   context 'from_time' do

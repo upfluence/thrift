@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'json'
-require 'thrift/types/value'
+require 'thrift/types/value/value'
 
 class LocalObject
   def initialize(foo, bar)

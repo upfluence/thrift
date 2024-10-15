@@ -1,6 +1,6 @@
 require 'spec_helper'
-require 'thrift/types/value'
-require 'thrift/types/known/any'
+require 'thrift/types/value/value'
+require 'thrift/types/known/any/any'
 
 describe 'Thrift::Types::Known::Any' do
   describe 'encode' do
