@@ -20,10 +20,13 @@
 package tests
 
 import (
-	"github.com/golang/mock/gomock"
-	"optionalfieldstest"
 	"testing"
-	"thrift"
+
+	"github.com/upfluence/thrift/lib/go/thrift"
+
+	"github.com/golang/mock/gomock"
+
+	"github.com/upfluence/thrift/lib/go/test/gopath/src/optionalfieldstest"
 )
 
 func TestStructReadRequiredFields(t *testing.T) {

@@ -24,7 +24,7 @@ package common
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	thrifttest "gen/thrifttest"
+	"github.com/upfluence/thrift/test/go/src/gen/thrifttest"
 )
 
 // Mock of ThriftTest interface

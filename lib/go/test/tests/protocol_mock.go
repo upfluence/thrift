@@ -23,8 +23,8 @@
 package tests
 
 import (
-	thrift "thrift"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/upfluence/thrift/lib/go/thrift"
 )
 
 // Mock of TProtocol interface
@@ -43,7 +43,7 @@ func NewMockTProtocol(ctrl *gomock.Controller) *MockTProtocol {
 	mock.recorder = &_MockTProtocolRecorder{mock}
 	return mock
 }
-
+func (m *MockTProtocol) GetProtocol(thrift.TTransport) thrift.TProtocol { return m }
 func (_m *MockTProtocol) EXPECT() *_MockTProtocolRecorder {
 	return _m.recorder
 }

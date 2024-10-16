@@ -21,8 +21,10 @@ package tests
 
 import (
 	"testing"
-	"thrift"
-	"thrifttest"
+
+	"github.com/upfluence/thrift/lib/go/test/gopath/src/thrifttest"
+
+	"github.com/upfluence/thrift/lib/go/thrift"
 )
 
 func RunSocketTestSuite(t *testing.T, protocolFactory thrift.TProtocolFactory,
@@ -34,7 +36,7 @@ func RunSocketTestSuite(t *testing.T, protocolFactory thrift.TProtocolFactory,
 	if err != nil {
 		t.Fatal("Unable to create server socket", err)
 	}
-	processor := thrifttest.NewThriftTestProcessor(NewThriftTestHandler())
+	processor := thrifttest.NewThriftTestProcessor(NewThriftTestHandler(), nil)
 	server = thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
 	server.Listen()
 
@@ -43,8 +45,7 @@ func RunSocketTestSuite(t *testing.T, protocolFactory thrift.TProtocolFactory,
 	// client
 	var transport thrift.TTransport = thrift.NewTSocketFromAddrTimeout(addr, TIMEOUT)
 	transport = transportFactory.GetTransport(transport)
-	var protocol thrift.TProtocol = protocolFactory.GetProtocol(transport)
-	thriftTestClient := thrifttest.NewThriftTestClientProtocol(transport, protocol, protocol)
+	thriftTestClient := thrifttest.NewThriftTestClient(thrift.NewTSyncClient(transport, protocolFactory))
 	err = transport.Open()
 	if err != nil {
 		t.Fatal("Unable to open client socket", err)

@@ -20,11 +20,14 @@
 package tests
 
 import (
-	"github.com/golang/mock/gomock"
+	"context"
 	"errors"
-	"errortest"
 	"testing"
-	"thrift"
+
+	"github.com/upfluence/thrift/lib/go/thrift"
+
+	"github.com/golang/mock/gomock"
+	"github.com/upfluence/thrift/lib/go/test/gopath/src/errortest"
 )
 
 // TestCase: Comprehensive call and reply workflow in the client.
@@ -211,6 +214,7 @@ func prepareClientCallReply(protocol *MockTProtocol, failAt int, failWith error)
 	if failAt == 25 {
 		err = failWith
 	}
+	last = protocol.EXPECT().Transport().Return(thrift.NewTMemoryBuffer()).After(last)
 	last = protocol.EXPECT().Flush().Return(err).After(last)
 	if failAt == 25 {
 		return true
@@ -411,8 +415,8 @@ func TestClientReportTTransportErrors(t *testing.T) {
 		if !prepareClientCallReply(protocol, i, err) {
 			return
 		}
-		client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-		_, retErr := client.TestStruct(thing)
+		client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+		_, retErr := client.TestStruct(context.Background(), thing)
 		mockCtrl.Finish()
 		err2, ok := retErr.(thrift.TTransportException)
 		if !ok {
@@ -443,8 +447,8 @@ func TestClientReportTProtocolErrors(t *testing.T) {
 		if !prepareClientCallReply(protocol, i, err) {
 			return
 		}
-		client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-		_, retErr := client.TestStruct(thing)
+		client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+		_, retErr := client.TestStruct(context.Background(), thing)
 		mockCtrl.Finish()
 		err2, ok := retErr.(thrift.TProtocolException)
 		if !ok {
@@ -470,6 +474,7 @@ func prepareClientCallException(protocol *MockTProtocol, failAt int, failWith er
 	last = protocol.EXPECT().WriteFieldStop().After(last)
 	last = protocol.EXPECT().WriteStructEnd().After(last)
 	last = protocol.EXPECT().WriteMessageEnd().After(last)
+	last = protocol.EXPECT().Transport().Return(thrift.NewTMemoryBuffer()).After(last)
 	last = protocol.EXPECT().Flush().After(last)
 
 	// Reading the exception, might fail.
@@ -564,8 +569,8 @@ func TestClientCallException(t *testing.T) {
 		protocol := NewMockTProtocol(mockCtrl)
 		willComplete := !prepareClientCallException(protocol, i, err)
 
-		client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-		_, retErr := client.TestString("test")
+		client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+		_, retErr := client.TestString(context.Background(), "test")
 		mockCtrl.Finish()
 
 		if !willComplete {
@@ -603,12 +608,13 @@ func TestClientSeqIdMismatch(t *testing.T) {
 		protocol.EXPECT().WriteFieldStop(),
 		protocol.EXPECT().WriteStructEnd(),
 		protocol.EXPECT().WriteMessageEnd(),
+		protocol.EXPECT().Transport().Return(transport),
 		protocol.EXPECT().Flush(),
 		protocol.EXPECT().ReadMessageBegin().Return("testString", thrift.REPLY, int32(2), nil),
 	)
 
-	client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-	_, err := client.TestString("test")
+	client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+	_, err := client.TestString(context.Background(), "test")
 	mockCtrl.Finish()
 	appErr, ok := err.(thrift.TApplicationException)
 	if !ok {
@@ -633,12 +639,13 @@ func TestClientWrongMethodName(t *testing.T) {
 		protocol.EXPECT().WriteFieldStop(),
 		protocol.EXPECT().WriteStructEnd(),
 		protocol.EXPECT().WriteMessageEnd(),
+		protocol.EXPECT().Transport().Return(transport),
 		protocol.EXPECT().Flush(),
 		protocol.EXPECT().ReadMessageBegin().Return("unknown", thrift.REPLY, int32(1), nil),
 	)
 
-	client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-	_, err := client.TestString("test")
+	client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+	_, err := client.TestString(context.Background(), "test")
 	mockCtrl.Finish()
 	appErr, ok := err.(thrift.TApplicationException)
 	if !ok {
@@ -663,12 +670,13 @@ func TestClientWrongMessageType(t *testing.T) {
 		protocol.EXPECT().WriteFieldStop(),
 		protocol.EXPECT().WriteStructEnd(),
 		protocol.EXPECT().WriteMessageEnd(),
+		protocol.EXPECT().Transport().Return(transport),
 		protocol.EXPECT().Flush(),
 		protocol.EXPECT().ReadMessageBegin().Return("testString", thrift.INVALID_TMESSAGE_TYPE, int32(1), nil),
 	)
 
-	client := errortest.NewErrorTestClientProtocol(transport, protocol, protocol)
-	_, err := client.TestString("test")
+	client := errortest.NewErrorTestClient(thrift.NewTSyncClient(transport, protocol))
+	_, err := client.TestString(context.Background(), "test")
 	mockCtrl.Finish()
 	appErr, ok := err.(thrift.TApplicationException)
 	if !ok {

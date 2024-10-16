@@ -21,8 +21,9 @@ package common
 
 import (
 	"errors"
-	. "gen/thrifttest"
 	"time"
+
+	. "github.com/upfluence/thrift/test/go/src/gen/thrifttest"
 )
 
 var SimpleHandler = &simpleHandler{}

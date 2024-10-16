@@ -18,7 +18,7 @@
 #
 
 THRIFT = $(top_builddir)/compiler/cpp/thrift
-THRIFTARGS = -out gopath/src/ --gen go:thrift_import=thrift
+THRIFTARGS = -out gopath/src/ --gen go:package_prefix=github.com/upfluence/thrift/lib/go/test/gopath/src/
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
 
 # Thrift for GO has problems with complex map keys: THRIFT-2063
@@ -49,22 +49,21 @@ gopath: $(THRIFT) $(THRIFTTEST) \
 	$(THRIFT) $(THRIFTARGS) ErrorTest.thrift
 	$(THRIFT) $(THRIFTARGS) NamesTest.thrift
 	$(THRIFT) $(THRIFTARGS) InitialismsTest.thrift
-	GOPATH=`pwd`/gopath $(GO) get github.com/golang/mock/gomock
 	ln -nfs ../../../thrift gopath/src/thrift
 	ln -nfs ../../tests gopath/src/tests
 	touch gopath
 
 check: gopath
-	GOPATH=`pwd`/gopath $(GO) build \
-				includestest \
-				binarykeytest \
-				servicestest \
-				typedeffieldtest \
-				refannotationfieldstest \
-				errortest	\
-				namestest \
-				initialismstest
-	GOPATH=`pwd`/gopath $(GO) test thrift tests
+	$(GO) build \
+				./gopath/src/includestest \
+				./gopath/src/binarykeytest \
+				./gopath/src/servicestest \
+				./gopath/src/typedeffieldtest \
+				./gopath/src/refannotationfieldstest \
+				./gopath/src/errortest	\
+				./gopath/src/namestest \
+				./gopath/src/initialismstest
+	$(GO) test ./tests/...
 
 clean-local:
 	$(RM) -r gopath ThriftTest.thrift gen-go

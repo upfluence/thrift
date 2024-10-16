@@ -23,8 +23,9 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"gen/thrifttest"
-	"thrift"
+
+	"github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/test/go/src/gen/thrifttest"
 )
 
 var (
@@ -104,7 +105,7 @@ func StartServer(
 	default:
 		return nil, fmt.Errorf("Invalid transport specified %s", transport)
 	}
-	processor := thrifttest.NewThriftTestProcessor(handler)
+	processor := thrifttest.NewThriftTestProcessor(handler, nil)
 	server := thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
 	if err = server.Listen(); err != nil {
 		return

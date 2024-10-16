@@ -18,8 +18,9 @@
 #
 
 THRIFT = $(top_builddir)/compiler/cpp/thrift
-THRIFTCMD = $(THRIFT) -out src/gen --gen go:thrift_import=thrift
+THRIFTARGS = -out src/gen --gen go:package_prefix=github.com/upfluence/thrift/test/go/src/gen/
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
+THRIFTCMD = $(THRIFT) $(THRIFTARGS)
 
 precross: bin/testclient bin/testserver
 
@@ -31,18 +32,16 @@ gopath: $(THRIFT) ThriftTest.thrift
 	mkdir -p src/gen
 	$(THRIFTCMD) ThriftTest.thrift
 	$(THRIFTCMD) ../StressTest.thrift
-	ln -nfs ../../../lib/go/thrift src/thrift
-	GOPATH=`pwd` $(GO) get github.com/golang/mock/gomock
-	touch gopath
+	$(GO) get github.com/golang/mock/gomock
 
 bin/testclient: gopath
-	GOPATH=`pwd` $(GO) install bin/testclient
+	$(GO) install ./src/bin/testclient
 
 bin/testserver: gopath
-	GOPATH=`pwd` $(GO) install bin/testserver
+	$(GO) install ./src/bin/testserver
 
 bin/stress: gopath
-	GOPATH=`pwd` $(GO) install bin/stress
+	$(GO) install ./src/bin/stress
 
 clean-local:
 	$(RM) -r src/gen src/code.google.com src/thrift bin pkg gopath ThriftTest.thrift
@@ -50,11 +49,11 @@ clean-local:
 check_PROGRAMS: bin/testclient bin/testserver bin/stress
 
 check: gopath
-	GOPATH=`pwd` $(GO) test -v common/...
+	$(GO) test -v ./src/common/...
+	$(GO) test -v ./src/gen/...
 
 genmock: gopath
-	GOPATH=`pwd` $(GO) install code.google.com/p/gomock/mockgen
-	GOPATH=`pwd` bin/mockgen -destination=src/common/mock_handler.go -package=common gen/thrifttest ThriftTest
+	bin/mockgen -destination=src/common/mock_handler.go -package=common gen/thrifttest ThriftTest
 
 EXTRA_DIST = \
 	src/bin \
