@@ -44,7 +44,7 @@ namespace :'gen-rb' do
 
   task :'flat_spec' do
     dir = File.dirname(__FILE__) + '/spec'
-    mkdir_p("#{dir}/gen-rb/flat")
+    sh "mkdir", "-p", "#{dir}/gen-rb/flat"
     sh THRIFT, '--gen', 'rb', '-recurse', '-out', "#{dir}/gen-rb/flat", "#{dir}/ThriftNamespacedSpec.thrift"
   end
 
@@ -76,7 +76,7 @@ end
 desc 'Run the compiler tests (requires full thrift checkout)'
 task :test do
   # ensure this is a full thrift checkout and not a tarball of the ruby libs
-  cmd = 'head -1 ../../README 2>/dev/null | grep Thrift >/dev/null 2>/dev/null'
+  cmd = 'head -1 ../../README.md 2>/dev/null | grep Thrift >/dev/null 2>/dev/null'
   system(cmd) or fail "rake test requires a full thrift checkout"
   sh 'make', '-C', File.dirname(__FILE__) + "/../../test/rb", "check"
 end
