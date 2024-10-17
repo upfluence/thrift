@@ -264,6 +264,7 @@ public:
   void add_include(std::string path, std::string include_site) {
     t_program* program = new t_program(path);
 
+    program->set_std_path(std_path_);
     program->set_include_site(include_site);
 
     // include prefix for this program is the site at which it was included
