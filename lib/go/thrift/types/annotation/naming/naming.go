@@ -12,7 +12,7 @@ func init() {
 					lns := pka.GetNamespace_()
 					ln := pka.GetName()
 
-					if lns == "" {
+					if pka.Namespace_ == nil {
 						lns = ns
 					}
 
