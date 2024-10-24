@@ -15,10 +15,14 @@ module Thrift
     end
 
     def structured_annotations
+      return [] unless @klass.const_defined? :STRUCTURED_ANNOTATIONS
+
       @klass::STRUCTURED_ANNOTATIONS
     end
 
     def legacy_annotations
+      return {} unless @klass.const_defined? :LEGACY_ANNOTATIONS
+
       @klass::LEGACY_ANNOTATIONS
     end
 
