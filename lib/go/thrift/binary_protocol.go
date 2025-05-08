@@ -20,13 +20,13 @@
 package thrift
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"strings"
 	"sync"
 )
 
@@ -475,7 +475,7 @@ func (p *TBinaryProtocol) readAll(buf []byte) error {
 	return NewTProtocolException(err)
 }
 
-var bufPool = &sync.Pool{New: func() interface{} { return new(bytes.Buffer) }}
+var bufPool = &sync.Pool{New: func() interface{} { return new(strings.Builder) }}
 
 func (p *TBinaryProtocol) readString(b []byte) (string, error) {
 	_, e := io.ReadFull(p.trans, b)
@@ -483,22 +483,17 @@ func (p *TBinaryProtocol) readString(b []byte) (string, error) {
 }
 
 func (p *TBinaryProtocol) readStringBody(size int) (value string, err error) {
-	if size < 0 {
-		return "", nil
-	}
-
-	if size > maxStringSize {
-		return "", invalidDataLength
-	}
-
 	switch {
+	case size <= 0:
+		return "", nil
+	case size > maxStringSize:
+		return "", invalidDataLength
 	case int(size) <= len(p.buffer):
 		return p.readString(p.buffer[:size]) // avoids allocation for small reads
-	case int(size) < readLimit:
-		return p.readString(make([]byte, size))
 	}
 
-	var buf = bufPool.Get().(*bytes.Buffer)
+	var buf = bufPool.Get().(*strings.Builder)
+
 	defer func() {
 		buf.Reset()
 		bufPool.Put(buf)
