@@ -74,6 +74,10 @@ func NewTTransportException(t int, e string) TTransportException {
 }
 
 func NewTTransportExceptionFromError(err error) TTransportException {
+	if err == nil {
+		return nil
+	}
+
 	var (
 		terr TTransportException
 
@@ -81,8 +85,6 @@ func NewTTransportExceptionFromError(err error) TTransportException {
 	)
 
 	switch {
-	case err == nil:
-		return nil
 	case errors.As(err, &terr):
 		return terr
 	case errors.Is(err, io.EOF):

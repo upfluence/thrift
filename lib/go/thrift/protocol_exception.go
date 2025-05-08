@@ -63,6 +63,10 @@ func (p *tProtocolException) Unwrap() error {
 }
 
 func NewTProtocolException(err error) TProtocolException {
+	if err == nil {
+		return nil
+	}
+
 	var (
 		perr TProtocolException
 		berr base64.CorruptInputError
@@ -71,13 +75,10 @@ func NewTProtocolException(err error) TProtocolException {
 	)
 
 	switch {
-	case err == nil:
-		return nil
 	case errors.As(err, &perr):
 		return perr
 	case errors.As(err, &berr):
 		typeID = INVALID_DATA
-
 	}
 
 	return NewTProtocolExceptionWithType(typeID, err)
