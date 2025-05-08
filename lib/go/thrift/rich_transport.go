@@ -30,7 +30,7 @@ func NewTRichTransport(trans TTransport) *RichTransport {
 	return &RichTransport{trans}
 }
 
-func (r *RichTransport) ReadByte() (c byte, err error) {
+func (r *RichTransport) ReadByte() (byte, error) {
 	return readByte(r.TTransport)
 }
 
@@ -38,11 +38,15 @@ func (r *RichTransport) WriteByte(c byte) error {
 	return writeByte(r.TTransport, c)
 }
 
-func (r *RichTransport) WriteString(s string) (n int, err error) {
-	return r.Write([]byte(s))
+func (r *RichTransport) WriteString(s string) (int, error) {
+	return io.WriteString(r.TTransport, s)
 }
 
-func readByte(r io.Reader) (c byte, err error) {
+func readByte(r io.Reader) (byte, error) {
+	if br, ok := r.(io.ByteReader); ok {
+		return br.ReadByte()
+	}
+
 	v := [1]byte{0}
 	n, err := r.Read(v[0:1])
 	if n > 0 && (err == nil || err == io.EOF) {
@@ -58,6 +62,10 @@ func readByte(r io.Reader) (c byte, err error) {
 }
 
 func writeByte(w io.Writer, c byte) error {
+	if bw, ok := w.(io.ByteWriter); ok {
+		return bw.WriteByte(c)
+	}
+
 	v := [1]byte{c}
 	_, err := w.Write(v[0:1])
 	return err
