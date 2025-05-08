@@ -44,10 +44,6 @@ type TTransport interface {
 	WriteContext(ctx Context) error
 }
 
-type stringWriter interface {
-	WriteString(s string) (n int, err error)
-}
-
 // This is "enchanced" transport with extra capabilities. You need to use one of these
 // to construct protocol.
 // Notably, TSocket does not implement this interface, and it is always a mistake to use
@@ -56,6 +52,6 @@ type TRichTransport interface {
 	io.ReadWriter
 	io.ByteReader
 	io.ByteWriter
-	stringWriter
+	io.StringWriter
 	Flusher
 }

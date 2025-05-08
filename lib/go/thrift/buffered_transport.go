@@ -32,8 +32,6 @@ type TBufferedTransport struct {
 	tp TTransport
 }
 
-func (p *TBufferedTransport) WriteContext(_ Context) error { return nil }
-
 func (p *TBufferedTransportFactory) GetTransport(trans TTransport) TTransport {
 	return NewTBufferedTransport(trans, p.size)
 }
@@ -52,15 +50,19 @@ func NewTBufferedTransport(trans TTransport, bufferSize int) *TBufferedTransport
 	}
 }
 
+func (p *TBufferedTransport) WriteContext(ctx Context) error {
+	return p.tp.WriteContext(ctx)
+}
+
 func (p *TBufferedTransport) IsOpen() bool {
 	return p.tp.IsOpen()
 }
 
-func (p *TBufferedTransport) Open() (err error) {
+func (p *TBufferedTransport) Open() error {
 	return p.tp.Open()
 }
 
-func (p *TBufferedTransport) Close() (err error) {
+func (p *TBufferedTransport) Close() error {
 	return p.tp.Close()
 }
 

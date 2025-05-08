@@ -197,14 +197,11 @@ func (p *StreamTransport) WriteByte(c byte) (err error) {
 }
 
 func (p *StreamTransport) WriteString(s string) (n int, err error) {
-	f, ok := p.Writer.(stringWriter)
-	if ok {
-		n, err = f.WriteString(s)
-	} else {
-		n, err = p.Writer.Write([]byte(s))
-	}
+	n, err = io.WriteString(p.Writer, s)
+
 	if err != nil {
 		err = NewTTransportExceptionFromError(err)
 	}
+
 	return
 }

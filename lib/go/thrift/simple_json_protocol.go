@@ -65,7 +65,6 @@ func (p _ParseContext) String() string {
 // This protocol produces/consumes a simple output format
 // suitable for parsing by scripting languages.  It should not be
 // confused with the full-featured TJSONProtocol.
-//
 type TSimpleJSONProtocol struct {
 	trans TTransport
 
@@ -889,7 +888,7 @@ func (p *TSimpleJSONProtocol) ParseQuotedStringBody() (string, error) {
 	return b.String(), nil
 }
 
-func (p *TSimpleJSONProtocol) parseQuotedStringBody(sw stringWriter) error {
+func (p *TSimpleJSONProtocol) parseQuotedStringBody(sw io.StringWriter) error {
 	for {
 		line, err := p.reader.ReadString(JSON_QUOTE)
 
