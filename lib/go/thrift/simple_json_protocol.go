@@ -892,7 +892,7 @@ func (p *TSimpleJSONProtocol) ParseQuotedStringBody() (string, error) {
 	return b.String(), nil
 }
 
-func (p *TSimpleJSONProtocol) parseQuotedStringBody(sw stringWriter) error {
+func (p *TSimpleJSONProtocol) parseQuotedStringBody(sw io.StringWriter) error {
 	for {
 		line, err := p.reader.ReadString(JSON_QUOTE)
 
