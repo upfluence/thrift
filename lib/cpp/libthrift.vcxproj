@@ -71,6 +71,7 @@
     <ClCompile Include="src\thrift\transport\TSocket.cpp"/>
     <ClCompile Include="src\thrift\transport\TSSLSocket.cpp"/>
     <ClCompile Include="src\thrift\transport\TTransportException.cpp"/>
+    <ClCompile Include="src\thrift\transport\TSubprocessTransport.cpp" />
     <ClCompile Include="src\thrift\transport\TTransportUtils.cpp"/>
     <ClCompile Include="src\thrift\windows\GetTimeOfDay.cpp" />
     <ClCompile Include="src\thrift\windows\OverlappedSubmissionThread.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="src\thrift\transport\TServerSocket.h" />
     <ClInclude Include="src\thrift\transport\TServerTransport.h" />
     <ClInclude Include="src\thrift\transport\TSimpleFileTransport.h" />
+    <ClInclude Include="src\thrift\transport\TSubprocessTransport.h" />
     <ClInclude Include="src\thrift\transport\TSocket.h" />
     <ClInclude Include="src\thrift\transport\TSSLSocket.h" />
     <ClInclude Include="src\thrift\transport\TTransport.h" />

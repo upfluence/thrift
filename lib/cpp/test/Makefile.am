@@ -88,6 +88,7 @@ Benchmark_LDADD = libtestgencpp.la
 check_PROGRAMS = \
 	UnitTests \
 	TFDTransportTest \
+	TSubprocessTransportTest \
 	TPipedTransportTest \
 	DebugProtoTest \
 	JSONProtoTest \
@@ -226,6 +227,15 @@ TFDTransportTest_SOURCES = \
 TFDTransportTest_LDADD =  \
 	$(top_builddir)/lib/cpp/libthrift.la \
 	$(BOOST_TEST_LDADD)
+
+#
+# TSubprocessTransportTest
+#
+TSubprocessTransportTest_SOURCES = \
+	TSubprocessTransportTest.cpp
+
+TSubprocessTransportTest_LDADD = \
+	$(top_builddir)/lib/cpp/libthrift.la
 
 
 #

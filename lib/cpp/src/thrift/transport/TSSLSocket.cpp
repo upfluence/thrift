@@ -114,6 +114,9 @@ void initializeOpenSSL() {
     return;
   }
   openSSLInitialized = true;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  OPENSSL_init_ssl(0, NULL);
+#else
   SSL_library_init();
   SSL_load_error_strings();
   ERR_load_crypto_strings();
@@ -136,6 +139,7 @@ void initializeOpenSSL() {
   CRYPTO_set_dynlock_create_callback(dyn_create);
   CRYPTO_set_dynlock_lock_callback(dyn_lock);
   CRYPTO_set_dynlock_destroy_callback(dyn_destroy);
+#endif
 }
 
 void cleanupOpenSSL() {
@@ -156,6 +160,7 @@ void cleanupOpenSSL() {
   ERR_free_strings();
 
   mutexes.reset();
+#endif
 }
 
 static void buildErrors(string& message, int errno_copy = 0, int sslerrno = 0);
@@ -165,6 +170,9 @@ static char uppercase(char c);
 // SSLContext implementation
 SSLContext::SSLContext(const SSLProtocol& protocol) {
   if (protocol == SSLTLS) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    ctx_ = SSL_CTX_new(TLS_method());
+#else
     ctx_ = SSL_CTX_new(SSLv23_method());
 #ifndef OPENSSL_NO_SSL3
   } else if (protocol == SSLv3) {
@@ -485,7 +493,7 @@ void TSSLSocket::write(const uint8_t* buf, uint32_t len) {
               && (errno_copy != THRIFT_EAGAIN)) {
             break;
           }
-        // fallthrough        
+        // fallthrough
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
           if (isLibeventSafe()) {

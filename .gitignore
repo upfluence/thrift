@@ -145,6 +145,7 @@ project.lock.json
 /lib/cpp/test/TPipedTransportTest
 /lib/cpp/test/TServerIntegrationTest
 /lib/cpp/test/TSocketInterruptTest
+/lib/cpp/test/TSubprocessTransportTest
 /lib/cpp/test/TransportTest
 /lib/cpp/test/UnitTests
 /lib/cpp/test/ZlibTest

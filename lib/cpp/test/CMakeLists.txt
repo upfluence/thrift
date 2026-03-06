@@ -182,6 +182,10 @@ target_link_libraries(TFDTransportTest
 LINK_AGAINST_THRIFT_LIBRARY(TFDTransportTest thrift)
 add_test(NAME TFDTransportTest COMMAND TFDTransportTest)
 
+add_executable(TSubprocessTransportTest TSubprocessTransportTest.cpp)
+LINK_AGAINST_THRIFT_LIBRARY(TSubprocessTransportTest thrift)
+add_test(NAME TSubprocessTransportTest COMMAND TSubprocessTransportTest)
+
 add_executable(TPipedTransportTest TPipedTransportTest.cpp)
 target_link_libraries(TPipedTransportTest
     ${Boost_LIBRARIES}

@@ -73,6 +73,7 @@ libthrift_la_SOURCES = src/thrift/TApplicationException.cpp \
                        src/thrift/transport/TFDTransport.cpp \
                        src/thrift/transport/TFileTransport.cpp \
                        src/thrift/transport/TSimpleFileTransport.cpp \
+                       src/thrift/transport/TSubprocessTransport.cpp \
                        src/thrift/transport/THttpTransport.cpp \
                        src/thrift/transport/THttpClient.cpp \
                        src/thrift/transport/THttpServer.cpp \
@@ -178,6 +179,7 @@ include_transport_HEADERS = \
                          src/thrift/transport/TFileTransport.h \
                          src/thrift/transport/THeaderTransport.h \
                          src/thrift/transport/TSimpleFileTransport.h \
+                         src/thrift/transport/TSubprocessTransport.h \
                          src/thrift/transport/TServerSocket.h \
                          src/thrift/transport/TSSLServerSocket.h \
                          src/thrift/transport/TServerTransport.h \

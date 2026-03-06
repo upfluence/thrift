@@ -49,6 +49,7 @@ set( thriftcpp_SOURCES
    src/thrift/transport/TTransportException.cpp
    src/thrift/transport/TFDTransport.cpp
    src/thrift/transport/TSimpleFileTransport.cpp
+   src/thrift/transport/TSubprocessTransport.cpp
    src/thrift/transport/THttpTransport.cpp
    src/thrift/transport/THttpClient.cpp
    src/thrift/transport/THttpServer.cpp
