@@ -25,53 +25,49 @@ require 'thrift/server/rack_application'
 describe Thrift::RackApplication do
   include Rack::Test::Methods
 
-  let(:processor) { mock('processor') }
-  let(:protocol_factory) { mock('protocol factory') }
+  let(:processor) { double('processor') }
+  let(:protocol_factory) { double('protocol factory') }
 
   def app
-    Thrift::RackApplication.for("/", processor, protocol_factory)
+    Thrift::RackApplication.for('/', processor, protocol_factory)
   end
 
-  context "404 response" do
-
+  context '404 response' do
     it 'receives a non-POST' do
-      header('Content-Type', "application/x-thrift")
-      get "/"
-      last_response.status.should be 404
+      header('Content-Type', 'application/x-thrift')
+      get '/'
+      expect(last_response.status).to be 404
     end
 
     it 'receives a header other than application/x-thrift' do
-      header('Content-Type', "application/json")
-      post "/"
-      last_response.status.should be 404
+      header('Content-Type', 'application/json')
+      post '/'
+      expect(last_response.status).to be 404
     end
-
   end
 
-  context "200 response" do
-
+  context '200 response' do
     before do
-      protocol_factory.stub(:get_protocol)
-      processor.stub(:process)
+      allow(protocol_factory).to receive(:get_protocol)
+      allow(processor).to receive(:process)
     end
 
     it 'creates an IOStreamTransport' do
-      header('Content-Type', "application/x-thrift")
-      Thrift::IOStreamTransport.should_receive(:new).with(an_instance_of(StringIO), an_instance_of(Rack::Response))
-      post "/"
+      header('Content-Type', 'application/x-thrift')
+      expect(Thrift::IOStreamTransport).to receive(:new).with(an_instance_of(StringIO), an_instance_of(Rack::Response))
+      post '/'
     end
 
     it 'fetches the right protocol based on the Transport' do
-      header('Content-Type', "application/x-thrift")
-      protocol_factory.should_receive(:get_protocol).with(an_instance_of(Thrift::IOStreamTransport))
-      post "/"
+      header('Content-Type', 'application/x-thrift')
+      expect(protocol_factory).to receive(:get_protocol).with(an_instance_of(Thrift::IOStreamTransport))
+      post '/'
     end
 
     it 'status code 200' do
-      header('Content-Type', "application/x-thrift")
-      post "/"
-      last_response.ok?.should be_true
+      header('Content-Type', 'application/x-thrift')
+      post '/'
+      expect(last_response.ok?).to be_truthy
     end
-
   end
 end

@@ -1,4 +1,3 @@
-# encoding: UTF-8
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. See the NOTICE file
@@ -22,17 +21,18 @@ require 'spec_helper'
 
 describe Thrift::CompactProtocol do
   TESTS = {
-    :byte => (-127..127).to_a,
-    :i16 => (0..14).map {|shift| [1 << shift, -(1 << shift)]}.flatten.sort,
-    :i32 => (0..30).map {|shift| [1 << shift, -(1 << shift)]}.flatten.sort,
-    :i64 => (0..62).map {|shift| [1 << shift, -(1 << shift)]}.flatten.sort,
-    :string => ["", "1", "short", "fourteen123456", "fifteen12345678", "unicode characters: \u20AC \u20AD", "1" * 127, "1" * 3000],
-    :binary => ["", "\001", "\001" * 5, "\001" * 14, "\001" * 15, "\001" * 127, "\001" * 3000],
-    :double => [0.0, 1.0, -1.0, 1.1, -1.1, 10000000.1, 1.0/0.0, -1.0/0.0],
-    :bool => [true, false]
+    byte:   (-127..127).to_a,
+    i16:    (0..14).map { |shift| [1 << shift, -(1 << shift)] }.flatten.sort,
+    i32:    (0..30).map { |shift| [1 << shift, -(1 << shift)] }.flatten.sort,
+    i64:    (0..62).map { |shift| [1 << shift, -(1 << shift)] }.flatten.sort,
+    string: ['', '1', 'short', 'fourteen123456', 'fifteen12345678', "unicode characters: \u20AC \u20AD", '1' * 127,
+             '1' * 3000],
+    binary: ['', "\001", "\001" * 5, "\001" * 14, "\001" * 15, "\001" * 127, "\001" * 3000],
+    double: [0.0, 1.0, -1.0, 1.1, -1.1, 10_000_000.1, 1.0 / 0.0, -1.0 / 0.0],
+    bool:   [true, false]
   }
 
-  it "should encode and decode naked primitives correctly" do
+  it 'should encode and decode naked primitives correctly' do
     TESTS.each_pair do |primitive_type, test_values|
       test_values.each do |value|
         # puts "testing #{value}" if primitive_type == :i64
@@ -47,7 +47,7 @@ describe Thrift::CompactProtocol do
     end
   end
 
-  it "should encode and decode primitives in fields correctly" do
+  it 'should encode and decode primitives in fields correctly' do
     TESTS.each_pair do |primitive_type, test_values|
       final_primitive_type = primitive_type == :binary ? :string : primitive_type
       thrift_type = Thrift::Types.const_get(final_primitive_type.to_s.upcase)
@@ -61,7 +61,7 @@ describe Thrift::CompactProtocol do
         proto.write_field_end
 
         proto = Thrift::CompactProtocol.new(trans)
-        name, type, id = proto.read_field_begin
+        _, type, id = proto.read_field_begin
         expect(type).to eq(thrift_type)
         expect(id).to eq(15)
         read_back = proto.send(reader(primitive_type))
@@ -71,7 +71,7 @@ describe Thrift::CompactProtocol do
     end
   end
 
-  it "should encode and decode a monster struct correctly" do
+  it 'should encode and decode a monster struct correctly' do
     trans = Thrift::MemoryBufferTransport.new
     proto = Thrift::CompactProtocol.new(trans)
 
@@ -84,7 +84,7 @@ describe Thrift::CompactProtocol do
     expect(struct2).to eq(struct)
   end
 
-  xit "should make method calls correctly" do
+  xit 'should make method calls correctly' do
     r1, w1 = IO.pipe
     r2, w2 = IO.pipe
     client_out_trans = Thrift::IOStreamTransport.new(r2, w1)
@@ -95,40 +95,22 @@ describe Thrift::CompactProtocol do
 
     processor = Thrift::Test::Srv::Processor.new(JankyHandler.new)
 
-<<<<<<< HEAD
-    client = Thrift::Test::Srv::Client.new(client_in_proto, client_out_proto)
+    client = Thrift::Test::Srv::Client.new(client_in_proto)
     client.send_Janky(1)
     # puts client_out_trans.inspect_buffer
     processor.process(client_out_proto, client_in_proto)
     expect(client.recv_Janky).to eq(2)
-=======
-    client = Srv::Client.new(
-      Thrift::BaseClient.new(client_in_proto, client_out_proto)
-    )
-
-    t = Thread.new { processor.process(client_in_proto, client_out_proto) }
-
-    client.Janky(1).should == 2
-
-    t.join
->>>>>>> 7727fe875 (lib/rb: Update the test suite)
   end
 
-  it "should deal with fields following fields that have non-delta ids" do
-<<<<<<< HEAD
+  it 'should deal with fields following fields that have non-delta ids' do
     brcp = Thrift::Test::BreaksRubyCompactProtocol.new(
-      :field1 => "blah",
-      :field2 => Thrift::Test::BigFieldIdStruct.new(
-        :field1 => "string1",
-        :field2 => "string2"),
-=======
-    brcp = BreaksRubyCompactProtocol.new(
-      :field1 => "blah",
-      :field2 => BigFieldIdStruct.new(
-        :field1 => "string1",
-        :field2 => "string2"),
->>>>>>> 7727fe875 (lib/rb: Update the test suite)
-      :field3 => 3)
+      field1: 'blah',
+      field2: Thrift::Test::BigFieldIdStruct.new(
+        field1: 'string1',
+        field2: 'string2'
+      ),
+      field3: 3
+    )
     ser = Thrift::Serializer.new(Thrift::CompactProtocolFactory.new)
     bytes = ser.serialize(brcp)
 
@@ -138,8 +120,8 @@ describe Thrift::CompactProtocol do
     expect(brcp2).to eq(brcp)
   end
 
-  it "should deserialize an empty map to an empty hash" do
-    struct = Thrift::Test::SingleMapTestStruct.new(:i32_map => {})
+  it 'should deserialize an empty map to an empty hash' do
+    struct = Thrift::Test::SingleMapTestStruct.new(i32_map: {})
     ser = Thrift::Serializer.new(Thrift::CompactProtocolFactory.new)
     bytes = ser.serialize(struct)
 
@@ -149,9 +131,9 @@ describe Thrift::CompactProtocol do
     expect(struct).to eq(struct2)
   end
 
-  it "should provide a reasonable to_s" do
+  it 'should provide a reasonable to_s' do
     trans = Thrift::MemoryBufferTransport.new
-    expect(Thrift::CompactProtocol.new(trans).to_s).to eq("compact(memory)")
+    expect(Thrift::CompactProtocol.new(trans).to_s).to eq('compact(memory)')
   end
 
   class JankyHandler
@@ -161,20 +143,20 @@ describe Thrift::CompactProtocol do
   end
 
   def writer(sym)
-    "write_#{sym.to_s}"
+    "write_#{sym}"
   end
 
   def reader(sym)
-    "read_#{sym.to_s}"
+    "read_#{sym}"
   end
 end
 
 describe Thrift::CompactProtocolFactory do
-  it "should create a CompactProtocol" do
-    expect(Thrift::CompactProtocolFactory.new.get_protocol(double("MockTransport"))).to be_instance_of(Thrift::CompactProtocol)
+  it 'should create a CompactProtocol' do
+    expect(Thrift::CompactProtocolFactory.new.get_protocol(double('MockTransport'))).to be_instance_of(Thrift::CompactProtocol)
   end
 
-  it "should provide a reasonable to_s" do
-    expect(Thrift::CompactProtocolFactory.new.to_s).to eq("compact")
+  it 'should provide a reasonable to_s' do
+    expect(Thrift::CompactProtocolFactory.new.to_s).to eq('compact')
   end
 end

@@ -20,54 +20,59 @@
 require 'spec_helper'
 
 describe 'Thrift::HTTPClientTransport' do
-
   describe Thrift::HTTPClientTransport do
     before(:each) do
       @client = Thrift::HTTPClientTransport.new(
-        "http://my.domain.com/path/to/service?param=value",
+        'http://my.domain.com/path/to/service?param=value',
         retries: 0
       )
     end
 
-    it "should provide a reasonable to_s" do
-      @client.to_s == "http://my.domain.com/path/to/service?param=value"
+    it 'should provide a reasonable to_s' do
+      @client.to_s == 'http://my.domain.com/path/to/service?param=value'
     end
 
-    it "should always be open" do
+    it 'should always be open' do
       expect(@client).to be_open
       @client.close
       expect(@client).to be_open
     end
 
-    it "should post via HTTP and return the results" do
-      @client.write "a test"
-      @client.write " frame"
-      expect(Net::HTTP).to receive(:new).with("my.domain.com", 80) do
-        double("Net::HTTP").tap do |http|
+    it 'should post via HTTP and return the results' do
+      @client.write 'a test'
+      @client.write ' frame'
+      expect(Net::HTTP).to receive(:new).with('my.domain.com', 80) do
+        double('Net::HTTP').tap do |http|
           expect(http).to receive(:use_ssl=).with(false)
-          expect(http).to receive(:post).with("/path/to/service?param=value", "a test frame", {"Content-Type"=>"application/x-thrift"}) do
-            double("Net::HTTPOK").tap do |response|
-              expect(response).to receive(:body).and_return "data"
+          expect(http).to receive(:post).with('/path/to/service?param=value', 'a test frame',
+                                              { 'Content-Type'=>'application/x-thrift' }) do
+            double('Net::HTTPOK').tap do |response|
+              expect(response).to receive(:body).and_return 'data'
+              expect(response).to receive(:value)
             end
           end
         end
       end
       @client.flush
-      expect(@client.read(10)).to eq("data")
+      expect(@client.read(10)).to eq('data')
     end
 
-    it "should send custom headers if defined" do
-      @client.write "test"
-      custom_headers = {"Cookie" => "Foo"}
-      headers = {"Content-Type"=>"application/x-thrift"}.merge(custom_headers)
-
-      @client.add_headers(custom_headers)
-      expect(Net::HTTP).to receive(:new).with("my.domain.com", 80) do
-        double("Net::HTTP").tap do |http|
+    it 'should send custom headers if defined' do
+      custom_headers = { 'Cookie' => 'Foo' }
+      headers = { 'Content-Type'=>'application/x-thrift' }.merge(custom_headers)
+      @client = Thrift::HTTPClientTransport.new(
+        'http://my.domain.com/path/to/service?param=value',
+        retries: 0,
+        headers: custom_headers
+      )
+      @client.write 'test'
+      expect(Net::HTTP).to receive(:new).with('my.domain.com', 80) do
+        double('Net::HTTP').tap do |http|
           expect(http).to receive(:use_ssl=).with(false)
-          expect(http).to receive(:post).with("/path/to/service?param=value", "test", headers) do
-            double("Net::HTTPOK").tap do |response|
-              expect(response).to receive(:body).and_return "data"
+          expect(http).to receive(:post).with('/path/to/service?param=value', 'test', headers) do
+            double('Net::HTTPOK').tap do |response|
+              expect(response).to receive(:body).and_return 'data'
+              expect(response).to receive(:value)
             end
           end
         end
@@ -76,67 +81,80 @@ describe 'Thrift::HTTPClientTransport' do
     end
 
     it 'should reset the outbuf on HTTP failures' do
-      @client.write "test"
+      @client.write 'test'
 
-      expect(Net::HTTP).to receive(:new).with("my.domain.com", 80) do
-        double("Net::HTTP").tap do |http|
+      expect(Net::HTTP).to receive(:new).with('my.domain.com', 80) do
+        double('Net::HTTP').tap do |http|
           expect(http).to receive(:use_ssl=).with(false)
-          expect(http).to receive(:post).with("/path/to/service?param=value", "test", {"Content-Type"=>"application/x-thrift"}) { raise Net::ReadTimeout }
+          expect(http).to receive(:post).with('/path/to/service?param=value', 'test',
+                                              { 'Content-Type'=>'application/x-thrift' }) {
+            raise Net::ReadTimeout
+          }
         end
       end
 
-      @client.flush  rescue
-      expect(@client.instance_variable_get(:@outbuf)).to eq(Thrift::Bytes.empty_byte_buffer)
+      begin
+        @client.flush
+      rescue StandardError
+        expect(@client.instance_variable_get(:@outbuf)).to eq(Thrift::Bytes.empty_byte_buffer)
+      end
     end
-
   end
 
   describe 'ssl enabled' do
     before(:each) do
-      @service_path = "/path/to/service?param=value"
-      @server_uri = "https://my.domain.com"
+      @service_path = '/path/to/service?param=value'
+      @server_uri = 'https://my.domain.com'
     end
 
-    it "should use SSL for https" do
+    it 'should use SSL for https' do
       client = Thrift::HTTPClientTransport.new("#{@server_uri}#{@service_path}")
 
-      client.write "test"
+      client.write 'test'
 
-      expect(Net::HTTP).to receive(:new).with("my.domain.com", 443) do
-        double("Net::HTTP").tap do |http|
+      expect(Net::HTTP).to receive(:new).with('my.domain.com', 443) do
+        double('Net::HTTP').tap do |http|
           expect(http).to receive(:use_ssl=).with(true)
           expect(http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-          expect(http).to receive(:post).with(@service_path, "test",
-              "Content-Type" => "application/x-thrift") do
-            double("Net::HTTPOK").tap do |response|
-              expect(response).to receive(:body).and_return "data"
+          expect(http).to receive(:post).with(
+            @service_path,
+            'test',
+            { 'Content-Type' => 'application/x-thrift' }
+          ) do
+            double('Net::HTTPOK').tap do |response|
+              expect(response).to receive(:body).and_return 'data'
+              expect(response).to receive(:value)
             end
           end
         end
       end
       client.flush
-      expect(client.read(4)).to eq("data")
+      expect(client.read(4)).to eq('data')
     end
 
-    it "should set SSL verify mode when specified" do
+    it 'should set SSL verify mode when specified' do
       client = Thrift::HTTPClientTransport.new("#{@server_uri}#{@service_path}",
-          :ssl_verify_mode => OpenSSL::SSL::VERIFY_NONE)
+                                               ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE)
 
-      client.write "test"
-      expect(Net::HTTP).to receive(:new).with("my.domain.com", 443) do
-        double("Net::HTTP").tap do |http|
+      client.write 'test'
+      expect(Net::HTTP).to receive(:new).with('my.domain.com', 443) do
+        double('Net::HTTP').tap do |http|
           expect(http).to receive(:use_ssl=).with(true)
           expect(http).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
-          expect(http).to receive(:post).with(@service_path, "test",
-              "Content-Type" => "application/x-thrift") do
-            double("Net::HTTPOK").tap do |response|
-              expect(response).to receive(:body).and_return "data"
+          expect(http).to receive(:post).with(
+            @service_path,
+            'test',
+            { 'Content-Type' => 'application/x-thrift' }
+          ) do
+            double('Net::HTTPOK').tap do |response|
+              expect(response).to receive(:body).and_return 'data'
+              expect(response).to receive(:value)
             end
           end
         end
       end
       client.flush
-      expect(client.read(4)).to eq("data")
+      expect(client.read(4)).to eq('data')
     end
   end
 end

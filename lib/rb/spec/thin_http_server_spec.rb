@@ -23,57 +23,51 @@ require 'thrift/server/thin_http_server'
 require 'thrift/server/rack_application'
 
 describe Thrift::ThinHTTPServer do
-
   let(:processor) { double('processor') }
 
-  describe "#initialize" do
-
-    context "when using the defaults" do
-
+  describe '#initialize' do
+    context 'when using the defaults' do
       it "binds to port 80, with host 0.0.0.0, a path of '/'" do
         expect(Thin::Server).to receive(:new).with('0.0.0.0', 80, an_instance_of(Rack::Builder))
         Thrift::ThinHTTPServer.new(processor)
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext' do
-        expect(Thrift::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
+        expect(Thrift::RackApplication).to receive(:for).with('/', processor,
+                                                              an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor)
       end
 
-      it "uses the BinaryProtocolFactory" do
+      it 'uses the BinaryProtocolFactory' do
         expect(Thrift::BinaryProtocolFactory).to receive(:new)
         Thrift::ThinHTTPServer.new(processor)
       end
-
     end
 
-    context "when using the options" do
-
+    context 'when using the options' do
       it 'accepts :ip, :port, :path' do
-        ip = "192.168.0.1"
+        ip = '192.168.0.1'
         port = 3000
-        path = "/thin"
+        path = '/thin'
         expect(Thin::Server).to receive(:new).with(ip, port, an_instance_of(Rack::Builder))
         Thrift::ThinHTTPServer.new(processor,
-                           :ip => ip,
-                           :port => port,
-                           :path => path)
+                                   ip:   ip,
+                                   port: port,
+                                   path: path)
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext with a different protocol factory' do
-        expect(Thrift::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
+        expect(Thrift::RackApplication).to receive(:for).with('/', processor,
+                                                              an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor,
-                           :protocol_factory => Thrift::JsonProtocolFactory.new)
+                                   protocol_factory: Thrift::JsonProtocolFactory.new)
       end
-
     end
-
   end
 
-  describe "#serve" do
-
+  describe '#serve' do
     it 'starts the Thin server' do
-      underlying_thin_server = double('thin server', :start => true)
+      underlying_thin_server = double('thin server', start: true)
       allow(Thin::Server).to receive(:new).and_return(underlying_thin_server)
 
       thin_thrift_server = Thrift::ThinHTTPServer.new(processor)
@@ -82,7 +76,6 @@ describe Thrift::ThinHTTPServer do
       thin_thrift_server.serve
     end
   end
-
 end
 
 describe Thrift::RackApplication do
@@ -92,50 +85,45 @@ describe Thrift::RackApplication do
   let(:protocol_factory) { double('protocol factory') }
 
   def app
-    Thrift::RackApplication.for("/", processor, protocol_factory)
+    Thrift::RackApplication.for('/', processor, protocol_factory)
   end
 
-  context "404 response" do
-
+  context '404 response' do
     it 'receives a non-POST' do
-      header('Content-Type', "application/x-thrift")
-      get "/"
+      header('Content-Type', 'application/x-thrift')
+      get '/'
       expect(last_response.status).to be 404
     end
 
     it 'receives a header other than application/x-thrift' do
-      header('Content-Type', "application/json")
-      post "/"
+      header('Content-Type', 'application/json')
+      post '/'
       expect(last_response.status).to be 404
     end
-
   end
 
-  context "200 response" do
-
+  context '200 response' do
     before do
       allow(protocol_factory).to receive(:get_protocol)
       allow(processor).to receive(:process)
     end
 
     it 'creates an IOStreamTransport' do
-      header('Content-Type', "application/x-thrift")
-      expect(Thrift::IOStreamTransport).to receive(:new).with(an_instance_of(Rack::Lint::InputWrapper), an_instance_of(Rack::Response))
-      post "/"
+      header('Content-Type', 'application/x-thrift')
+      expect(Thrift::IOStreamTransport).to receive(:new).with(an_instance_of(StringIO), an_instance_of(Rack::Response))
+      post '/'
     end
 
     it 'fetches the right protocol based on the Transport' do
-      header('Content-Type', "application/x-thrift")
+      header('Content-Type', 'application/x-thrift')
       expect(protocol_factory).to receive(:get_protocol).with(an_instance_of(Thrift::IOStreamTransport))
-      post "/"
+      post '/'
     end
 
     it 'status code 200' do
-      header('Content-Type', "application/x-thrift")
-      post "/"
+      header('Content-Type', 'application/x-thrift')
+      post '/'
       expect(last_response.ok?).to be_truthy
     end
-
   end
-
 end
