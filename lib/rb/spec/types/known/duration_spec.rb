@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'thrift/types/known/duration'
+require 'thrift/types/known/duration/duration'
 
 describe 'Thrift::Types::Known::Duration' do
   context 'from_number' do

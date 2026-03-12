@@ -36,7 +36,7 @@ describe Thrift::ThinHTTPServer do
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext' do
-        expect(Thrift::ThinHTTPServer::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
+        expect(Thrift::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::BinaryProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor)
       end
 
@@ -61,7 +61,7 @@ describe Thrift::ThinHTTPServer do
       end
 
       it 'creates a ThinHTTPServer::RackApplicationContext with a different protocol factory' do
-        expect(Thrift::ThinHTTPServer::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
+        expect(Thrift::RackApplication).to receive(:for).with("/", processor, an_instance_of(Thrift::JsonProtocolFactory)).and_return(anything)
         Thrift::ThinHTTPServer.new(processor,
                            :protocol_factory => Thrift::JsonProtocolFactory.new)
       end
@@ -85,14 +85,14 @@ describe Thrift::ThinHTTPServer do
 
 end
 
-describe Thrift::ThinHTTPServer::RackApplication do
+describe Thrift::RackApplication do
   include Rack::Test::Methods
 
   let(:processor) { double('processor') }
   let(:protocol_factory) { double('protocol factory') }
 
   def app
-    Thrift::ThinHTTPServer::RackApplication.for("/", processor, protocol_factory)
+    Thrift::RackApplication.for("/", processor, protocol_factory)
   end
 
   context "404 response" do

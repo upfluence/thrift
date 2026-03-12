@@ -44,7 +44,7 @@ namespace :'gen-rb' do
 
   task :'flat_spec' do
     dir = File.dirname(__FILE__) + '/spec'
-    mkdir_p("#{dir}/gen-rb/flat")
+    sh "mkdir", "-p", "#{dir}/gen-rb/flat"
     sh THRIFT, '--gen', 'rb', '--recurse', '-out', "#{dir}/gen-rb/flat", "#{dir}/ThriftNamespacedSpec.thrift"
   end
 
@@ -54,8 +54,8 @@ namespace :'gen-rb' do
   end
 
   task :'debug_proto' do
-    sh "mkdir", "-p", "test/debug_proto"
-    sh THRIFT, '--gen', 'rb', "-o", "test/debug_proto", "../../test/DebugProtoTest.thrift"
+    sh "mkdir", "-p", "test/debug_proto/gen-rb"
+    sh THRIFT, '--gen', 'rb', "-o", "test/debug_proto/gen-rb", "../../test/DebugProtoTest.thrift"
   end
 end
 
