@@ -24,8 +24,7 @@
 #pragma once
 #endif // _MSC_VER
 
-#define THRIFT_VERSION "@PACKAGE_VERSION@"
+#define THRIFT_VERSION "@REPO_VERSION@"
 #define THRIFT_TYPES_PATH "@TYPES_PREFIX@"
-#define THRIFT_TYPES_NESTED_PATH "@TYPES_PREFIX@/types"
 
 #endif // _THRIFT_VERSION_H_

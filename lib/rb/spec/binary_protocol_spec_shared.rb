@@ -386,15 +386,13 @@ shared_examples_for 'a binary protocol' do
 
   it "should perform a complete rpc with no args or return" do
     srv_test(
-      proc {|client| client.send_voidMethod()},
-      proc {|client| expect(client.recv_voidMethod).to eq(nil)}
+      proc {|client| expect(client.voidMethod).to eq(nil)}
     )
   end
 
   it "should perform a complete rpc with a primitive return type" do
     srv_test(
-      proc {|client| client.send_primitiveMethod()},
-      proc {|client| expect(client.recv_primitiveMethod).to eq(1)}
+      proc {|client| expect(client.primitiveMethod).to eq(1)}
     )
   end
 
@@ -427,15 +425,12 @@ shared_examples_for 'a binary protocol' do
 
     processor = Thrift::Test::Srv::Processor.new(SrvHandler.new)
 
-    client = Thrift::Test::Srv::Client.new(clientproto, clientproto)
+    client = Thrift::Test::Srv::Client.new(clientproto)
 
-    t = Thread.new { processor.process(serverproto, serverproto) }
-
-    resp = block.call(client)
+    t = Thread. new { processor.process(serverproto, serverproto) }
+    block.call(client)
 
     t.join
-
-    resp
   ensure
     clientside.close
     serverside.close

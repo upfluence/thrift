@@ -93,7 +93,7 @@ struct RandomStuff {
   8: double triple,
 }
 
-struct Base64 {
+struct Base64Struct {
   1: i32 a,
   2: binary b1,
   3: binary b2,

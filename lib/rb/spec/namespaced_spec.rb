@@ -24,44 +24,41 @@ describe 'namespaced generation' do
     require 'namespaced_spec_namespace/namespaced_nonblocking_service'
   end
 
-  it "generated the right files" do
-    prefix = File.expand_path("../gen-rb", __FILE__)
-    ["namespaced_spec_namespace/namespaced_nonblocking_service.rb",
-     "namespaced_spec_namespace/thrift_namespaced_spec_constants.rb",
-     "namespaced_spec_namespace/thrift_namespaced_spec_types.rb",
-     "other_namespace/referenced_constants.rb",
-     "other_namespace/referenced_types.rb"
-    ].each do |name|
+  it 'generated the right files' do
+    prefix = File.expand_path('gen-rb/flat', __dir__)
+    ['namespaced_nonblocking_service.rb',
+     'thrift_namespaced_spec_constants.rb',
+     'thrift_namespaced_spec_types.rb',
+     'referenced_constants.rb',
+     'referenced_types.rb'].each do |name|
       expect(File.exist?(File.join(prefix, name))).to be_truthy
     end
   end
 
-  it "did not generate the wrong files" do
-    prefix = File.expand_path("../gen-rb", __FILE__)
-    ["namespaced_nonblocking_service.rb",
-     "thrift_namespaced_spec_constants.rb",
-     "thrift_namespaced_spec_types.rb",
-     "referenced_constants.rb",
-     "referenced_types.rb"
-    ].each do |name|
+  it 'did not generate the wrong files' do
+    prefix = File.expand_path('gen-rb/flat', __dir__)
+    ['namespaced_spec_namespace/namespaced_nonblocking_service.rb',
+     'namespaced_spec_namespace/thrift_namespaced_spec_constants.rb',
+     'namespaced_spec_namespace/thrift_namespaced_spec_types.rb',
+     'other_namespace/referenced_constants.rb',
+     'other_namespace/referenced_types.rb'].each do |name|
       expect(File.exist?(File.join(prefix, name))).not_to be_truthy
     end
   end
 
-  it "has a service class in the right place" do
+  it 'has a service class in the right place' do
     expect(defined?(NamespacedSpecNamespace::NamespacedNonblockingService)).to be_truthy
   end
 
-  it "has a struct in the right place" do
+  it 'has a struct in the right place' do
     expect(defined?(NamespacedSpecNamespace::Hello)).to be_truthy
   end
 
-  it "required an included file" do
+  it 'required an included file' do
     expect(defined?(OtherNamespace::SomeEnum)).to be_truthy
   end
 
-  it "extended a service" do
-    require "extended/extended_service"
+  it 'extended a service' do
+    require 'extended/extended_service'
   end
-
 end
