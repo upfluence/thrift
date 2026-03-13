@@ -20,7 +20,6 @@
 package thrift
 
 import (
-	"context"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -63,13 +62,13 @@ func TestTHeaderHeadersReadWrite(t *testing.T) {
 	if _, err := writer.Write([]byte(payload1)); err != nil {
 		t.Errorf("writer.Write returned error: %v", err)
 	}
-	if err := writer.Flush(context.Background()); err != nil {
+	if err := writer.Flush(); err != nil {
 		t.Errorf("writer.Flush returned error: %v", err)
 	}
 	if _, err := writer.Write([]byte(payload2)); err != nil {
 		t.Errorf("writer.Write returned error: %v", err)
 	}
-	if err := writer.Flush(context.Background()); err != nil {
+	if err := writer.Flush(); err != nil {
 		t.Errorf("writer.Flush returned error: %v", err)
 	}
 

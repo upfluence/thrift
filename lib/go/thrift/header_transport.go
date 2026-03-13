@@ -23,7 +23,6 @@ import (
 	"bufio"
 	"bytes"
 	"compress/zlib"
-	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -119,7 +118,7 @@ var _ io.ReadCloser = (*TransformReader)(nil)
 //
 // If you don't know the closers capacity beforehand, just use
 //
-//     &TransformReader{Reader: baseReader}
+//	&TransformReader{Reader: baseReader}
 //
 // instead would be sufficient.
 func NewTransformReaderWithCapacity(baseReader io.Reader, capacity int) *TransformReader {
@@ -293,6 +292,10 @@ func (t *THeaderTransport) Open() error {
 // IsOpen calls the underlying transport's IsOpen function.
 func (t *THeaderTransport) IsOpen() bool {
 	return t.transport.IsOpen()
+}
+
+func (t *THeaderTransport) WriteContext(ctx Context) error {
+	return t.transport.WriteContext(ctx)
 }
 
 // ReadFrame tries to read the frame header, guess the client type, and handle
@@ -518,7 +521,7 @@ func (t *THeaderTransport) Write(p []byte) (int, error) {
 }
 
 // Flush writes the appropriate header and the write buffer to the underlying transport.
-func (t *THeaderTransport) Flush(ctx context.Context) error {
+func (t *THeaderTransport) Flush() error {
 	if t.writeBuffer.Len() == 0 {
 		return nil
 	}
@@ -620,18 +623,12 @@ func (t *THeaderTransport) Flush(ctx context.Context) error {
 		}
 	}
 
-	select {
-	default:
-	case <-ctx.Done():
-		return NewTTransportExceptionFromError(ctx.Err())
-	}
-
-	return t.transport.Flush(ctx)
+	return t.transport.Flush()
 }
 
 // Close closes the transport, along with its underlying transport.
 func (t *THeaderTransport) Close() error {
-	if err := t.Flush(context.Background()); err != nil {
+	if err := t.Flush(); err != nil {
 		return err
 	}
 	return t.transport.Close()
@@ -645,7 +642,13 @@ func (t *THeaderTransport) Close() error {
 // frame size by ourselves and just use the underlying transport's
 // RemainingBytes directly.
 func (t *THeaderTransport) RemainingBytes() uint64 {
-	return t.transport.RemainingBytes()
+	if transport, ok := t.transport.(interface {
+		RemainingBytes() (numBytes uint64)
+	}); ok {
+		return transport.RemainingBytes()
+	}
+	const maxSize = ^uint64(0)
+	return maxSize
 }
 
 // GetReadHeaders returns the THeaderMap read from transport.
@@ -711,13 +714,9 @@ func NewTHeaderTransportFactory(factory TTransportFactory) TTransportFactory {
 }
 
 // GetTransport implements TTransportFactory.
-func (f *THeaderTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
+func (f *THeaderTransportFactory) GetTransport(trans TTransport) TTransport {
 	if f.Factory != nil {
-		t, err := f.Factory.GetTransport(trans)
-		if err != nil {
-			return nil, err
-		}
-		return NewTHeaderTransport(t), nil
+		trans = f.Factory.GetTransport(trans)
 	}
-	return NewTHeaderTransport(trans), nil
+	return NewTHeaderTransport(trans)
 }

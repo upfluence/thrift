@@ -19,10 +19,6 @@
 
 package thrift
 
-import (
-	"context"
-)
-
 // THeaderProtocol is a thrift protocol that implements THeader:
 // https://github.com/apache/thrift/blob/master/doc/specs/HeaderFormat.md
 //
@@ -91,8 +87,8 @@ func (p *THeaderProtocol) AddTransform(transform THeaderTransformID) error {
 	return p.transport.AddTransform(transform)
 }
 
-func (p *THeaderProtocol) Flush(ctx context.Context) error {
-	return p.transport.Flush(ctx)
+func (p *THeaderProtocol) Flush() error {
+	return p.transport.Flush()
 }
 
 func (p *THeaderProtocol) WriteMessageBegin(name string, typeID TMessageType, seqID int32) error {
@@ -109,7 +105,7 @@ func (p *THeaderProtocol) WriteMessageEnd() error {
 	if err := p.protocol.WriteMessageEnd(); err != nil {
 		return err
 	}
-	return p.transport.Flush(context.Background())
+	return p.transport.Flush()
 }
 
 func (p *THeaderProtocol) WriteStructBegin(name string) error {
@@ -214,7 +210,7 @@ func (p *THeaderProtocol) ReadMessageBegin() (name string, typeID TMessageType, 
 		if e := p.protocol.WriteMessageEnd(); e != nil {
 			return
 		}
-		if e := p.transport.Flush(context.Background()); e != nil {
+		if e := p.transport.Flush(); e != nil {
 			return
 		}
 		return

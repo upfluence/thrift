@@ -18,7 +18,7 @@
 #
 
 cmake_minimum_required(VERSION 3.3)
-project("thrift-compiler" VERSION ${PACKAGE_VERSION})
+project("thrift-compiler" VERSION ${SEMVER_PACKAGE_VERSION})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/thrift/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/thrift/version.h)
 
@@ -111,12 +111,12 @@ list(APPEND thrift-compiler_SOURCES ${compiler_core})
 
 add_executable(thrift-compiler ${thrift-compiler_SOURCES})
 
-set_target_properties(thrift-compiler PROPERTIES RUNTIME_OUTPUT_DIRECTORY bin/)
+set_target_properties(thrift-compiler PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(thrift-compiler PROPERTIES OUTPUT_NAME thrift)
 
 target_link_libraries(thrift-compiler parse)
 
-install(TARGETS thrift-compiler DESTINATION bin)
+install(TARGETS thrift-compiler RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin")
 
 if(BUILD_TESTING)
     add_subdirectory(test)

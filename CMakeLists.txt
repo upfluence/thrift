@@ -27,12 +27,7 @@ if(POLICY CMP0074)
 endif()
 
 # PACKAGE_VERSION is used by cpack scripts currently
-# Both thrift_VERSION and PACKAGE_VERSION should be the same for now
-set(thrift_VERSION "0.13.0")
-set(PACKAGE_VERSION ${thrift_VERSION})
-
-project("thrift" VERSION ${PACKAGE_VERSION})
-message(STATUS "Configuring ${CMAKE_PROJECT_NAME} ${thrift_VERSION}")
+set(PACKAGE_VERSION "0.13.0" CACHE STRING "Thrift package version")
 
 
 set(TYPES_PREFIX "/usr/local/share/thrift" CACHE STRING "Directory the thrift tpyes will be installed in")
@@ -53,11 +48,16 @@ message(STATUS "Parsed Thrift package version: ${PACKAGE_VERSION}")
 
 set(REPO_VERSION "${THRIFT_VERSION}")
 
-# These are internal to CMake
 string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-upfluence)?" "\\1" thrift_VERSION ${PACKAGE_VERSION})
 string(REGEX REPLACE "([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1" thrift_VERSION_MAJOR ${thrift_VERSION})
-string(REGEX REPLACE "[0-9]+\\.([0-9])+\\.[0-9]+" "\\1" thrift_VERSION_MINOR ${thrift_VERSION})
+string(REGEX REPLACE "[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1" thrift_VERSION_MINOR ${thrift_VERSION})
 string(REGEX REPLACE "[0-9]+\\.[0-9]+\\.([0-9]+)" "\\1" thrift_VERSION_PATCH ${thrift_VERSION})
+set(SEMVER_PACKAGE_VERSION "${thrift_VERSION_MAJOR}.${thrift_VERSION_MINOR}.${thrift_VERSION_PATCH}")
+
+project("thrift" VERSION ${SEMVER_PACKAGE_VERSION})
+message(STATUS "Configuring ${CMAKE_PROJECT_NAME} ${thrift_VERSION}")
+
+# These are internal to CMake
 message(STATUS "Parsed Thrift version: ${thrift_VERSION} (${thrift_VERSION_MAJOR}.${thrift_VERSION_MINOR}.${thrift_VERSION_PATCH})")
 
 # Some default settings

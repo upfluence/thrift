@@ -29,6 +29,9 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/gen-c_glib")
 include_directories("${PROJECT_SOURCE_DIR}/lib/c_glib/src")
 
+find_package(OpenSSL REQUIRED)
+include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
+
 set(crosstestgencglib_SOURCES
 	gen-c_glib/t_test_second_service.c
 	gen-c_glib/t_test_second_service.h

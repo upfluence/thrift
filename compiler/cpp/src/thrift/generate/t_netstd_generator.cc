@@ -702,7 +702,7 @@ void t_netstd_generator::generate_netstd_struct_definition(ostream& out, t_struc
         out << indent() << "[DataContract(Namespace=\"" << wcf_namespace_ << "\")]" << endl;
     }
 
-    bool is_final = tstruct->annotations_.find("final") != tstruct->annotations_.end();
+    bool is_final = tstruct->has_legacy_annotation("final");
 
     string sharp_struct_name = check_and_correct_struct_name(normalize_name(tstruct->get_name()));
 
@@ -906,7 +906,7 @@ void t_netstd_generator::generate_netstd_wcffault(ostream& out, t_struct* tstruc
     out << endl;
     out << indent() << "[DataContract]" << endl;
 
-    bool is_final = tstruct->annotations_.find("final") != tstruct->annotations_.end();
+    bool is_final = tstruct->has_legacy_annotation("final");
 
     out << indent() << "public " << (is_final ? "sealed " : "") << "partial class " << tstruct->get_name() << "Fault" << endl
         << indent() << "{" << endl;
@@ -1356,8 +1356,8 @@ void t_netstd_generator::generate_netstd_union_class(ostream& out, t_struct* tun
     indent_down();
     out << indent() << "}" << endl
         << endl;
-    
-    
+
+
     out << indent() << "public class " << tfield->get_name() << " : " << tunion->get_name() << endl
         << indent() << "{" << endl;
     indent_up();
@@ -1496,7 +1496,7 @@ void t_netstd_generator::generate_netstd_struct_hashcode(ostream& out, t_struct*
         else
         {
             out << prop_name((*f_iter)) << ".GetHashCode()";
-        }	
+        }
         out << ";" << endl;
 
         if (!field_is_required((*f_iter)))

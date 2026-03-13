@@ -68,6 +68,12 @@ struct _ThriftSocketClass
 /* used by THRIFT_TYPE_SOCKET */
 GType thrift_socket_get_type (void);
 
+gboolean thrift_socket_is_open (ThriftTransport *transport);
+
+gboolean thrift_socket_open (ThriftTransport *transport, GError **error);
+
+gboolean thrift_socket_close (ThriftTransport *transport, GError **error);
+
 G_END_DECLS
 
 #endif

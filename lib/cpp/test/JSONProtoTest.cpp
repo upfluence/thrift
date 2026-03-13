@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(test_json_proto_7) {
   std::shared_ptr<TMemoryBuffer> buffer(new TMemoryBuffer());
   std::shared_ptr<TJSONProtocol> proto(new TJSONProtocol(buffer));
 
-  Base64 base;
+  Base64Struct base;
   base.a = 123;
   base.b1 = "1";
   base.b2 = "12";
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(test_json_proto_7) {
   base.b6 = "123456";
 
   base.write(proto.get());
-  Base64 base2;
+  Base64Struct base2;
   base2.read(proto.get());
 
   BOOST_CHECK(base == base2);

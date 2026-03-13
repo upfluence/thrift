@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TDebugProtocol.h>
 #include <thrift/server/TSimpleServer.h>
@@ -636,4 +637,3 @@ main (void)
 
   return 0;
 }
-
