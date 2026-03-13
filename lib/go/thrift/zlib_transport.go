@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"compress/zlib"
-	"context"
 	"io"
 	"log"
 )
@@ -40,16 +39,16 @@ type TZlibTransport struct {
 }
 
 // GetTransport constructs a new instance of NewTZlibTransport
-func (p *TZlibTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
+func (p *TZlibTransportFactory) GetTransport(trans TTransport) TTransport {
 	if p.factory != nil {
 		// wrap other factory
-		var err error
-		trans, err = p.factory.GetTransport(trans)
-		if err != nil {
-			return nil, err
-		}
+		trans = p.factory.GetTransport(trans)
 	}
-	return NewTZlibTransport(trans, p.level)
+	transport, err := NewTZlibTransport(trans, p.level)
+	if err != nil {
+		return nil
+	}
+	return transport
 }
 
 // NewTZlibTransportFactory constructs a new instance of NewTZlibTransportFactory
@@ -92,11 +91,11 @@ func (z *TZlibTransport) Close() error {
 }
 
 // Flush flushes the writer and its underlying transport.
-func (z *TZlibTransport) Flush(ctx context.Context) error {
+func (z *TZlibTransport) Flush() error {
 	if err := z.writer.Flush(); err != nil {
 		return err
 	}
-	return z.transport.Flush(ctx)
+	return z.transport.Flush()
 }
 
 // IsOpen returns true if the transport is open
@@ -121,12 +120,10 @@ func (z *TZlibTransport) Read(p []byte) (int, error) {
 	return z.reader.Read(p)
 }
 
-// RemainingBytes returns the size in bytes of the data that is still to be
-// read.
-func (z *TZlibTransport) RemainingBytes() uint64 {
-	return z.transport.RemainingBytes()
-}
-
 func (z *TZlibTransport) Write(p []byte) (int, error) {
 	return z.writer.Write(p)
+}
+
+func (z *TZlibTransport) WriteContext(ctx Context) error {
+	return z.transport.WriteContext(ctx)
 }

@@ -22,7 +22,6 @@ package thrift
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -54,12 +53,9 @@ func NewTFramedTransportFactoryMaxLength(factory TTransportFactory, maxLength ui
 	return &tFramedTransportFactory{factory: factory, maxLength: maxLength}
 }
 
-func (p *tFramedTransportFactory) GetTransport(base TTransport) (TTransport, error) {
-	tt, err := p.factory.GetTransport(base)
-	if err != nil {
-		return nil, err
-	}
-	return NewTFramedTransportMaxLength(tt, p.maxLength), nil
+func (p *tFramedTransportFactory) GetTransport(base TTransport) TTransport {
+	tt := p.factory.GetTransport(base)
+	return NewTFramedTransportMaxLength(tt, p.maxLength)
 }
 
 func NewTFramedTransport(transport TTransport) *TFramedTransport {
@@ -152,7 +148,7 @@ func (p *TFramedTransport) WriteString(s string) (n int, err error) {
 	return p.buf.WriteString(s)
 }
 
-func (p *TFramedTransport) Flush(ctx context.Context) error {
+func (p *TFramedTransport) Flush() error {
 	size := p.buf.Len()
 	buf := p.buffer[:4]
 	binary.BigEndian.PutUint32(buf, uint32(size))
@@ -168,7 +164,7 @@ func (p *TFramedTransport) Flush(ctx context.Context) error {
 			return NewTTransportExceptionFromError(err)
 		}
 	}
-	err = p.transport.Flush(ctx)
+	err = p.transport.Flush()
 	return NewTTransportExceptionFromError(err)
 }
 

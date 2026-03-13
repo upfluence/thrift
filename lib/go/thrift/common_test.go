@@ -19,12 +19,14 @@
 
 package thrift
 
-import "context"
-
 type mockProcessor struct {
 	ProcessFunc func(in, out TProtocol) (bool, TException)
 }
 
-func (m *mockProcessor) Process(ctx context.Context, in, out TProtocol) (bool, TException) {
+func (m *mockProcessor) GetMiddlewares() []TMiddleware { return nil }
+
+func (m *mockProcessor) AddProcessor(string, TProcessorFunction) {}
+
+func (m *mockProcessor) Process(ctx Context, in, out TProtocol) (bool, TException) {
 	return m.ProcessFunc(in, out)
 }
