@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -49,14 +48,22 @@ type THttpClientTransportFactory struct {
 	url     string
 }
 
-func (p *THttpClientTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
+func (p *THttpClientTransportFactory) GetTransport(trans TTransport) TTransport {
 	if trans != nil {
 		t, ok := trans.(*THttpClient)
 		if ok && t.url != nil {
-			return NewTHttpClientWithOptions(t.url.String(), p.options)
+			client, err := NewTHttpClientWithOptions(t.url.String(), p.options)
+			if err != nil {
+				return nil
+			}
+			return client
 		}
 	}
-	return NewTHttpClientWithOptions(p.url, p.options)
+	client, err := NewTHttpClientWithOptions(p.url, p.options)
+	if err != nil {
+		return nil
+	}
+	return client
 }
 
 type THttpClientOptions struct {
@@ -184,7 +191,7 @@ func (p *THttpClient) WriteString(s string) (n int, err error) {
 	return p.requestBuffer.WriteString(s)
 }
 
-func (p *THttpClient) Flush(ctx context.Context) error {
+func (p *THttpClient) Flush() error {
 	// Close any previous response body to avoid leaking connections.
 	p.closeResponse()
 
@@ -193,9 +200,6 @@ func (p *THttpClient) Flush(ctx context.Context) error {
 		return NewTTransportExceptionFromError(err)
 	}
 	req.Header = p.header
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
 	response, err := p.client.Do(req)
 	if err != nil {
 		return NewTTransportExceptionFromError(err)

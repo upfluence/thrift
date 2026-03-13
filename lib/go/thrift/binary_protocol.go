@@ -20,7 +20,6 @@
 package thrift
 
 import (
-	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -267,7 +266,7 @@ func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, 
 	if p.strictRead {
 		return name, typeId, seqId, NewTProtocolExceptionWithType(BAD_VERSION, fmt.Errorf("Missing version in ReadMessageBegin"))
 	}
-	name, e2 := p.readStringBody(size)
+	name, e2 := p.readStringBody(int(size))
 	if e2 != nil {
 		return name, typeId, seqId, e2
 	}
@@ -444,7 +443,7 @@ func (p *TBinaryProtocol) ReadString() (value string, err error) {
 		return
 	}
 
-	return p.readStringBody(size)
+	return p.readStringBody(int(size))
 }
 
 func (p *TBinaryProtocol) ReadBinary() ([]byte, error) {
@@ -462,8 +461,8 @@ func (p *TBinaryProtocol) ReadBinary() ([]byte, error) {
 	return buf, NewTProtocolException(err)
 }
 
-func (p *TBinaryProtocol) Flush(ctx context.Context) (err error) {
-	return NewTProtocolException(p.trans.Flush(ctx))
+func (p *TBinaryProtocol) Flush() (err error) {
+	return NewTProtocolException(p.trans.Flush())
 }
 
 func (p *TBinaryProtocol) Skip(fieldType TType) (err error) {

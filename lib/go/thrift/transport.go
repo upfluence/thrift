@@ -20,7 +20,6 @@
 package thrift
 
 import (
-	"context"
 	"errors"
 	"io"
 )
@@ -31,19 +30,10 @@ type Flusher interface {
 	Flush() (err error)
 }
 
-type ContextFlusher interface {
-	Flush(ctx context.Context) (err error)
-}
-
-type ReadSizeProvider interface {
-	RemainingBytes() (num_bytes uint64)
-}
-
 // Encapsulates the I/O layer
 type TTransport interface {
 	io.ReadWriteCloser
-	ContextFlusher
-	ReadSizeProvider
+	Flusher
 
 	// Opens the transport for communication
 	Open() error

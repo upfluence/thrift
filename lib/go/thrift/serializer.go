@@ -50,10 +50,10 @@ func (t *TSerializer) WriteString(ctx context.Context, msg TStruct) (s string, e
 		return
 	}
 
-	if err = t.Protocol.Flush(ctx); err != nil {
+	if err = t.Protocol.Flush(); err != nil {
 		return
 	}
-	if err = t.Transport.Flush(ctx); err != nil {
+	if err = t.Transport.Flush(); err != nil {
 		return
 	}
 
@@ -67,11 +67,11 @@ func (t *TSerializer) Write(ctx context.Context, msg TStruct) (b []byte, err err
 		return
 	}
 
-	if err = t.Protocol.Flush(ctx); err != nil {
+	if err = t.Protocol.Flush(); err != nil {
 		return
 	}
 
-	if err = t.Transport.Flush(ctx); err != nil {
+	if err = t.Transport.Flush(); err != nil {
 		return
 	}
 

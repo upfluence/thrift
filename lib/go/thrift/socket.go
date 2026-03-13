@@ -20,7 +20,6 @@
 package thrift
 
 import (
-	"context"
 	"net"
 	"time"
 )
@@ -34,7 +33,8 @@ type TSocket struct {
 // NewTSocket creates a net.Conn-backed TTransport, given a host and port
 //
 // Example:
-// 	trans, err := thrift.NewTSocket("localhost:9090")
+//
+//	trans, err := thrift.NewTSocket("localhost:9090")
 func NewTSocket(hostPort string) (*TSocket, error) {
 	return NewTSocketTimeout(hostPort, 0)
 }
@@ -129,7 +129,7 @@ func (p *TSocket) Close() error {
 	return nil
 }
 
-//Returns the remote address of the socket.
+// Returns the remote address of the socket.
 func (p *TSocket) Addr() net.Addr {
 	return p.addr
 }
@@ -151,7 +151,7 @@ func (p *TSocket) Write(buf []byte) (int, error) {
 	return p.conn.Write(buf)
 }
 
-func (p *TSocket) Flush(ctx context.Context) error {
+func (p *TSocket) Flush() error {
 	return nil
 }
 

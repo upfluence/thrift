@@ -72,8 +72,6 @@ func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
 	}
 
 	if method != rMethod {
-		var exception tApplicationException
-		if err := exception.Read(iprot); err != nil {
 		return NewTApplicationException(
 			WRONG_METHOD_NAME,
 			fmt.Sprintf("%s: wrong method name", method),
@@ -84,12 +82,9 @@ func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
 			fmt.Sprintf("%s: out of order sequence response", method),
 		)
 	} else if rTypeID == EXCEPTION {
-		var (
-			exception   tApplicationException
-			retErr, err = exception.Read(iprot)
-		)
+		var exception tApplicationException
 
-		if err != nil {
+		if err := exception.Read(iprot); err != nil {
 			return err
 		}
 
@@ -97,7 +92,7 @@ func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
 			return err
 		}
 
-		return retErr
+		return exception
 	} else if rTypeID != REPLY {
 		return NewTApplicationException(
 			INVALID_MESSAGE_TYPE_EXCEPTION,

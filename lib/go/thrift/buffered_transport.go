@@ -21,7 +21,6 @@ package thrift
 
 import (
 	"bufio"
-	"context"
 )
 
 type TBufferedTransportFactory struct {
@@ -83,14 +82,10 @@ func (p *TBufferedTransport) Write(b []byte) (int, error) {
 	return n, err
 }
 
-func (p *TBufferedTransport) Flush(ctx context.Context) error {
+func (p *TBufferedTransport) Flush() error {
 	if err := p.ReadWriter.Flush(); err != nil {
 		p.ReadWriter.Writer.Reset(p.tp)
 		return err
 	}
-	return p.tp.Flush(ctx)
-}
-
-func (p *TBufferedTransport) RemainingBytes() (num_bytes uint64) {
-	return p.tp.RemainingBytes()
+	return p.tp.Flush()
 }

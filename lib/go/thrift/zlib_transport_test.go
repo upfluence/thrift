@@ -34,8 +34,8 @@ func TestZlibTransport(t *testing.T) {
 
 type DummyTransportFactory struct{}
 
-func (p *DummyTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
-	return NewTMemoryBuffer(), nil
+func (p *DummyTransportFactory) GetTransport(trans TTransport) TTransport {
+	return NewTMemoryBuffer()
 }
 
 func TestZlibFactoryTransportWithFactory(t *testing.T) {
@@ -44,19 +44,13 @@ func TestZlibFactoryTransportWithFactory(t *testing.T) {
 		&DummyTransportFactory{},
 	)
 	buffer := NewTMemoryBuffer()
-	trans, err := factory.GetTransport(buffer)
-	if err != nil {
-		t.Fatal(err)
-	}
+	trans := factory.GetTransport(buffer)
 	TransportTest(t, trans, trans)
 }
 
 func TestZlibFactoryTransportWithoutFactory(t *testing.T) {
 	factory := NewTZlibTransportFactoryWithFactory(zlib.BestCompression, nil)
 	buffer := NewTMemoryBuffer()
-	trans, err := factory.GetTransport(buffer)
-	if err != nil {
-		t.Fatal(err)
-	}
+	trans := factory.GetTransport(buffer)
 	TransportTest(t, trans, trans)
 }

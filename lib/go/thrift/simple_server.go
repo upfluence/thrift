@@ -156,30 +156,16 @@ func (p *TSimpleServer) innerAccept() (int32, error) {
 func (p *TSimpleServer) AcceptLoop() error {
 	for {
 		closed, err := p.innerAccept()
+		if closed != 0 {
+			return nil
+		}
 		if err != nil {
 			if p.errorLogger != nil {
 				(*p.errorLogger)(err)
 			} else {
 				log.Println("error accepting request:", err)
 			}
-
-			select {
-			case <-p.quit:
-				return nil
-			default:
-			}
 			return err
-		}
-		if client != nil {
-			go func() {
-				if err := p.processRequests(client); err != nil {
-					if p.errorLogger != nil {
-						(*p.errorLogger)(err)
-					} else {
-						log.Println("error processing request:", err)
-					}
-				}
-			}()
 		}
 	}
 }
@@ -207,14 +193,8 @@ func (p *TSimpleServer) Stop() error {
 
 func (p *TSimpleServer) processRequests(client TTransport) error {
 	processor := p.processorFactory.GetProcessor(client)
-	inputTransport, err := p.inputTransportFactory.GetTransport(client)
-	if err != nil {
-		return err
-	}
-	outputTransport, err := p.outputTransportFactory.GetTransport(client)
-	if err != nil {
-		return err
-	}
+	inputTransport := p.inputTransportFactory.GetTransport(client)
+	outputTransport := p.outputTransportFactory.GetTransport(client)
 	inputProtocol := p.inputProtocolFactory.GetProtocol(inputTransport)
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
 	defer func() {
