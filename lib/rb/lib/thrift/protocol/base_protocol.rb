@@ -18,11 +18,9 @@
 #
 
 # this require is to make generated struct definitions happy
-require 'set'
 
 module Thrift
   class ProtocolException < Exception
-
     UNKNOWN = 0
     INVALID_DATA = 1
     NEGATIVE_SIZE = 2
@@ -33,14 +31,13 @@ module Thrift
 
     attr_reader :type
 
-    def initialize(type=UNKNOWN, message=nil)
+    def initialize(type = UNKNOWN, message = nil)
       super(message)
       @type = type
     end
   end
 
   class BaseProtocol
-
     attr_reader :trans
 
     def initialize(trans)
@@ -48,7 +45,7 @@ module Thrift
     end
 
     def native?
-      puts "wrong method is being called!"
+      puts 'wrong method is being called!'
       false
     end
 
@@ -56,19 +53,19 @@ module Thrift
       raise NotImplementedError
     end
 
-    def write_message_end; nil; end
+    def write_message_end = nil
 
     def write_struct_begin(name)
       raise NotImplementedError
     end
 
-    def write_struct_end; nil; end
+    def write_struct_end = nil
 
     def write_field_begin(name, type, id)
       raise NotImplementedError
     end
 
-    def write_field_end; nil; end
+    def write_field_end = nil
 
     def write_field_stop
       raise NotImplementedError
@@ -78,19 +75,19 @@ module Thrift
       raise NotImplementedError
     end
 
-    def write_map_end; nil; end
+    def write_map_end = nil
 
     def write_list_begin(etype, size)
       raise NotImplementedError
     end
 
-    def write_list_end; nil; end
+    def write_list_end = nil
 
     def write_set_begin(etype, size)
       raise NotImplementedError
     end
 
-    def write_set_end; nil; end
+    def write_set_end = nil
 
     def write_bool(bool)
       raise NotImplementedError
@@ -141,37 +138,37 @@ module Thrift
       raise NotImplementedError
     end
 
-    def read_message_end; nil; end
+    def read_message_end = nil
 
     def read_struct_begin
       raise NotImplementedError
     end
 
-    def read_struct_end; nil; end
+    def read_struct_end = nil
 
     def read_field_begin
       raise NotImplementedError
     end
 
-    def read_field_end; nil; end
+    def read_field_end = nil
 
     def read_map_begin
       raise NotImplementedError
     end
 
-    def read_map_end; nil; end
+    def read_map_end = nil
 
     def read_list_begin
       raise NotImplementedError
     end
 
-    def read_list_end; nil; end
+    def read_list_end = nil
 
     def read_set_begin
       raise NotImplementedError
     end
 
-    def read_set_end; nil; end
+    def read_set_end = nil
 
     def read_bool
       raise NotImplementedError
@@ -230,7 +227,7 @@ module Thrift
         value = args[2]
       elsif args.size == 4
         # handles the deprecated method signature - write_field(name, type, fid, value)
-        field_info = {:name => args[0], :type => args[1]}
+        field_info = { name: args[0], type: args[1] }
         fid = args[2]
         value = args[3]
       else
@@ -253,9 +250,7 @@ module Thrift
     def write_type(field_info, value)
       # if field_info is a Fixnum, assume it is a Thrift::Types constant
       # convert it into a field_info Hash for backwards compatibility
-      if field_info.is_a? Integer
-        field_info = {:type => field_info}
-      end
+      field_info = { type: field_info } if field_info.is_a? Integer
 
       case field_info[:type]
       when Types::BOOL
@@ -291,11 +286,9 @@ module Thrift
     #
     # Returns the value read; object type varies based on field_info[:type].
     def read_type(field_info)
-      # if field_info is a Fixnum, assume it is a Thrift::Types constant
+      # if field_info is an Integer, assume it is a Thrift::Types constant
       # convert it into a field_info Hash for backwards compatibility
-      if field_info.is_a? Fixnum
-        field_info = {:type => field_info}
-      end
+      field_info = { type: field_info } if field_info.is_a? Integer
 
       case field_info[:type]
       when Types::BOOL
@@ -340,8 +333,9 @@ module Thrift
       when Types::STRUCT
         read_struct_begin
         while true
-          name, type, id = read_field_begin
+          _, type, = read_field_begin
           break if type == Types::STOP
+
           skip(type)
           read_field_end
         end
@@ -371,7 +365,7 @@ module Thrift
     end
 
     def to_s
-      "#{trans.to_s}"
+      "#{trans}"
     end
   end
 
@@ -381,7 +375,7 @@ module Thrift
     end
 
     def to_s
-      "base"
+      'base'
     end
   end
 end
