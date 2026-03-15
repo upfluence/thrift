@@ -131,7 +131,7 @@ precross-%:
 
 precross: $(PRECROSS_TARGET)
 
-.PHONY: generate-types-% generate-types
+.PHONY: $(GENERATE_TYPES_TARGET) generate-types
 
 generate-types-%:
 	$(MAKE) -C $* generate-types

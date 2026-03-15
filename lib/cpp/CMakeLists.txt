@@ -139,10 +139,16 @@ set( thriftcppz_SOURCES
     src/thrift/transport/THeaderTransport.cpp
 )
 
+file(GLOB_RECURSE THRIFT_TYPE_CPP_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/thrift/types/*.cpp"
+)
+list(APPEND thriftcpp_SOURCES ${THRIFT_TYPE_CPP_SOURCES})
+
 # Contains the thrift specific ADD_LIBRARY_THRIFT and TARGET_LINK_LIBRARIES_THRIFT
 include(ThriftMacros)
 
 ADD_LIBRARY_THRIFT(thrift ${thriftcpp_SOURCES} ${thriftcpp_threads_SOURCES})
+add_dependencies(thrift generate-types-cpp)
 if(WIN32)
     TARGET_LINK_LIBRARIES_THRIFT(thrift ${SYSLIBS} ws2_32)
 else()
@@ -189,3 +195,38 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/thrift" DESTINATION "${INCLUDE_INSTALL_DI
 if(BUILD_TESTING)
     add_subdirectory(test)
 endif()
+
+set(THRIFT_TYPES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../types")
+find_program(THRIFT_COMPILER_PATH thrift)
+if(THRIFT_COMPILER_PATH)
+    set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_PATH}")
+else()
+    set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER}")
+endif()
+file(GLOB_RECURSE THRIFT_TYPE_FILES "${THRIFT_TYPES_DIR}/*.thrift")
+set(THRIFT_TYPE_STAMPS "")
+foreach(THRIFT_TYPE_FILE ${THRIFT_TYPE_FILES})
+    file(RELATIVE_PATH THRIFT_TYPE_RELATIVE "${THRIFT_TYPES_DIR}" "${THRIFT_TYPE_FILE}")
+    get_filename_component(THRIFT_TYPE_RELATIVE_DIR "${THRIFT_TYPE_RELATIVE}" DIRECTORY)
+    get_filename_component(THRIFT_TYPE_NAME_WE "${THRIFT_TYPE_RELATIVE}" NAME_WE)
+    if(THRIFT_TYPE_RELATIVE_DIR)
+        set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/thrift/types/${THRIFT_TYPE_RELATIVE_DIR}")
+        set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_RELATIVE_DIR}/${THRIFT_TYPE_NAME_WE}.stamp")
+    else()
+        set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/thrift/types")
+        set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_NAME_WE}.stamp")
+    endif()
+    get_filename_component(THRIFT_TYPE_STAMP_DIR "${THRIFT_TYPE_STAMP}" DIRECTORY)
+    add_custom_command(
+        OUTPUT "${THRIFT_TYPE_STAMP}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_OUT_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_STAMP_DIR}"
+        COMMAND ${THRIFT_COMPILER_EXECUTABLE} --gen cpp --out "${THRIFT_TYPE_OUT_DIR}" "${THRIFT_TYPE_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E touch "${THRIFT_TYPE_STAMP}"
+        DEPENDS "${THRIFT_TYPE_FILE}"
+        COMMENT "Generating C++ thrift types from ${THRIFT_TYPE_RELATIVE}"
+    )
+    list(APPEND THRIFT_TYPE_STAMPS "${THRIFT_TYPE_STAMP}")
+endforeach()
+
+add_custom_target(generate-types-cpp DEPENDS ${THRIFT_TYPE_STAMPS})

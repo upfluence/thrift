@@ -428,3 +428,4 @@ project.lock.json
 /install_manifest.txt
 **/*.cmake
 **/CMakeFiles
+lib/*/generated-types

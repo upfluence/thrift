@@ -22,6 +22,9 @@ project("thrift-compiler" VERSION ${SEMVER_PACKAGE_VERSION})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/thrift/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/thrift/version.h)
 
+include(BoostMacros)
+REQUIRE_BOOST_HEADERS()
+
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
@@ -105,7 +108,7 @@ THRIFT_ADD_COMPILER(xsd     "Enable compiler for XSD" ON)
 
 # Thrift is looking for include files in the src directory
 # we also add the current binary directory for generated files
-include_directories(${CMAKE_CURRENT_BINARY_DIR} src)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} src ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/cpp/src)
 
 list(APPEND thrift-compiler_SOURCES ${compiler_core})
 
@@ -115,6 +118,9 @@ set_target_properties(thrift-compiler PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 set_target_properties(thrift-compiler PROPERTIES OUTPUT_NAME thrift)
 
 target_link_libraries(thrift-compiler parse)
+if(TARGET thrift)
+    target_link_libraries(thrift-compiler thrift)
+endif()
 
 install(TARGETS thrift-compiler RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin")
 
