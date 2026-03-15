@@ -198,11 +198,11 @@ MapEntry::~MapEntry() noexcept {
 }
 
 
-void MapEntry::__set_key(const Value& val) {
+void MapEntry::__set_key(::std::shared_ptr<Value> val) {
   this->key = val;
 }
 
-void MapEntry::__set_value(const Value& val) {
+void MapEntry::__set_value(::std::shared_ptr<Value> val) {
   this->value = val;
 }
 std::ostream& operator<<(std::ostream& out, const MapEntry& obj)
@@ -237,7 +237,21 @@ uint32_t MapEntry::read(::apache::thrift::protocol::TProtocol* iprot) {
     {
       case 1:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->key.read(iprot);
+          if (!this->key) {
+            this->key = ::std::shared_ptr<Value>(new Value);
+          }
+          xfer += this->key->read(iprot);
+          bool wasSet = false;
+          if (this->key->__isset.null_value) { wasSet = true; }
+          if (this->key->__isset.string_value) { wasSet = true; }
+          if (this->key->__isset.binary_value) { wasSet = true; }
+          if (this->key->__isset.integer_value) { wasSet = true; }
+          if (this->key->__isset.double_value) { wasSet = true; }
+          if (this->key->__isset.bool_value) { wasSet = true; }
+          if (this->key->__isset.list_value) { wasSet = true; }
+          if (this->key->__isset.map_value) { wasSet = true; }
+          if (this->key->__isset.struct_value) { wasSet = true; }
+          if (!wasSet) { this->key.reset(); }
           isset_key = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -245,7 +259,21 @@ uint32_t MapEntry::read(::apache::thrift::protocol::TProtocol* iprot) {
         break;
       case 2:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->value.read(iprot);
+          if (!this->value) {
+            this->value = ::std::shared_ptr<Value>(new Value);
+          }
+          xfer += this->value->read(iprot);
+          bool wasSet = false;
+          if (this->value->__isset.null_value) { wasSet = true; }
+          if (this->value->__isset.string_value) { wasSet = true; }
+          if (this->value->__isset.binary_value) { wasSet = true; }
+          if (this->value->__isset.integer_value) { wasSet = true; }
+          if (this->value->__isset.double_value) { wasSet = true; }
+          if (this->value->__isset.bool_value) { wasSet = true; }
+          if (this->value->__isset.list_value) { wasSet = true; }
+          if (this->value->__isset.map_value) { wasSet = true; }
+          if (this->value->__isset.struct_value) { wasSet = true; }
+          if (!wasSet) { this->value.reset(); }
           isset_value = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -273,11 +301,21 @@ uint32_t MapEntry::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeStructBegin("MapEntry");
 
   xfer += oprot->writeFieldBegin("key", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += this->key.write(oprot);
+  if (this->key) {
+    xfer += this->key->write(oprot);
+  } else {oprot->writeStructBegin("Value");
+    oprot->writeStructEnd();
+    oprot->writeFieldStop();
+  }
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldBegin("value", ::apache::thrift::protocol::T_STRUCT, 2);
-  xfer += this->value.write(oprot);
+  if (this->value) {
+    xfer += this->value->write(oprot);
+  } else {oprot->writeStructBegin("Value");
+    oprot->writeStructEnd();
+    oprot->writeFieldStop();
+  }
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
@@ -421,122 +459,6 @@ void MapValue::printTo(std::ostream& out) const {
 }
 
 
-StructValue::~StructValue() noexcept {
-}
-
-
-void StructValue::__set_fields(const std::map<std::string, Value> & val) {
-  this->fields = val;
-}
-std::ostream& operator<<(std::ostream& out, const StructValue& obj)
-{
-  obj.printTo(out);
-  return out;
-}
-
-
-uint32_t StructValue::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-  bool isset_fields = false;
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_MAP) {
-          {
-            this->fields.clear();
-            uint32_t _size20;
-            ::apache::thrift::protocol::TType _ktype21;
-            ::apache::thrift::protocol::TType _vtype22;
-            xfer += iprot->readMapBegin(_ktype21, _vtype22, _size20);
-            uint32_t _i24;
-            for (_i24 = 0; _i24 < _size20; ++_i24)
-            {
-              std::string _key25;
-              xfer += iprot->readString(_key25);
-              Value& _val26 = this->fields[_key25];
-              xfer += _val26.read(iprot);
-            }
-            xfer += iprot->readMapEnd();
-          }
-          isset_fields = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  if (!isset_fields)
-    throw TProtocolException(TProtocolException::INVALID_DATA);
-  return xfer;
-}
-
-uint32_t StructValue::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-  xfer += oprot->writeStructBegin("StructValue");
-
-  xfer += oprot->writeFieldBegin("fields", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->fields.size()));
-    std::map<std::string, Value> ::const_iterator _iter27;
-    for (_iter27 = this->fields.begin(); _iter27 != this->fields.end(); ++_iter27)
-    {
-      xfer += oprot->writeString(_iter27->first);
-      xfer += _iter27->second.write(oprot);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-void swap(StructValue &a, StructValue &b) {
-  using ::std::swap;
-  swap(a.fields, b.fields);
-}
-
-StructValue::StructValue(const StructValue& other28) {
-  fields = other28.fields;
-}
-StructValue& StructValue::operator=(const StructValue& other29) {
-  fields = other29.fields;
-  return *this;
-}
-void StructValue::printTo(std::ostream& out) const {
-  using ::apache::thrift::to_string;
-  out << "StructValue(";
-  out << "fields=" << to_string(fields);
-  out << ")";
-}
-
-
 Value::~Value() noexcept {
 }
 
@@ -581,7 +503,7 @@ void Value::__set_map_value(const MapValue& val) {
 __isset.map_value = true;
 }
 
-void Value::__set_struct_value(const StructValue& val) {
+void Value::__set_struct_value(::std::shared_ptr<StructValue> val) {
   this->struct_value = val;
 __isset.struct_value = true;
 }
@@ -679,7 +601,12 @@ uint32_t Value::read(::apache::thrift::protocol::TProtocol* iprot) {
         break;
       case 9:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->struct_value.read(iprot);
+          if (!this->struct_value) {
+            this->struct_value = ::std::shared_ptr<StructValue>(new StructValue);
+          }
+          xfer += this->struct_value->read(iprot);
+          bool wasSet = false;
+          if (!wasSet) { this->struct_value.reset(); }
           this->__isset.struct_value = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -744,7 +671,12 @@ uint32_t Value::write(::apache::thrift::protocol::TProtocol* oprot) const {
   }
   if (this->__isset.struct_value) {
     xfer += oprot->writeFieldBegin("struct_value", ::apache::thrift::protocol::T_STRUCT, 9);
-    xfer += this->struct_value.write(oprot);
+    if (this->struct_value) {
+      xfer += this->struct_value->write(oprot);
+    } else {oprot->writeStructBegin("StructValue");
+      oprot->writeStructEnd();
+      oprot->writeFieldStop();
+    }
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldStop();
@@ -766,29 +698,29 @@ void swap(Value &a, Value &b) {
   swap(a.__isset, b.__isset);
 }
 
-Value::Value(const Value& other30) {
-  null_value = other30.null_value;
-  string_value = other30.string_value;
-  binary_value = other30.binary_value;
-  integer_value = other30.integer_value;
-  double_value = other30.double_value;
-  bool_value = other30.bool_value;
-  list_value = other30.list_value;
-  map_value = other30.map_value;
-  struct_value = other30.struct_value;
-  __isset = other30.__isset;
+Value::Value(const Value& other20) {
+  null_value = other20.null_value;
+  string_value = other20.string_value;
+  binary_value = other20.binary_value;
+  integer_value = other20.integer_value;
+  double_value = other20.double_value;
+  bool_value = other20.bool_value;
+  list_value = other20.list_value;
+  map_value = other20.map_value;
+  struct_value = other20.struct_value;
+  __isset = other20.__isset;
 }
-Value& Value::operator=(const Value& other31) {
-  null_value = other31.null_value;
-  string_value = other31.string_value;
-  binary_value = other31.binary_value;
-  integer_value = other31.integer_value;
-  double_value = other31.double_value;
-  bool_value = other31.bool_value;
-  list_value = other31.list_value;
-  map_value = other31.map_value;
-  struct_value = other31.struct_value;
-  __isset = other31.__isset;
+Value& Value::operator=(const Value& other21) {
+  null_value = other21.null_value;
+  string_value = other21.string_value;
+  binary_value = other21.binary_value;
+  integer_value = other21.integer_value;
+  double_value = other21.double_value;
+  bool_value = other21.bool_value;
+  list_value = other21.list_value;
+  map_value = other21.map_value;
+  struct_value = other21.struct_value;
+  __isset = other21.__isset;
   return *this;
 }
 void Value::printTo(std::ostream& out) const {
@@ -803,6 +735,122 @@ void Value::printTo(std::ostream& out) const {
   out << ", " << "list_value="; (__isset.list_value ? (out << to_string(list_value)) : (out << "<null>"));
   out << ", " << "map_value="; (__isset.map_value ? (out << to_string(map_value)) : (out << "<null>"));
   out << ", " << "struct_value="; (__isset.struct_value ? (out << to_string(struct_value)) : (out << "<null>"));
+  out << ")";
+}
+
+
+StructValue::~StructValue() noexcept {
+}
+
+
+void StructValue::__set_fields(const std::map<std::string, Value> & val) {
+  this->fields = val;
+}
+std::ostream& operator<<(std::ostream& out, const StructValue& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t StructValue::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_fields = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_MAP) {
+          {
+            this->fields.clear();
+            uint32_t _size22;
+            ::apache::thrift::protocol::TType _ktype23;
+            ::apache::thrift::protocol::TType _vtype24;
+            xfer += iprot->readMapBegin(_ktype23, _vtype24, _size22);
+            uint32_t _i26;
+            for (_i26 = 0; _i26 < _size22; ++_i26)
+            {
+              std::string _key27;
+              xfer += iprot->readString(_key27);
+              Value& _val28 = this->fields[_key27];
+              xfer += _val28.read(iprot);
+            }
+            xfer += iprot->readMapEnd();
+          }
+          isset_fields = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_fields)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t StructValue::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("StructValue");
+
+  xfer += oprot->writeFieldBegin("fields", ::apache::thrift::protocol::T_MAP, 1);
+  {
+    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->fields.size()));
+    std::map<std::string, Value> ::const_iterator _iter29;
+    for (_iter29 = this->fields.begin(); _iter29 != this->fields.end(); ++_iter29)
+    {
+      xfer += oprot->writeString(_iter29->first);
+      xfer += _iter29->second.write(oprot);
+    }
+    xfer += oprot->writeMapEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(StructValue &a, StructValue &b) {
+  using ::std::swap;
+  swap(a.fields, b.fields);
+}
+
+StructValue::StructValue(const StructValue& other30) {
+  fields = other30.fields;
+}
+StructValue& StructValue::operator=(const StructValue& other31) {
+  fields = other31.fields;
+  return *this;
+}
+void StructValue::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "StructValue(";
+  out << "fields=" << to_string(fields);
   out << ")";
 }
 

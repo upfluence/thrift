@@ -605,168 +605,6 @@ func (p *MapValue) String() string {
 }
 
 // Attributes:
-//   - Fields
-type StructValue struct {
-	Fields map[string]*Value `thrift:"fields,1,required" db:"fields" json:"fields"`
-}
-
-func NewStructValue() *StructValue {
-	return &StructValue{}
-}
-
-var structValueStructDefinition = thrift.StructDefinition{
-	Namespace: Namespace,
-	AnnotatedDefinition: thrift.AnnotatedDefinition{
-		Name:                  "StructValue",
-		LegacyAnnotations:     map[string]string{},
-		StructuredAnnotations: []thrift.RegistrableStruct{},
-	},
-	Fields: []thrift.FieldDefinition{
-		{
-			AnnotatedDefinition: thrift.AnnotatedDefinition{
-				Name:                  "fields",
-				LegacyAnnotations:     map[string]string{},
-				StructuredAnnotations: []thrift.RegistrableStruct{},
-			},
-		},
-	},
-}
-
-func (p *StructValue) StructDefinition() thrift.StructDefinition {
-	return structValueStructDefinition
-}
-
-func (p *StructValue) GetFields() map[string]*Value {
-	return p.Fields
-}
-
-func (p *StructValue) SetFields(v map[string]*Value) {
-	p.Fields = v
-}
-func (p *StructValue) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	var issetFields bool = false
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		switch fieldId {
-		case 1:
-			if fieldTypeId == thrift.MAP {
-				if err := p.ReadField1(iprot); err != nil {
-					return err
-				}
-				issetFields = true
-			} else {
-				if err := iprot.Skip(fieldTypeId); err != nil {
-					return err
-				}
-			}
-		default:
-			if err := iprot.Skip(fieldTypeId); err != nil {
-				return err
-			}
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	if !issetFields {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Fields is not set"))
-	}
-	return nil
-}
-
-func (p *StructValue) ReadField1(iprot thrift.TProtocol) error {
-	_, _, size, err := iprot.ReadMapBegin()
-	if err != nil {
-		return thrift.PrependError("error reading map begin: ", err)
-	}
-	tMap := make(map[string]*Value, size)
-	p.Fields = tMap
-	for i := 0; i < size; i++ {
-		var _key2 string
-		if v, err := iprot.ReadString(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_key2 = v
-		}
-		_val3 := NewValue()
-		if err := _val3.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _val3), err)
-		}
-		p.Fields[_key2] = _val3
-	}
-	if err := iprot.ReadMapEnd(); err != nil {
-		return thrift.PrependError("error reading map end: ", err)
-	}
-	return nil
-}
-
-func (p *StructValue) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("StructValue"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if p != nil {
-		if err := p.writeField1(oprot); err != nil {
-			return err
-		}
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *StructValue) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("fields", thrift.MAP, 1); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:fields: ", p), err)
-	}
-	if err := oprot.WriteMapBegin(thrift.STRING, thrift.STRUCT, len(p.Fields)); err != nil {
-		return thrift.PrependError("error writing map begin: ", err)
-	}
-	for k, v := range p.Fields {
-		if err := oprot.WriteString(string(k)); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-		if err := v.Write(oprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
-		}
-	}
-	if err := oprot.WriteMapEnd(); err != nil {
-		return thrift.PrependError("error writing map end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:fields: ", p), err)
-	}
-	return err
-}
-
-func (p *StructValue) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf(
-		"StructValue({fields: %v})",
-		p.GetFields(),
-	)
-}
-
-// Attributes:
 //   - NullValue
 //   - StringValue
 //   - BinaryValue
@@ -1484,5 +1322,167 @@ func (p *Value) String() string {
 		p.GetListValue(),
 		p.GetMapValue(),
 		p.GetStructValue(),
+	)
+}
+
+// Attributes:
+//   - Fields
+type StructValue struct {
+	Fields map[string]*Value `thrift:"fields,1,required" db:"fields" json:"fields"`
+}
+
+func NewStructValue() *StructValue {
+	return &StructValue{}
+}
+
+var structValueStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "StructValue",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "fields",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
+func (p *StructValue) StructDefinition() thrift.StructDefinition {
+	return structValueStructDefinition
+}
+
+func (p *StructValue) GetFields() map[string]*Value {
+	return p.Fields
+}
+
+func (p *StructValue) SetFields(v map[string]*Value) {
+	p.Fields = v
+}
+func (p *StructValue) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	var issetFields bool = false
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.MAP {
+				if err := p.ReadField1(iprot); err != nil {
+					return err
+				}
+				issetFields = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetFields {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Fields is not set"))
+	}
+	return nil
+}
+
+func (p *StructValue) ReadField1(iprot thrift.TProtocol) error {
+	_, _, size, err := iprot.ReadMapBegin()
+	if err != nil {
+		return thrift.PrependError("error reading map begin: ", err)
+	}
+	tMap := make(map[string]*Value, size)
+	p.Fields = tMap
+	for i := 0; i < size; i++ {
+		var _key2 string
+		if v, err := iprot.ReadString(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_key2 = v
+		}
+		_val3 := NewValue()
+		if err := _val3.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _val3), err)
+		}
+		p.Fields[_key2] = _val3
+	}
+	if err := iprot.ReadMapEnd(); err != nil {
+		return thrift.PrependError("error reading map end: ", err)
+	}
+	return nil
+}
+
+func (p *StructValue) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("StructValue"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if p != nil {
+		if err := p.writeField1(oprot); err != nil {
+			return err
+		}
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *StructValue) writeField1(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("fields", thrift.MAP, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:fields: ", p), err)
+	}
+	if err := oprot.WriteMapBegin(thrift.STRING, thrift.STRUCT, len(p.Fields)); err != nil {
+		return thrift.PrependError("error writing map begin: ", err)
+	}
+	for k, v := range p.Fields {
+		if err := oprot.WriteString(string(k)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+		}
+		if err := v.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+		}
+	}
+	if err := oprot.WriteMapEnd(); err != nil {
+		return thrift.PrependError("error writing map end: ", err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:fields: ", p), err)
+	}
+	return err
+}
+
+func (p *StructValue) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"StructValue({fields: %v})",
+		p.GetFields(),
 	)
 }

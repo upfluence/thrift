@@ -3875,9 +3875,12 @@ void t_cpp_generator::generate_deserialize_struct(ostream& out,
     const vector<t_field*>& members = tstruct->get_members();
     vector<t_field*>::const_iterator f_iter;
     for (f_iter = members.begin(); f_iter != members.end(); ++f_iter) {
-
-      indent(out) << "if (" << prefix << "->__isset." << (*f_iter)->get_name()
-                  << ") { wasSet = true; }" << endl;
+      if ((*f_iter)->get_req() != t_field::T_REQUIRED) {
+        indent(out) << "if (" << prefix << "->__isset." << (*f_iter)->get_name()
+                    << ") { wasSet = true; }" << endl;
+      } else {
+        indent(out) << "wasSet = true;" << endl;
+      }
     }
     indent(out) << "if (!wasSet) { " << prefix << ".reset(); }" << endl;
   } else {

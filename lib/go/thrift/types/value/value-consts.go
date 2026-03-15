@@ -27,6 +27,6 @@ func init() {
 	thrift.RegisterStruct((*ListValue)(nil))
 	thrift.RegisterStruct((*MapEntry)(nil))
 	thrift.RegisterStruct((*MapValue)(nil))
-	thrift.RegisterStruct((*StructValue)(nil))
 	thrift.RegisterStruct((*Value)(nil))
+	thrift.RegisterStruct((*StructValue)(nil))
 }

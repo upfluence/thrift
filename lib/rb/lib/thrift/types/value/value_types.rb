@@ -17,9 +17,9 @@ module Thrift
 
       class MapValue; end
 
-      class StructValue; end
-
       class Value < ::Thrift::Union; end
+
+      class StructValue; end
 
       class NullValue
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -152,40 +152,6 @@ module Thrift
 
         def validate
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field entries is unset!') unless @entries
-        end
-
-        ::Thrift::Struct.generate_accessors self
-        ::Thrift.register_struct_type self
-      end
-
-      class StructValue
-        include ::Thrift::Struct, ::Thrift::Struct_Union
-
-        NAME = 'StructValue'.freeze
-        NAMESPACE = 'types.value'.freeze
-
-        LEGACY_ANNOTATIONS = {
-        }.freeze
-
-        STRUCTURED_ANNOTATIONS = [
-        ].freeze
-
-        THRIFT_FIELD_INDEX_FIELDS = 1
-
-        THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS = {
-        }.freeze
-
-        THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS = [
-        ].freeze
-
-        FIELDS = {
-          THRIFT_FIELD_INDEX_FIELDS => {type: ::Thrift::Types::MAP, name: 'fields', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value}, legacy_annotations: THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS}
-        }
-
-        def struct_fields; FIELDS; end
-
-        def validate
-          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field fields is unset!') unless @fields
         end
 
         ::Thrift::Struct.generate_accessors self
@@ -325,6 +291,40 @@ module Thrift
         end
 
         ::Thrift::Union.generate_accessors self
+        ::Thrift.register_struct_type self
+      end
+
+      class StructValue
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+
+        NAME = 'StructValue'.freeze
+        NAMESPACE = 'types.value'.freeze
+
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_INDEX_FIELDS = 1
+
+        THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        FIELDS = {
+          THRIFT_FIELD_INDEX_FIELDS => {type: ::Thrift::Types::MAP, name: 'fields', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Value::Value}, legacy_annotations: THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field fields is unset!') unless @fields
+        end
+
+        ::Thrift::Struct.generate_accessors self
         ::Thrift.register_struct_type self
       end
 

@@ -29,9 +29,9 @@ class MapEntry;
 
 class MapValue;
 
-class StructValue;
-
 class Value;
+
+class StructValue;
 
 
 class NullValue : public virtual ::apache::thrift::TBase {
@@ -106,16 +106,16 @@ class MapEntry : public virtual ::apache::thrift::TBase {
 
   MapEntry(const MapEntry&);
   MapEntry& operator=(const MapEntry&);
-  MapEntry() {
+  MapEntry() : key(), value() {
   }
 
   virtual ~MapEntry() noexcept;
-  Value key;
-  Value value;
+  ::std::shared_ptr<Value> key;
+  ::std::shared_ptr<Value> value;
 
-  void __set_key(const Value& val);
+  void __set_key(::std::shared_ptr<Value> val);
 
-  void __set_value(const Value& val);
+  void __set_value(::std::shared_ptr<Value> val);
 
   bool operator == (const MapEntry & rhs) const
   {
@@ -177,42 +177,6 @@ void swap(MapValue &a, MapValue &b);
 
 std::ostream& operator<<(std::ostream& out, const MapValue& obj);
 
-
-class StructValue : public virtual ::apache::thrift::TBase {
- public:
-
-  StructValue(const StructValue&);
-  StructValue& operator=(const StructValue&);
-  StructValue() {
-  }
-
-  virtual ~StructValue() noexcept;
-  std::map<std::string, Value>  fields;
-
-  void __set_fields(const std::map<std::string, Value> & val);
-
-  bool operator == (const StructValue & rhs) const
-  {
-    if (!(fields == rhs.fields))
-      return false;
-    return true;
-  }
-  bool operator != (const StructValue &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const StructValue & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(StructValue &a, StructValue &b);
-
-std::ostream& operator<<(std::ostream& out, const StructValue& obj);
-
 typedef struct _Value__isset {
   _Value__isset() : null_value(false), string_value(false), binary_value(false), integer_value(false), double_value(false), bool_value(false), list_value(false), map_value(false), struct_value(false) {}
   bool null_value :1;
@@ -231,7 +195,7 @@ class Value : public virtual ::apache::thrift::TBase {
 
   Value(const Value&);
   Value& operator=(const Value&);
-  Value() : string_value(), binary_value(), integer_value(0), double_value(0), bool_value(0) {
+  Value() : string_value(), binary_value(), integer_value(0), double_value(0), bool_value(0), struct_value() {
   }
 
   virtual ~Value() noexcept;
@@ -243,7 +207,7 @@ class Value : public virtual ::apache::thrift::TBase {
   bool bool_value;
   ListValue list_value;
   MapValue map_value;
-  StructValue struct_value;
+  ::std::shared_ptr<StructValue> struct_value;
 
   _Value__isset __isset;
 
@@ -263,7 +227,7 @@ class Value : public virtual ::apache::thrift::TBase {
 
   void __set_map_value(const MapValue& val);
 
-  void __set_struct_value(const StructValue& val);
+  void __set_struct_value(::std::shared_ptr<StructValue> val);
 
   bool operator == (const Value & rhs) const
   {
@@ -320,6 +284,42 @@ class Value : public virtual ::apache::thrift::TBase {
 void swap(Value &a, Value &b);
 
 std::ostream& operator<<(std::ostream& out, const Value& obj);
+
+
+class StructValue : public virtual ::apache::thrift::TBase {
+ public:
+
+  StructValue(const StructValue&);
+  StructValue& operator=(const StructValue&);
+  StructValue() {
+  }
+
+  virtual ~StructValue() noexcept;
+  std::map<std::string, Value>  fields;
+
+  void __set_fields(const std::map<std::string, Value> & val);
+
+  bool operator == (const StructValue & rhs) const
+  {
+    if (!(fields == rhs.fields))
+      return false;
+    return true;
+  }
+  bool operator != (const StructValue &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const StructValue & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(StructValue &a, StructValue &b);
+
+std::ostream& operator<<(std::ostream& out, const StructValue& obj);
 
 }} // namespace
 
