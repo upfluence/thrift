@@ -14,23 +14,23 @@ enum ScalarType {
   Double = 7,
 }
 
-struct ListType {
-  1: required Type& element_type;
+struct ListTypeDefinition {
+  1: required TypeDefinition& element_type;
 }
 
-struct MapType {
-  1: required Type& key_type;
-  2: required Type& value_type;
+struct MapTypeDefinition {
+  1: required TypeDefinition& key_type;
+  2: required TypeDefinition& value_type;
 }
 
-struct SetType {
-  1: required Type& element_type;
+struct SetTypeDefinition {
+  1: required TypeDefinition& element_type;
 }
 
-union Type {
-  1: ScalarType scalar_type;
-  2: ListType list_type;
-  3: MapType map_type;
-  4: SetType set_type;
-  8: core.Reference reference_type;
+union TypeDefinition {
+  1: ScalarType         scalar_type;
+  2: ListTypeDefinition list_type;
+  3: MapTypeDefinition  map_type;
+  4: SetTypeDefinition  set_type;
+  8: core.Reference     reference_type;
 }

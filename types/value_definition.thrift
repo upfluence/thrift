@@ -1,33 +1,32 @@
 namespace * types.value
 
-struct NullValue {}
+struct NullValueDefinition {}
 
-struct ListValue {
-  1: required list<Value> values;
+struct ListValueDefinition {
+  1: required list<ValueDefinition> values;
 }
 
-struct MapEntry {
-  1: required Value& key;
-  2: required Value& value;
+struct MapEntryDefinition {
+  1: required ValueDefinition& key;
+  2: required ValueDefinition& value;
 }
 
-struct MapValue {
-  1: required list<MapEntry> entries;
+struct MapValueDefinition {
+  1: required list<MapEntryDefinition> entries;
 }
 
-
-union Value {
-  1: NullValue    null_value;
-  2: string       string_value;
-  3: binary       binary_value;
-  4: i64          integer_value;
-  5: double       double_value;
-  6: bool         bool_value;
-  7: ListValue    list_value;
-  8: MapValue     map_value;
-  9: StructValue& struct_value;
+union ValueDefinition {
+  1: NullValueDefinition  null_value;
+  2: string               string_value;
+  3: binary               binary_value;
+  4: i64                  integer_value;
+  5: double               double_value;
+  6: bool                 bool_value;
+  7: ListValueDefinition  list_value;
+  8: MapValueDefinition   map_value;
+  9: StructValueDefinition& struct_value;
 }
 
-struct StructValue {
-  1: optional map<string, Value> fields;
+struct StructValueDefinition {
+  1: optional map<string, ValueDefinition> fields;
 }

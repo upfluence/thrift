@@ -9,11 +9,11 @@ enum Requiredness {
   Required = 2,
 }
 
-struct Field {
-  1: required annotation_definition.Annotation annotation;
-  2: required i32    id;
-  3: required type_definition.Type&   type;
-  4: required Requiredness requiredness;
+struct FieldDefinition {
+  1: required annotation_definition.AnnotationDefinition annotation;
+  2: required i32                    id;
+  3: required type_definition.TypeDefinition&  type;
+  4: required Requiredness            requiredness;
 }
 
 enum StructKind {
@@ -24,7 +24,7 @@ enum StructKind {
 }
 
 struct StructDefinition {
-  1: required annotation_definition.Annotation annotation;
-  2: required StructKind  kind;
-  3: required list<Field> fields;
+  1: required annotation_definition.AnnotationDefinition annotation;
+  2: required StructKind              kind;
+  3: required list<FieldDefinition>   fields;
 }
