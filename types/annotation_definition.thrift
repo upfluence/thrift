@@ -1,11 +1,11 @@
-namespace * types.annotation
+namespace * types.annotation_definition
 
 include "types/core.thrift"
-include "types/value.thrift"
+include "types/value_definition.thrift"
 
 struct StructuredAnnotation {
   1: required core.Reference type;
-  2: required value.Value value;
+  2: required value_definition.Value value;
 }
 
 struct Annotation {

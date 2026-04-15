@@ -1,8 +1,7 @@
-namespace * types.type
-namespace go types.ttype
+namespace * types.type_definition
 
 include "types/core.thrift"
-include "types/annotation.thrift"
+include "types/annotation_definition.thrift"
 
 enum ScalarType {
   Unknown = 0,

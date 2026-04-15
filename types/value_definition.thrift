@@ -29,5 +29,5 @@ union Value {
 }
 
 struct StructValue {
-  1: required map<string, Value> fields;
+  1: optional map<string, Value> fields;
 }

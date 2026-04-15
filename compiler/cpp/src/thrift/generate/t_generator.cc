@@ -260,3 +260,7 @@ t_generator_factory::t_generator_factory(const std::string& short_name,
   : short_name_(short_name), long_name_(long_name), documentation_(documentation) {
   t_generator_registry::register_generator(this);
 }
+
+void t_generator_factory::inject_language(t_generator* gen) const {
+  gen->set_language(short_name_);
+}

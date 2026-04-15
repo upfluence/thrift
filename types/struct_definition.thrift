@@ -1,7 +1,7 @@
-namespace * types.struct
-namespace go types.tstruct
+namespace * types.struct_definition
 
-include "types/type.thrift"
+include "types/annotation_definition.thrift"
+include "types/type_definition.thrift"
 
 enum Requiredness {
   Unknown = 0,
@@ -10,9 +10,9 @@ enum Requiredness {
 }
 
 struct Field {
-  1: required annotation.Annotation annotation;
+  1: required annotation_definition.Annotation annotation;
   2: required i32    id;
-  3: required Type&   type;
+  3: required type_definition.Type&   type;
   4: required Requiredness requiredness;
 }
 
@@ -24,7 +24,7 @@ enum StructKind {
 }
 
 struct StructDefinition {
-  1: required annotation.Annotation annotation;
+  1: required annotation_definition.Annotation annotation;
   2: required StructKind  kind;
   3: required list<Field> fields;
 }

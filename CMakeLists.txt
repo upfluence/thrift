@@ -33,20 +33,28 @@ set(PACKAGE_VERSION "0.13.0" CACHE STRING "Thrift package version")
 set(TYPES_PREFIX "/usr/local/share/thrift" CACHE STRING "Directory the thrift tpyes will be installed in")
 message(STATUS "Types will be installed in ${TYPES_PREFIX}")
 
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/types" DESTINATION "${TYPES_PREFIX}")
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/types" DESTINATION "${TYPES_PREFIX}")
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake")
 
 # TODO: add `git rev-parse --short HEAD`
 # Read the version information from the Autoconf file
-file (STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/configure.ac" CONFIGURE_AC REGEX "AC_INIT\\(.*\\)" )
-option (THRIFT_VERSION "VERSION" ${CONFIGURE_AC})
+if(NOT DEFINED THRIFT_VERSION OR THRIFT_VERSION STREQUAL "" OR THRIFT_VERSION STREQUAL "OFF")
+  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/configure.ac" CONFIGURE_AC REGEX "AC_INIT\\(.*\\)")
+  set(THRIFT_VERSION "${CONFIGURE_AC}")
+endif()
 
 # The following variable is used in the version.h.in file
-string(REGEX REPLACE "AC_INIT\\(\\[.*\\], \\[([0-9]+\\.[0-9]+\\.[0-9]+(-upfluence)?)\\]\\)" "\\1" PACKAGE_VERSION ${THRIFT_VERSION})
+if(THRIFT_VERSION MATCHES "AC_INIT")
+  string(REGEX REPLACE "AC_INIT\\(\\[.*\\], \\[([0-9]+\\.[0-9]+\\.[0-9]+(-upfluence)?)\\]\\)" "\\1" PACKAGE_VERSION ${THRIFT_VERSION})
+else()
+  set(PACKAGE_VERSION "${THRIFT_VERSION}")
+endif()
 message(STATUS "Parsed Thrift package version: ${PACKAGE_VERSION}")
 
-set(REPO_VERSION "${PACKAGE_VERSION}")
+if(NOT DEFINED REPO_VERSION OR REPO_VERSION STREQUAL "")
+  set(REPO_VERSION "${PACKAGE_VERSION}")
+endif()
 
 string(REGEX REPLACE "v?([0-9]+\\.[0-9]+\\.[0-9]+)(-upfluence)?" "\\1" thrift_VERSION ${PACKAGE_VERSION})
 string(REGEX REPLACE "([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1" thrift_VERSION_MAJOR ${thrift_VERSION})
@@ -108,12 +116,6 @@ endif()
 
 if(BUILD_CPP)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/cpp)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/go)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/rb)
-    add_custom_target(generate-types)
-    add_dependencies(generate-types generate-types-cpp)
-    add_dependencies(generate-types generate-types-go)
-    add_dependencies(generate-types generate-types-rb)
     if(BUILD_TUTORIALS)
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tutorial/cpp)
     endif()
@@ -124,7 +126,16 @@ if(BUILD_CPP)
             message(WARNING "libevent and/or ZLIB and/or OpenSSL not found or disabled; will not build some tests")
         endif()
     endif()
+else()
+    include(${CMAKE_CURRENT_SOURCE_DIR}/lib/cpp/generate-types.cmake)
 endif()
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/go)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/rb)
+add_custom_target(generate-types)
+add_dependencies(generate-types generate-types-cpp)
+add_dependencies(generate-types generate-types-go)
+add_dependencies(generate-types generate-types-rb)
 
 if(BUILD_COMPILER)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/compiler/cpp)

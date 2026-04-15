@@ -51,6 +51,8 @@ public:
   std::string get_long_name() { return long_name_; }
   std::string get_documentation() { return documentation_; }
 
+  void inject_language(t_generator* gen) const;
+
 private:
   std::string short_name_;
   std::string long_name_;
@@ -69,8 +71,7 @@ public:
                                      const std::map<std::string, std::string>& parsed_options,
                                      const std::string& option_string) override {
     t_generator* gen = new generator(program, parsed_options, option_string);
-    gen->set_language(get_short_name());
-    gen->set_parsed_options(parsed_options);
+    inject_language(gen);
     return gen;
   }
 

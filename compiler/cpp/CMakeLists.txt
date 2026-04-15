@@ -112,6 +112,21 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} src ${CMAKE_CURRENT_SOURCE_DIR}/
 
 list(APPEND thrift-compiler_SOURCES ${compiler_core})
 
+# When building the compiler without the C++ library, we compile the generated
+# type sources and TSubprocessTransport directly into the compiler binary and
+# link against the system-installed thrift runtime.
+if(NOT TARGET thrift)
+    file(GLOB THRIFT_TYPES_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/cpp/src/thrift/types/*_types.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/cpp/src/thrift/types/*_constants.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/cpp/src/thrift/types/Plugin.cpp"
+    )
+    list(APPEND thrift-compiler_SOURCES
+        ${THRIFT_TYPES_SOURCES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/cpp/src/thrift/transport/TSubprocessTransport.cpp"
+    )
+endif()
+
 add_executable(thrift-compiler ${thrift-compiler_SOURCES})
 
 set_target_properties(thrift-compiler PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -120,6 +135,14 @@ set_target_properties(thrift-compiler PROPERTIES OUTPUT_NAME thrift)
 target_link_libraries(thrift-compiler parse)
 if(TARGET thrift)
     target_link_libraries(thrift-compiler thrift)
+else()
+    # Link against the system-installed thrift runtime
+    find_library(THRIFT_RUNTIME_LIB NAMES thrift thriftd PATHS /usr/local/lib NO_DEFAULT_PATH)
+    if(THRIFT_RUNTIME_LIB)
+        target_link_libraries(thrift-compiler ${THRIFT_RUNTIME_LIB})
+    else()
+        message(FATAL_ERROR "Could not find thrift runtime library in /usr/local/lib")
+    endif()
 endif()
 
 install(TARGETS thrift-compiler RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin")
