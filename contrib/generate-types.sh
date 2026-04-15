@@ -1,20 +1,17 @@
 #!/bin/bash
 
-set -x
+set -ex
 
 git_tag=$(git describe --tag)
 tag=${TAG:-$git_tag}
+version="${tag#v}-upfluence"
 
-./bootstrap.sh
+build_dir="$(mktemp -d)"
+trap 'rm -rf "$build_dir"' EXIT
 
-REPO_VERSION=${tag#v}-upfluence ./configure --enable-ilbs --with-c-glib=off \
-                                            --with-cpp=off
+cmake -S . -B "$build_dir" \
+  -DTHRIFT_VERSION="$version" \
+  -DBUILD_LIBRARIES=OFF \
+  -DBUILD_TESTING=OFF
 
-
-make
-
-pushd lib
-make generate-types
-popd
-
-make clean
+cmake --build "$build_dir" --target generate-types
