@@ -5,11 +5,11 @@
 #
 
 require 'thrift'
-require 'thrift/types/program_definition/program_definition_types'
+require 'thrift/types/value/value_types'
 
 module Thrift
   module Types
-    module Program_definition
+    module Value
     end
   end
 end
