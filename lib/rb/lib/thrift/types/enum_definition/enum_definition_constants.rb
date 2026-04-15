@@ -5,13 +5,11 @@
 #
 
 require 'thrift'
-require 'thrift/types/known/timestamp/timestamp_types'
+require 'thrift/types/enum_definition/enum_definition_types'
 
 module Thrift
   module Types
-    module Known
-      module Timestamp
-      end
+    module Enum_definition
     end
   end
 end
