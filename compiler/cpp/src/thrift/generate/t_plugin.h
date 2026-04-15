@@ -6,11 +6,14 @@
 #include "thrift/parse/t_map.h"
 #include "thrift/parse/t_set.h"
 #include "thrift/parse/t_function.h"
+#include "thrift/parse/t_typedef.h"
+#include "thrift/parse/t_enum.h"
 #include "thrift/generate/t_generator_registry.h"
 #include "thrift/transport/TSubprocessTransport.h"
 #include <thrift/types/Plugin.h>
 #include <thrift/types/plugin_types.h>
 #include <thrift/types/program_definition_types.h>
+#include <thrift/types/enum_definition_types.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/TBufferTransports.h>
 
@@ -58,8 +61,8 @@ private:
     return ref;
   }
 
-  static ::types::type_definition::Type build_type(const t_type* type) {
-    ::types::type_definition::Type t;
+  static ::types::type_definition::TypeDefinition build_type(const t_type* type) {
+    ::types::type_definition::TypeDefinition t;
     type = type->get_true_type();
 
     if (type->is_base_type()) {
@@ -79,19 +82,19 @@ private:
       }
       t.__set_scalar_type(st);
     } else if (type->is_list()) {
-      ::types::type_definition::ListType lt;
-      lt.__set_element_type(std::make_shared<::types::type_definition::Type>(
+      ::types::type_definition::ListTypeDefinition lt;
+      lt.__set_element_type(std::make_shared<::types::type_definition::TypeDefinition>(
           build_type(static_cast<const t_list*>(type)->get_elem_type())));
       t.__set_list_type(lt);
     } else if (type->is_map()) {
       const t_map* mt = static_cast<const t_map*>(type);
-      ::types::type_definition::MapType mpt;
-      mpt.__set_key_type(std::make_shared<::types::type_definition::Type>(build_type(mt->get_key_type())));
-      mpt.__set_value_type(std::make_shared<::types::type_definition::Type>(build_type(mt->get_val_type())));
+      ::types::type_definition::MapTypeDefinition mpt;
+      mpt.__set_key_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(mt->get_key_type())));
+      mpt.__set_value_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(mt->get_val_type())));
       t.__set_map_type(mpt);
     } else if (type->is_set()) {
-      ::types::type_definition::SetType st;
-      st.__set_element_type(std::make_shared<::types::type_definition::Type>(
+      ::types::type_definition::SetTypeDefinition st;
+      st.__set_element_type(std::make_shared<::types::type_definition::TypeDefinition>(
           build_type(static_cast<const t_set*>(type)->get_elem_type())));
       t.__set_set_type(st);
     } else {
@@ -100,8 +103,8 @@ private:
     return t;
   }
 
-  static ::types::annotation_definition::Annotation build_annotation(const t_annotated* node) {
-    ::types::annotation_definition::Annotation ann;
+  static ::types::annotation_definition::AnnotationDefinition build_annotation(const t_annotated* node) {
+    ::types::annotation_definition::AnnotationDefinition ann;
     ann.__set_name(node->get_name());
     ann.__set_legacy_annotations(node->legacy_annotations());
     ann.__set_structured_annotations({});
@@ -116,11 +119,11 @@ private:
     sd.__set_kind(kind);
     sd.__set_annotation(build_annotation(s));
 
-    std::vector<::types::struct_definition::Field> fields;
+    std::vector<::types::struct_definition::FieldDefinition> fields;
     for (const t_field* f : s->get_members()) {
-      ::types::struct_definition::Field field;
+      ::types::struct_definition::FieldDefinition field;
       field.__set_id(f->get_key());
-      field.__set_type(std::make_shared<::types::type_definition::Type>(build_type(f->get_type())));
+      field.__set_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(f->get_type())));
       field.__set_annotation(build_annotation(f));
       ::types::struct_definition::Requiredness::type req = ::types::struct_definition::Requiredness::Unknown;
       if (f->get_req() == t_field::T_REQUIRED)      req = ::types::struct_definition::Requiredness::Required;
@@ -144,11 +147,11 @@ private:
       fd.__set_annotation(build_annotation(f));
       fd.__set_return_type(build_type(f->get_returntype()));
       fd.__set_oneway_(f->is_oneway());
-      std::vector<::types::struct_definition::Field> args;
+      std::vector<::types::struct_definition::FieldDefinition> args;
       for (const t_field* a : f->get_arglist()->get_members()) {
-        ::types::struct_definition::Field field;
+        ::types::struct_definition::FieldDefinition field;
         field.__set_id(a->get_key());
-        field.__set_type(std::make_shared<::types::type_definition::Type>(build_type(a->get_type())));
+        field.__set_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(a->get_type())));
         field.__set_annotation(build_annotation(a));
         field.__set_requiredness(::types::struct_definition::Requiredness::Required);
         args.push_back(field);
@@ -163,6 +166,21 @@ private:
     }
     sd.__set_functions(fns);
     return sd;
+  }
+
+  static ::types::enum_definition::EnumDefinition build_enum(const t_enum* e) {
+    ::types::enum_definition::EnumDefinition ed;
+    ed.__set_annotation(build_annotation(e));
+
+    std::vector<::types::enum_definition::EnumValueDefinition> values;
+    for (const t_enum_value* ev : e->get_constants()) {
+      ::types::enum_definition::EnumValueDefinition evd;
+      evd.__set_annotation(build_annotation(ev));
+      evd.__set_id(ev->get_value());
+      values.push_back(evd);
+    }
+    ed.__set_values(values);
+    return ed;
   }
 
   static ::types::program_definition::ProgramDefinition build_program_definition(const t_program* p) {
@@ -181,7 +199,7 @@ private:
     for (const t_struct* s : p->get_objects()) {
       types[s->get_name()] = build_struct(s);
     }
-    pd.__set_types(types);
+    pd.__set_structs(types);
 
     std::map<std::string, ::types::service_definition::ServiceDefinition> services;
     for (const t_service* svc : p->get_services()) {
@@ -190,6 +208,18 @@ private:
     pd.__set_services(services);
 
     pd.__set_constants({});
+
+    std::map<std::string, ::types::type_definition::TypeDefinition> typedefs;
+    for (const t_typedef* td : p->get_typedefs()) {
+      typedefs[td->get_symbolic()] = build_type(td->get_type());
+    }
+    pd.__set_typedefs(typedefs);
+
+    std::map<std::string, ::types::enum_definition::EnumDefinition> enums;
+    for (const t_enum* e : p->get_enums()) {
+      enums[e->get_name()] = build_enum(e);
+    }
+    pd.__set_enums(enums);
     return pd;
   }
 
