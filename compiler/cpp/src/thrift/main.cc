@@ -53,6 +53,7 @@
 #include "thrift/parse/t_program.h"
 #include "thrift/parse/t_scope.h"
 #include "thrift/generate/t_generator.h"
+#include "thrift/generate/t_plugin.h"
 #include "thrift/audit/t_audit.h"
 
 #include "thrift/version.h"
@@ -697,6 +698,8 @@ void help() {
   fprintf(stderr, "                Keys and values are options passed to the generator.\n");
   fprintf(stderr, "                Many options will not require values.\n");
   fprintf(stderr, "\n");
+  fprintf(stderr, "  --plugin key1=/cmd1,key2=/cmd2  Execute plugin for the program\n");
+  fprintf(stderr, "  --plugin-out key1=sub1,key2=sub2 Output plugin in a sub directory\n");
   fprintf(stderr, "Options related to audit operation\n");
   fprintf(stderr, "   --audit OldFile   Old Thrift file to be audited with 'file'\n");
   fprintf(stderr, "  -Iold dir    Add a directory to the list of directories\n");
@@ -977,10 +980,78 @@ void parse(t_program* program, t_program* parent_program) {
   fclose(yyin);
 }
 
+map<string, string> parse_key_value_arg(const string arg) {
+  map<string, string> res;
+
+  string::size_type pos = 0;
+
+  while (pos != string::npos && pos < arg.size()) {
+    string::size_type next_pos = arg.find(',', pos);
+    string option = arg.substr(pos, next_pos - pos);
+    pos = ((next_pos == string::npos) ? next_pos : next_pos + 1);
+
+    string::size_type separator = option.find('=');
+    string key, value;
+    if (separator == string::npos) {
+      key = option;
+      value = "";
+    } else {
+      key = option.substr(0, separator);
+      value = option.substr(separator + 1);
+    }
+
+    res[key] = value;
+  }
+
+  return res;
+}
+
+map<string, string> parse_key_value_args(const vector<string> args) {
+  map<string, string> res;
+  vector<string>::const_iterator iter;
+
+  for (iter = args.begin(); iter != args.end(); iter++) {
+    map<string, string> parsed_args = parse_key_value_arg(*iter);
+    res.insert(make_move_iterator(parsed_args.begin()), make_move_iterator(parsed_args.end()));
+  }
+
+  return res;
+}
+
+struct t_plugin_tuple {
+  string command;
+  string out_path;
+};
+
+vector<t_plugin_tuple> prepare_plugins(const vector<string> plugin_strings, const vector<string> plugin_out_strings) {
+  map<string, string> commands = parse_key_value_args(plugin_strings);
+  map<string, string> out_paths = parse_key_value_args(plugin_out_strings);
+
+  map<string, string>::iterator iter;
+  vector<t_plugin_tuple> res;
+
+  for (iter = commands.begin(); iter != commands.end(); iter++) {
+    t_plugin_tuple tuple;
+
+    tuple.command = iter->second;
+
+    if (out_paths.find(iter->first) == out_paths.end()) {
+      tuple.out_path = iter->first;
+    } else {
+      tuple.out_path = out_paths.find(iter->first)->second;
+    }
+
+    res.push_back(tuple);
+
+  }
+
+  return res;
+}
+
 /**
  * Generate code
  */
-void generate(t_program* program, const vector<string>& generator_strings) {
+void generate(t_program* program, const vector<string>& generator_strings, const vector<t_plugin_tuple>& plugins) {
   // Oooohh, recursive code generation, hot!!
   if (gen_recurse) {
     program->set_recursive(true);
@@ -989,7 +1060,7 @@ void generate(t_program* program, const vector<string>& generator_strings) {
       // Propagate output path from parent to child programs
       include->set_out_path(program->get_out_path(), program->is_out_path_absolute());
 
-      generate(include, generator_strings);
+      generate(include, generator_strings, plugins);
     }
   }
 
@@ -1012,6 +1083,18 @@ void generate(t_program* program, const vector<string>& generator_strings) {
         generator->validate_input();
         pverbose("Generating \"%s\"\n", iter->c_str());
         generator->generate_program();
+
+        vector<t_plugin_tuple>::const_iterator p_iter;
+
+        for (p_iter = plugins.begin(); p_iter != plugins.end(); p_iter++) {
+          t_plugin* plugin = new t_plugin(generator, p_iter->command, p_iter->out_path);
+
+          pverbose("Executing plugin with command \"%s\" output into \"%s\"\n\n", p_iter->command.c_str(), p_iter->out_path.c_str());
+          plugin->execute();
+
+          delete plugin;
+        }
+
         delete generator;
       }
     }
@@ -1070,6 +1153,8 @@ int main(int argc, char** argv) {
   }
 
   vector<string> generator_strings;
+  vector<string> plugin_strings;
+  vector<string> plugin_out_strings;
   string old_thrift_include_path;
   string new_thrift_include_path;
   string old_input_file;
@@ -1123,6 +1208,20 @@ int main(int argc, char** argv) {
           usage();
         }
         generator_strings.emplace_back(arg);
+      } else if (strcmp(arg, "-plugin") == 0) {
+        arg = argv[++i];
+        if (arg == NULL) {
+          fprintf(stderr, "Missing plugin specification\n");
+          usage();
+        }
+        plugin_strings.emplace_back(arg);
+      } else if (strcmp(arg, "-plugin-out") == 0) {
+        arg = argv[++i];
+        if (arg == NULL) {
+          fprintf(stderr, "Missing plugin-out specification\n");
+          usage();
+        }
+        plugin_out_strings.emplace_back(arg);
       } else if (strcmp(arg, "-I") == 0) {
         // An argument of "-I\ asdf" is invalid and has unknown results
         arg = argv[++i];
@@ -1279,7 +1378,7 @@ int main(int argc, char** argv) {
     yylineno = 1;
 
     // Generate it!
-    generate(program, generator_strings);
+    generate(program, generator_strings, prepare_plugins(plugin_strings, plugin_out_strings));
     delete program;
   }
 

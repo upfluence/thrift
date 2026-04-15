@@ -68,7 +68,10 @@ public:
   t_generator* get_generator(t_program* program,
                                      const std::map<std::string, std::string>& parsed_options,
                                      const std::string& option_string) override {
-    return new generator(program, parsed_options, option_string);
+    t_generator* gen = new generator(program, parsed_options, option_string);
+    gen->set_language(get_short_name());
+    gen->set_parsed_options(parsed_options);
+    return gen;
   }
 
   bool is_valid_namespace(const std::string& sub_namespace) override {

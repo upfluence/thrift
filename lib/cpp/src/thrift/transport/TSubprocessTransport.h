@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include <cstddef>
 #ifndef _THRIFT_TRANSPORT_TSUBPROCESSTRANSPORT_H_
 #define _THRIFT_TRANSPORT_TSUBPROCESSTRANSPORT_H_ 1
 
@@ -34,6 +35,9 @@ namespace transport {
 
 class TSubprocessTransport : public TTransport {
 public:
+  TSubprocessTransport(const std::string& command)
+    : command_(command), readOffset_(0), open_(true) {}
+
   TSubprocessTransport(const std::string& command, const std::vector<std::string>& args)
     : command_(command), args_(args), readOffset_(0), open_(true) {}
 
@@ -49,11 +53,14 @@ public:
 
   void flush();
 
+  std::string getStderr() const;
+
 protected:
   std::string command_;
   std::vector<std::string> args_;
   std::vector<uint8_t> writeBuffer_;
   std::vector<uint8_t> readBuffer_;
+  std::vector<uint8_t> stderrBuffer_;
   size_t readOffset_;
   bool open_;
 };

@@ -55,6 +55,18 @@ public:
     escape_['\\'] = "\\\\";
   }
 
+  t_generator(t_program* program, const std::string language, const std::map<std::string, std::string>& parsed_options): keywords_(lang_keywords()), language_(language), parsed_options_(parsed_options) {
+    tmp_ = 0;
+    indent_ = 0;
+    program_ = program;
+    program_name_ = get_program_name(program);
+    escape_['\n'] = "\\n";
+    escape_['\r'] = "\\r";
+    escape_['\t'] = "\\t";
+    escape_['"'] = "\\\"";
+    escape_['\\'] = "\\\\";
+  }
+
   virtual ~t_generator() {}
 
   /**
@@ -93,6 +105,12 @@ public:
    */
   virtual std::string escape_string(const std::string& in) const;
 
+  const std::string get_language() { return language_; }
+  const std::map<std::string, std::string> get_parsed_options() { return parsed_options_; }
+
+  void set_language(const std::string& lang) { language_ = lang; }
+  void set_parsed_options(const std::map<std::string, std::string>& opts) { parsed_options_ = opts; }
+
   std::string get_escaped_string(t_const_value* constval) {
     return escape_string(constval->get_string());
   }
@@ -101,6 +119,17 @@ public:
    * Check if all identifiers are valid for the target language
    */
   virtual void validate_input() const;
+
+  /**
+   * Get the current output directory
+   */
+  virtual std::string get_out_dir() const {
+    if (program_->is_out_path_absolute()) {
+      return program_->get_out_path() + "/";
+    }
+
+    return program_->get_out_path() + out_dir_base_ + "/";
+  }
 
 protected:
   virtual std::set<std::string> lang_keywords() const;
@@ -160,17 +189,6 @@ protected:
   virtual std::string get_service_name(t_service* tservice) { return tservice->get_name(); }
 
   /**
-   * Get the current output directory
-   */
-  virtual std::string get_out_dir() const {
-    if (program_->is_out_path_absolute()) {
-      return program_->get_out_path() + "/";
-    }
-
-    return program_->get_out_path() + out_dir_base_ + "/";
-  }
-
-  /**
    * Creates a unique temporary variable name, which is just "name" with a
    * number appended to it (i.e. name35)
    */
@@ -210,7 +228,7 @@ protected:
   int indent_count() { return indent_; }
 
   void indent_validate( int expected, const char * func_name) {
-    if (indent_ != expected) { 
+    if (indent_ != expected) {
       pverbose("Wrong indent count in %s: difference = %i \n", func_name, (expected - indent_));
     }
   }
@@ -374,6 +392,10 @@ private:
    * Temporary variable counter, for making unique variable names
    */
   int tmp_;
+
+  std::string language_;
+
+  std::map<std::string, std::string> parsed_options_;
 };
 
 template<typename _CharT, typename _Traits = std::char_traits<_CharT> >
