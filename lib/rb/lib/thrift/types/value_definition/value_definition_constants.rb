@@ -5,13 +5,11 @@
 #
 
 require 'thrift'
-require 'thrift/types/annotation/deprecation/deprecation_types'
+require 'thrift/types/value_definition/value_definition_types'
 
 module Thrift
   module Types
-    module Annotation
-      module Deprecation
-      end
+    module Value_definition
     end
   end
 end

@@ -1,4 +1,4 @@
-namespace * types.value
+namespace * types.value_definition
 
 struct NullValueDefinition {}
 
