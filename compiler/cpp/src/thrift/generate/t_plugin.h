@@ -14,6 +14,7 @@
 #include <thrift/types/plugin_types.h>
 #include <thrift/types/program_definition_types.h>
 #include <thrift/types/enum_definition_types.h>
+#include <thrift/types/constant_definition_types.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/TBufferTransports.h>
 
@@ -183,6 +184,88 @@ private:
     return ed;
   }
 
+  static ::types::constant_definition::ConstantValueDefinition build_constant_value(
+      const t_const_value* cv, const t_type* declared_type) {
+    ::types::constant_definition::ConstantValueDefinition out;
+    const t_type* true_type = declared_type->get_true_type();
+
+    switch (cv->get_type()) {
+      case t_const_value::CV_INTEGER:
+        if (true_type->is_base_type()
+            && static_cast<const t_base_type*>(true_type)->get_base() == t_base_type::TYPE_BOOL) {
+          out.__set_bool_value(cv->get_integer() != 0);
+        } else {
+          out.__set_integer_value(cv->get_integer());
+        }
+        break;
+      case t_const_value::CV_DOUBLE:
+        out.__set_double_value(cv->get_double());
+        break;
+      case t_const_value::CV_STRING:
+        out.__set_string_value(cv->get_string());
+        break;
+      case t_const_value::CV_IDENTIFIER: {
+        ::types::core::Reference ref;
+        std::string id = cv->get_identifier();
+        size_t dot = id.rfind('.');
+        if (dot != std::string::npos) {
+          ref.__set_namespace_(id.substr(0, dot));
+          ref.__set_name(id.substr(dot + 1));
+        } else {
+          ref.__set_name(id);
+        }
+        out.__set_reference(ref);
+        break;
+      }
+      case t_const_value::CV_LIST: {
+        ::types::constant_definition::ListConstantValueDefinition lv;
+        std::vector<::types::constant_definition::ConstantValueDefinition> elems;
+        const t_type* elem_type = true_type->is_list()
+            ? static_cast<const t_list*>(true_type)->get_elem_type()
+            : declared_type;
+        for (const t_const_value* elem : cv->get_list()) {
+          elems.push_back(build_constant_value(elem, elem_type));
+        }
+        lv.__set_values(elems);
+        out.__set_list_value(lv);
+        break;
+      }
+      case t_const_value::CV_MAP: {
+        ::types::constant_definition::MapConstantValueDefinition mv;
+        std::vector<::types::constant_definition::MapConstantValueDefinitionEntry> entries;
+        const t_type* key_type = declared_type;
+        const t_type* val_type = declared_type;
+        if (true_type->is_map()) {
+          const t_map* tm = static_cast<const t_map*>(true_type);
+          key_type = tm->get_key_type();
+          val_type = tm->get_val_type();
+        }
+        for (const auto& kv : cv->get_map()) {
+          ::types::constant_definition::MapConstantValueDefinitionEntry entry;
+          entry.__set_key(std::make_shared<::types::constant_definition::ConstantValueDefinition>(
+              build_constant_value(kv.first, key_type)));
+          entry.__set_value(std::make_shared<::types::constant_definition::ConstantValueDefinition>(
+              build_constant_value(kv.second, val_type)));
+          entries.push_back(entry);
+        }
+        mv.__set_entries(entries);
+        out.__set_map_value(mv);
+        break;
+      }
+      default:
+        break;
+    }
+    return out;
+  }
+
+  static ::types::constant_definition::ConstantDefinition build_constant_definition(
+      const t_const* c) {
+    ::types::constant_definition::ConstantDefinition cd;
+    cd.__set_annotation(build_annotation(c));
+    cd.__set_value(build_constant_value(c->get_value(), c->get_type()));
+    return cd;
+  }
+
   static ::types::program_definition::ProgramDefinition build_program_definition(const t_program* p) {
     ::types::program_definition::ProgramDefinition pd;
     pd.__set_name(p->get_name());
@@ -207,7 +290,11 @@ private:
     }
     pd.__set_services(services);
 
-    pd.__set_constants({});
+    std::map<std::string, ::types::constant_definition::ConstantDefinition> constants;
+    for (const t_const* c : p->get_consts()) {
+      constants[c->get_name()] = build_constant_definition(c);
+    }
+    pd.__set_constants(constants);
 
     std::map<std::string, ::types::type_definition::TypeDefinition> typedefs;
     for (const t_typedef* td : p->get_typedefs()) {

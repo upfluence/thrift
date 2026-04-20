@@ -1,5 +1,6 @@
 namespace * types.program_definition
 
+include "types/constant_definition.thrift"
 include "types/enum_definition.thrift"
 include "types/type_definition.thrift"
 include "types/struct_definition.thrift"
@@ -16,7 +17,7 @@ struct ProgramDefinition {
 
   6: required map<string, struct_definition.StructDefinition> structs;
   7: required map<string, service_definition.ServiceDefinition> services;
-  8: required map<string, value.Value> constants;
+  8: required map<string, constant_definition.ConstantDefinition> constants;
   9: required map<string, type_definition.TypeDefinition> typedefs;
   10: required map<string, enum_definition.EnumDefinition> enums;
 }

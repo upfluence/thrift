@@ -5,11 +5,11 @@
 #
 
 require 'thrift'
-require 'thrift/types/annotation_definition/annotation_definition_types'
+require 'thrift/types/constant_definition/constant_definition_types'
 
 module Thrift
   module Types
-    module Annotation_definition
+    module Constant_definition
     end
   end
 end

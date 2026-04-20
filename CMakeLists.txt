@@ -56,7 +56,7 @@ if(NOT DEFINED REPO_VERSION OR REPO_VERSION STREQUAL "")
   set(REPO_VERSION "${PACKAGE_VERSION}")
 endif()
 
-string(REGEX REPLACE "v?([0-9]+\\.[0-9]+\\.[0-9]+)(-upfluence)?" "\\1" thrift_VERSION ${PACKAGE_VERSION})
+string(REGEX REPLACE "v?([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1" thrift_VERSION ${PACKAGE_VERSION})
 string(REGEX REPLACE "([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1" thrift_VERSION_MAJOR ${thrift_VERSION})
 string(REGEX REPLACE "[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1" thrift_VERSION_MINOR ${thrift_VERSION})
 string(REGEX REPLACE "[0-9]+\\.[0-9]+\\.([0-9]+)" "\\1" thrift_VERSION_PATCH ${thrift_VERSION})
