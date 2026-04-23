@@ -33,7 +33,7 @@ const PROTOCOL_BINARY_DATA_SIZE = 155
 var (
 	protocol_bdata []byte // test data for writing; same as data
 	BOOL_VALUES    []bool
-	BYTE_VALUES    []int8
+	BYTE_VALUES    []byte
 	INT16_VALUES   []int16
 	INT32_VALUES   []int32
 	INT64_VALUES   []int64
@@ -47,7 +47,7 @@ func init() {
 		protocol_bdata[i] = byte((i + 'a') % 255)
 	}
 	BOOL_VALUES = []bool{false, true, false, false, true}
-	BYTE_VALUES = []int8{117, 0, 1, 32, 127, -128, -1}
+	BYTE_VALUES = []byte{117, 0, 1, 32, 127, 128, 255}
 	INT16_VALUES = []int16{459, 0, 1, -1, -128, 127, 32767, -32768}
 	INT32_VALUES = []int32{459, 0, 1, -1, -128, 127, 32767, 2147483647, -2147483535}
 	INT64_VALUES = []int64{459, 0, 1, -1, -128, 127, 32767, 2147483647, -2147483535, 34359738481, -35184372088719, -9223372036854775808, 9223372036854775807}
