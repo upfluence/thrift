@@ -1731,7 +1731,7 @@ void t_go_generator::generate_getsetfields_helper(std::ostream& out,
 
     out << indent() << "if (p.IsSet" << field_name << "()) {" << endl;
     indent_up();
-    out << indent() << "return \"" << field_name << "\"" << endl;
+    out << indent() << "return \"" << escape_string((*f_iter)->get_name()) << "\"" << endl;
     indent_down();
     out << indent() << "}" << endl;
   }

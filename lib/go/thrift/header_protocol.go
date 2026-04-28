@@ -156,7 +156,7 @@ func (p *THeaderProtocol) WriteBool(value bool) error {
 	return p.protocol.WriteBool(value)
 }
 
-func (p *THeaderProtocol) WriteByte(value int8) error {
+func (p *THeaderProtocol) WriteByte(value byte) error {
 	return p.protocol.WriteByte(value)
 }
 
@@ -268,7 +268,7 @@ func (p *THeaderProtocol) ReadBool() (value bool, err error) {
 	return p.protocol.ReadBool()
 }
 
-func (p *THeaderProtocol) ReadByte() (value int8, err error) {
+func (p *THeaderProtocol) ReadByte() (value byte, err error) {
 	return p.protocol.ReadByte()
 }
 
