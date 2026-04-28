@@ -162,6 +162,10 @@ public:
                               t_struct* tstruct,
                               const string& tstruct_name,
                               bool is_result = false);
+  void generate_getsetfields_helper(std::ostream& out,
+                              t_struct* tstruct,
+                              const string& tstruct_name,
+                              bool is_result = false);
   void generate_interface_helper(std::ostream& out,
                               t_struct* tstruct,
                               const string& tstruct_name,
@@ -1540,6 +1544,7 @@ void t_go_generator::generate_go_struct_definition(std::ostream& out,
 
   if (tstruct->is_union() && num_setable > 0) {
     generate_countsetfields_helper(out, tstruct, tstruct_name, is_result);
+    generate_getsetfields_helper(out, tstruct, tstruct_name, is_result);
     generate_interface_helper(out, tstruct, tstruct_name, is_result);
   }
 
@@ -1554,19 +1559,32 @@ void t_go_generator::generate_go_struct_definition(std::ostream& out,
   out << indent() << "  if p == nil {" << endl;
   out << indent() << "    return \"<nil>\"" << endl;
   out << indent() << "  }" << endl;
+
+  if (tstruct->is_union() && num_setable > 0) {
+    out << indent() << "if p.CountSetFields" << tstruct_name << "() == 0 {" << endl;
+    out << indent() << "  return \"" << escape_string(tstruct_name) << "({<empty>})\"" << endl;
+    out << indent() << "}" << endl;
+  }
+
   out << indent() << "  return fmt.Sprintf(" << endl;
   out << indent() << "    \"" << escape_string(tstruct_name) << "({";
 
-  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-    out << (*f_iter)->get_name() << ": %v";
-    if (fields.back() != *f_iter) {
-      out << ", ";
-    }
-  }
-  out << "})\", " << endl;
+  if (tstruct->is_union() && num_setable > 0) {
+    out << indent() << "%v: %v})\", " << endl;
+    out << indent() << "    p.GetSetFields" << tstruct_name << "()," << endl;
+    out << indent() << "    p.Interface()," << endl;
+  } else {
+      for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+        out << (*f_iter)->get_name() << ": %v";
+        if (fields.back() != *f_iter) {
+          out << ", ";
+        }
+      }
+    out << "})\", " << endl;
 
-  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-    out << "    p.Get" << publicize(escape_string((*f_iter)->get_name())) << "()," << endl;
+    for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+      out << "    p.Get" << publicize(escape_string((*f_iter)->get_name())) << "()," << endl;
+    }
   }
 
   out <<  ")" << endl;
@@ -1684,6 +1702,41 @@ void t_go_generator::generate_countsetfields_helper(std::ostream& out,
   }
 
   out << indent() << "return count" << endl << endl;
+  indent_down();
+  out << indent() << "}" << endl << endl;
+}
+
+void t_go_generator::generate_getsetfields_helper(std::ostream& out,
+                                                    t_struct* tstruct,
+                                                    const string& tstruct_name,
+                                                    bool is_result) {
+  (void)is_result;
+  const vector<t_field*>& fields = tstruct->get_members();
+  vector<t_field*>::const_iterator f_iter;
+  const string escaped_tstruct_name(escape_string(tstruct->get_name()));
+
+  out << indent() << "func (p *" << tstruct_name << ") GetSetFields" << tstruct_name << "() string {"
+      << endl;
+  indent_up();
+  for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+    if ((*f_iter)->get_req() == t_field::T_REQUIRED)
+      continue;
+
+    t_type* type = (*f_iter)->get_type()->get_true_type();
+
+    if (!(is_pointer_field(*f_iter) || type->is_map() || type->is_set() || type->is_list() || type->is_binary()))
+      continue;
+
+    const string field_name(publicize(escape_string((*f_iter)->get_name())));
+
+    out << indent() << "if (p.IsSet" << field_name << "()) {" << endl;
+    indent_up();
+    out << indent() << "return \"" << field_name << "\"" << endl;
+    indent_down();
+    out << indent() << "}" << endl;
+  }
+
+  out << indent() << "return \"<not set>\"" << endl << endl;
   indent_down();
   out << indent() << "}" << endl << endl;
 }
