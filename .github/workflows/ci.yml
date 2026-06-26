@@ -26,6 +26,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Install dependencies (ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get install -y libboost-dev
       - name: Generate build configuration
         env:
           THRIFT_VERSION: ${{ needs.compute-version.outputs.version }}
