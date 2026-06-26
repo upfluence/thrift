@@ -40,6 +40,7 @@ RUN buildDeps=" \
         make \
         cmake \
         curl \
+        libboost-dev \
         "; \
     apt-get update && apt-get install -y --no-install-recommends $buildDeps \
     && mkdir /tmp/cmake-build && cd /tmp/cmake-build \
