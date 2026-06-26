@@ -1027,11 +1027,11 @@ void t_go_generator::generate_enum(t_enum* tenum) {
                       << iter_std_name << "\"" << endl;
 
     if (iter_std_name != escape_string(iter_name)) {
-      from_string_mapping << indent() << "  case \"" << iter_std_name << "\", \""
+      from_string_mapping << indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\", \"" << iter_std_name << "\", \""
                           << escape_string(iter_name) << "\": return " << tenum_name << "_"
                           << iter_name << ", nil " << endl;
     } else {
-      from_string_mapping << indent() << "  case \"" << iter_std_name << "\": return " << tenum_name
+      from_string_mapping << indent() << "  case \"" << tenum_name << "_" << iter_std_name << "\", \"" << iter_std_name << "\": return " << tenum_name
                           << "_" << iter_name << ", nil " << endl;
     }
   }
@@ -1047,11 +1047,17 @@ void t_go_generator::generate_enum(t_enum* tenum) {
   f_types_ << ")" << endl << endl << to_string_mapping.str() << endl << from_string_mapping.str()
            << endl << endl;
 
+
   // Generate a convenience function that converts an instance of an enum
   // (which may be a constant) into a pointer to an instance of that enum
   // type.
   f_types_ << "func " << tenum_name << "Ptr(v " << tenum_name << ") *" << tenum_name
            << " { return &v }" << endl << endl;
+
+
+  f_types_ << "func (p " << tenum_name << ") LegacyString() string {" << endl;
+  f_types_ << "return \"" << tenum_name << "_\" + p.String()" << endl;
+  f_types_ << "}" << endl << endl;
 
   // Generate MarshalText
   f_types_ << "func (p " << tenum_name << ") MarshalText() ([]byte, error) {" << endl;
