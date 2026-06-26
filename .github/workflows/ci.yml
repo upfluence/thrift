@@ -21,7 +21,7 @@ jobs:
     needs: compute-version
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-15]
+        os: [ubuntu-24.04, macos-26-intel, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -29,6 +29,11 @@ jobs:
       - name: Install dependencies (ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo apt-get install -y libboost-dev
+      - name: Install dependencies (macos)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install boost bison flex
+          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
       - name: Generate build configuration
         env:
           THRIFT_VERSION: ${{ needs.compute-version.outputs.version }}
@@ -67,11 +72,11 @@ jobs:
           path: dist/
       - uses: actions/download-artifact@v4
         with:
-          name: thrift-macos-13
+          name: thrift-macos-26-intel
           path: dist/
       - uses: actions/download-artifact@v4
         with:
-          name: thrift-macos-15
+          name: thrift-macos-26
           path: dist/
       - name: tar types
         run: |
