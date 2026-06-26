@@ -53,7 +53,7 @@ RUN buildDeps=" \
        /thrift \
     && cmake --build . --config Release \
     && make install \
-    && curl -k -sSL "https://storage.googleapis.com/golang/go1.23.2.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
+    && curl -k -sSL "https://dl.google.com/go/go1.26.4.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar xzf /tmp/go.tar.gz -C /tmp \
     && cp /tmp/go/bin/gofmt /usr/bin/gofmt \
     && apt-get purge -y --auto-remove $buildDeps \
