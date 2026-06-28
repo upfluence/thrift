@@ -230,7 +230,7 @@ public:
   void begin_namespace(t_rb_ofstream&, std::vector<std::string>);
   void end_namespace(t_rb_ofstream&, std::vector<std::string>);
 
-  bool support_streaming() const { return true; }
+  bool support_streaming() const override { return true; }
 
 private:
   /**

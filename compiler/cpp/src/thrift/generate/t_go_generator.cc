@@ -310,7 +310,7 @@ public:
     return lowercase(program->get_name());
   }
 
-  bool support_streaming() const { return true; }
+  bool support_streaming() const override { return true; }
 
 private:
   std::string gen_package_prefix_;
@@ -2273,6 +2273,7 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
       generate_go_docstring(f_types_, (*f_iter));
       f_types_ << indent() << function_signature_if(*f_iter, "", true) << endl;
     }
+  }
 
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
@@ -2391,6 +2392,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   string extends_field = "";
   string extends_client = "";
   string extends_client_new = "";
+  string serviceName(publicize(tservice->get_name()));
   string serviceNameStruct(privatize(tservice->get_name()) + "Client");
   string serviceNameInterface(publicize(tservice->get_name()) + "Client");
 
@@ -2421,10 +2423,6 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   } else {
     f_types_ << indent() << "thrift.TClient" << endl;
   }
-
-  f_types_ << indent() << "client thrift.T"
-            << (tservice->is_streaming() ? "Streaming" : "")
-            << "Client" << endl;
 
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
@@ -2503,7 +2501,10 @@ void t_go_generator::generate_service_client(t_service* tservice) {
       }
       f_types_ << indent() << "}" << endl << endl;
 
-      for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
+      if (!xceptions.empty()) {
+        f_types_ << indent() << "switch {" << endl;
+
+        for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
           const std::string pubname = publicize((*x_iter)->get_name());
           f_types_ << indent() << "case result." << pubname << "!= nil:" << endl;
           indent_up();
