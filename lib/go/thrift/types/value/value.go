@@ -865,31 +865,31 @@ func (p *Value) CountSetFieldsValue() int {
 
 func (p *Value) GetSetFieldsValue() string {
 	if p.IsSetNullValue() {
-		return "NullValue"
+		return "null_value"
 	}
 	if p.IsSetStringValue() {
-		return "StringValue"
+		return "string_value"
 	}
 	if p.IsSetBinaryValue() {
-		return "BinaryValue"
+		return "binary_value"
 	}
 	if p.IsSetIntegerValue() {
-		return "IntegerValue"
+		return "integer_value"
 	}
 	if p.IsSetDoubleValue() {
-		return "DoubleValue"
+		return "double_value"
 	}
 	if p.IsSetBoolValue() {
-		return "BoolValue"
+		return "bool_value"
 	}
 	if p.IsSetListValue() {
-		return "ListValue"
+		return "list_value"
 	}
 	if p.IsSetMapValue() {
-		return "MapValue"
+		return "map_value"
 	}
 	if p.IsSetStructValue() {
-		return "StructValue"
+		return "struct_value"
 	}
 	return "<not set>"
 

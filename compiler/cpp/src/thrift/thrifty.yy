@@ -470,7 +470,7 @@ Enum:
       validate_simple_identifier( $2);
       $$->set_name($2);
       if ($6 != NULL) {
-        $$->merge($4);
+        $$->merge($6);
         delete $6;
       }
 

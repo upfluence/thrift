@@ -1064,7 +1064,11 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
   f_service_.indent_up();
 
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    f_service_.indent() << "'" << (*f_iter)->get_name() << "' => { args_klass: " << capitalize((*f_iter)->get_name()) << "_args, result_klass: " << capitalize((*f_iter)->get_name()) << "_result, oneway: " << ((*f_iter)->is_oneway() ? "true" : "false") << ", legacy_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS}," << endl;
+     f_service_.indent() << "'" << (*f_iter)->get_name() << "' => { args_klass: " << capitalize((*f_iter)->get_name()) << "_args, ";
+    if (!(*f_iter)->is_oneway()) {
+      f_service_ << "result_klass: " << capitalize((*f_iter)->get_name()) << "_result, ";
+    }
+    f_service_ << "oneway: " << ((*f_iter)->is_oneway() ? "true" : "false") << ", legacy_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_" << upcase_string((*f_iter)->get_name()) << "_STRUCTURED_ANNOTATIONS}," << endl;
   }
 
   f_service_.indent_down();

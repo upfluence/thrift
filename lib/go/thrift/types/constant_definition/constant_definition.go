@@ -750,25 +750,25 @@ func (p *ConstantValueDefinition) CountSetFieldsConstantValueDefinition() int {
 
 func (p *ConstantValueDefinition) GetSetFieldsConstantValueDefinition() string {
 	if p.IsSetReference() {
-		return "Reference"
+		return "reference"
 	}
 	if p.IsSetIntegerValue() {
-		return "IntegerValue"
+		return "integer_value"
 	}
 	if p.IsSetDoubleValue() {
-		return "DoubleValue"
+		return "double_value"
 	}
 	if p.IsSetBoolValue() {
-		return "BoolValue"
+		return "bool_value"
 	}
 	if p.IsSetStringValue() {
-		return "StringValue"
+		return "string_value"
 	}
 	if p.IsSetListValue() {
-		return "ListValue"
+		return "list_value"
 	}
 	if p.IsSetMapValue() {
-		return "MapValue"
+		return "map_value"
 	}
 	return "<not set>"
 

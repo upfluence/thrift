@@ -154,6 +154,7 @@ void cleanupOpenSSL() {
   ENGINE_cleanup();             // https://www.openssl.org/docs/man1.1.0/crypto/ENGINE_cleanup.html - cleanup call is needed before 1.1.0
 #endif
   CONF_modules_unload(1);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   EVP_cleanup();
   CRYPTO_cleanup_all_ex_data();
   ERR_remove_state(0);
@@ -174,6 +175,7 @@ SSLContext::SSLContext(const SSLProtocol& protocol) {
     ctx_ = SSL_CTX_new(TLS_method());
 #else
     ctx_ = SSL_CTX_new(SSLv23_method());
+#endif
 #ifndef OPENSSL_NO_SSL3
   } else if (protocol == SSLv3) {
     ctx_ = SSL_CTX_new(SSLv3_method());

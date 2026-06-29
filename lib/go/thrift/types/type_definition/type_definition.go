@@ -62,27 +62,31 @@ func (p ScalarType) String() string {
 
 func ScalarTypeFromString(s string) (ScalarType, error) {
 	switch s {
-	case "Unknown":
+	case "ScalarType_Unknown", "Unknown":
 		return ScalarType_Unknown, nil
-	case "String":
+	case "ScalarType_String", "String":
 		return ScalarType_String, nil
-	case "Binary":
+	case "ScalarType_Binary", "Binary":
 		return ScalarType_Binary, nil
-	case "Bool":
+	case "ScalarType_Bool", "Bool":
 		return ScalarType_Bool, nil
-	case "I16":
+	case "ScalarType_I16", "I16":
 		return ScalarType_I16, nil
-	case "I32":
+	case "ScalarType_I32", "I32":
 		return ScalarType_I32, nil
-	case "I64":
+	case "ScalarType_I64", "I64":
 		return ScalarType_I64, nil
-	case "Double":
+	case "ScalarType_Double", "Double":
 		return ScalarType_Double, nil
 	}
 	return ScalarType(0), fmt.Errorf("not a valid ScalarType string")
 }
 
 func ScalarTypePtr(v ScalarType) *ScalarType { return &v }
+
+func (p ScalarType) LegacyString() string {
+	return "ScalarType_" + p.String()
+}
 
 func (p ScalarType) MarshalText() ([]byte, error) {
 	return []byte(p.String()), nil
@@ -767,19 +771,19 @@ func (p *TypeDefinition) CountSetFieldsTypeDefinition() int {
 
 func (p *TypeDefinition) GetSetFieldsTypeDefinition() string {
 	if p.IsSetScalarType() {
-		return "ScalarType"
+		return "scalar_type"
 	}
 	if p.IsSetListType() {
-		return "ListType"
+		return "list_type"
 	}
 	if p.IsSetMapType() {
-		return "MapType"
+		return "map_type"
 	}
 	if p.IsSetSetType() {
-		return "SetType"
+		return "set_type"
 	}
 	if p.IsSetReferenceType() {
-		return "ReferenceType"
+		return "reference_type"
 	}
 	return "<not set>"
 

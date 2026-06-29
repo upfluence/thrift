@@ -125,7 +125,7 @@ module Thrift
           ].freeze
 
           METHODS = {
-            'generate_code' => { args_klass: Generate_code_args, oneway: false, legacy_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS},
+            'generate_code' => { args_klass: Generate_code_args, result_klass: Generate_code_result, oneway: false, legacy_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS},
           }.freeze
 
           def execute_generate_code(args)

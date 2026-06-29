@@ -47,17 +47,21 @@ func (p Requiredness) String() string {
 
 func RequirednessFromString(s string) (Requiredness, error) {
 	switch s {
-	case "Unknown":
+	case "Requiredness_Unknown", "Unknown":
 		return Requiredness_Unknown, nil
-	case "Optional":
+	case "Requiredness_Optional", "Optional":
 		return Requiredness_Optional, nil
-	case "Required":
+	case "Requiredness_Required", "Required":
 		return Requiredness_Required, nil
 	}
 	return Requiredness(0), fmt.Errorf("not a valid Requiredness string")
 }
 
 func RequirednessPtr(v Requiredness) *Requiredness { return &v }
+
+func (p Requiredness) LegacyString() string {
+	return "Requiredness_" + p.String()
+}
 
 func (p Requiredness) MarshalText() ([]byte, error) {
 	return []byte(p.String()), nil
@@ -113,19 +117,23 @@ func (p StructKind) String() string {
 
 func StructKindFromString(s string) (StructKind, error) {
 	switch s {
-	case "Unknown":
+	case "StructKind_Unknown", "Unknown":
 		return StructKind_Unknown, nil
-	case "Struct":
+	case "StructKind_Struct", "Struct":
 		return StructKind_Struct, nil
-	case "Exception":
+	case "StructKind_Exception", "Exception":
 		return StructKind_Exception, nil
-	case "Union":
+	case "StructKind_Union", "Union":
 		return StructKind_Union, nil
 	}
 	return StructKind(0), fmt.Errorf("not a valid StructKind string")
 }
 
 func StructKindPtr(v StructKind) *StructKind { return &v }
+
+func (p StructKind) LegacyString() string {
+	return "StructKind_" + p.String()
+}
 
 func (p StructKind) MarshalText() ([]byte, error) {
 	return []byte(p.String()), nil
