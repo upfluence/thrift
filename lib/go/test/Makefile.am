@@ -17,36 +17,35 @@
 # under the License.
 #
 
-THRIFTARGS = -out gopath/src/ --gen go:thrift_import=thrift$(COMPILER_EXTRAFLAG)
+THRIFTARGS = -out gen --gen go:package_prefix=github.com/upfluence/thrift/lib/go/test/gen/$(COMPILER_EXTRAFLAG)
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
 
 # Thrift for GO has problems with complex map keys: THRIFT-2063
 gopath: $(THRIFT) $(THRIFTTEST) \
-				IncludesTest.thrift \
-				NamespacedTest.thrift \
-				MultiplexedProtocolTest.thrift \
-				OnewayTest.thrift \
-				OptionalFieldsTest.thrift \
-				RequiredFieldTest.thrift \
-				ServicesTest.thrift \
-				GoTagTest.thrift \
-				TypedefFieldTest.thrift \
-				RefAnnotationFieldsTest.thrift \
-				UnionDefaultValueTest.thrift \
-				UnionBinaryTest.thrift \
-				ErrorTest.thrift \
-				NamesTest.thrift \
-				InitialismsTest.thrift \
-				DontExportRWTest.thrift \
-				dontexportrwtest/compile_test.go \
-				IgnoreInitialismsTest.thrift \
-				ConflictNamespaceTestA.thrift \
-				ConflictNamespaceTestB.thrift \
-				ConflictNamespaceTestC.thrift \
-				ConflictNamespaceTestD.thrift \
-				ConflictNamespaceTestSuperThing.thrift \
-				ConflictNamespaceServiceTest.thrift
-	mkdir -p gopath/src
+			IncludesTest.thrift \
+			NamespacedTest.thrift \
+			MultiplexedProtocolTest.thrift \
+			OnewayTest.thrift \
+			OptionalFieldsTest.thrift \
+			RequiredFieldTest.thrift \
+			ServicesTest.thrift \
+			GoTagTest.thrift \
+			TypedefFieldTest.thrift \
+			RefAnnotationFieldsTest.thrift \
+			UnionDefaultValueTest.thrift \
+			UnionBinaryTest.thrift \
+			ErrorTest.thrift \
+			NamesTest.thrift \
+			InitialismsTest.thrift \
+			DontExportRWTest.thrift \
+			IgnoreInitialismsTest.thrift \
+			ConflictNamespaceTestA.thrift \
+			ConflictNamespaceTestB.thrift \
+			ConflictNamespaceTestC.thrift \
+			ConflictNamespaceTestD.thrift \
+			ConflictNamespaceTestSuperThing.thrift \
+			ConflictNamespaceServiceTest.thrift
+	mkdir -p gen
 	grep -v list.*map.*list.*map $(THRIFTTEST) | grep -v 'set<Insanity>' > ThriftTest.thrift
 	$(THRIFT) $(THRIFTARGS) -r IncludesTest.thrift
 	$(THRIFT) $(THRIFTARGS) BinaryKeyTest.thrift
@@ -71,36 +70,15 @@ gopath: $(THRIFT) $(THRIFTTEST) \
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceTestD.thrift
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceTestSuperThing.thrift
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceServiceTest.thrift
-	GOPATH=`pwd`/gopath $(GO) get github.com/golang/mock/gomock || true
-	sed -i 's/\"context\"/\"golang.org\/x\/net\/context\"/g' gopath/src/github.com/golang/mock/gomock/controller.go || true
-	GOPATH=`pwd`/gopath $(GO) get github.com/golang/mock/gomock
-	ln -nfs ../../../thrift gopath/src/thrift
-	ln -nfs ../../tests gopath/src/tests
-	cp -r ./dontexportrwtest gopath/src
+	cp -r dontexportrwtest gen/
+	$(GO) mod tidy
 	touch gopath
 
 check: gopath
-	GOPATH=`pwd`/gopath $(GO) build \
-				includestest \
-				binarykeytest \
-				servicestest \
-				typedeffieldtest \
-				refannotationfieldstest \
-				errortest	\
-				namestest \
-				initialismstest \
-				dontexportrwtest \
-				ignoreinitialismstest \
-				unionbinarytest \
-				conflictnamespacetestsuperthing \
-				conflict/context/conflict_service-remote
-	GOPATH=`pwd`/gopath $(GO) test thrift tests dontexportrwtest
+	$(GO) test -vet=off ./tests/... ./gen/dontexportrwtest/...
 
 clean-local:
-	$(RM) -r gopath ThriftTest.thrift gen-go
-
-client: stubs
-	$(GO) run TestClient.go
+	$(RM) -r gen ThriftTest.thrift gen-go
 
 EXTRA_DIST = \
 	dontexportrwtest \
@@ -127,5 +105,5 @@ EXTRA_DIST = \
 	ConflictNamespaceTestB.thrift \
 	ConflictNamespaceTestC.thrift \
 	ConflictNamespaceTestD.thrift \
-	ConflictNamespaceTestSuperThing.thrift
+	ConflictNamespaceTestSuperThing.thrift \
 	ConflictNamespaceServiceTest.thrift

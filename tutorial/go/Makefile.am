@@ -17,37 +17,32 @@
 # under the License.
 #
 
+THRIFTARGS = --gen go:package_prefix=github.com/upfluence/thrift/tutorial/go/gen-go/$(COMPILER_EXTRAFLAG)
 gen-go/tutorial/calculator.go gen-go/shared/shared_service.go: $(top_srcdir)/tutorial/tutorial.thrift
-	$(THRIFT) --gen go$(COMPILER_EXTRAFLAG) -r $<
+	$(THRIFT) $(THRIFTARGS) -r $<
 
 all-local: gen-go/tutorial/calculator.go
 
 check: src/github.com/apache/thrift/lib/go/thrift thirdparty-dep
-	$(THRIFT) -r --gen go$(COMPILER_EXTRAFLAG) $(top_srcdir)/tutorial/tutorial.thrift
-	cp -r gen-go/* src/
-	GOPATH=`pwd` $(GO) build -o go-tutorial ./src
-	GOPATH=`pwd` $(GO) build -o calculator-remote src/tutorial/calculator-remote/calculator-remote.go
-
-src/github.com/apache/thrift/lib/go/thrift:
-	mkdir -p src/github.com/apache/thrift/lib/go
-	ln -sf $(realpath $(top_srcdir)/lib/go/thrift) src/github.com/apache/thrift/lib/go/thrift
+	$(THRIFT) -r $(THRIFTARGS) $(top_srcdir)/tutorial/tutorial.thrift
+	$(GO) test ./...
 
 thirdparty-dep:
 
 tutorialserver: all
-	GOPATH=`pwd` $(GO) run src/*.go -server=true
+	$(GO) run src/*.go -server=true
 
 tutorialclient: all
-	GOPATH=`pwd` $(GO) run src/*.go
+	$(GO) run src/*.go
 
 tutorialsecureserver: all
-	GOPATH=`pwd` $(GO) run src/*.go -server=true -secure=true
+	$(GO) run src/*.go -server=true -secure=true
 
 tutorialsecureclient: all
-	GOPATH=`pwd` $(GO) run src/*.go -secure=true
+	$(GO) run src/*.go -secure=true
 
 clean-local:
-	$(RM) -r gen-* src/shared src/tutorial src/git.apache.org go-tutorial calculator-remote
+	$(RM) -r gen-*
 
 EXTRA_DIST = \
 	src/client.go \

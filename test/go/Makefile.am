@@ -17,48 +17,30 @@
 # under the License.
 #
 
-BUILT_SOURCES = gopath
-
-THRIFTCMD = $(THRIFT) -out src/gen --gen go:thrift_import=thrift$(COMPILER_EXTRAFLAG)
+THRIFTCMD = $(THRIFT) -out gen --gen go$(COMPILER_EXTRAFLAG)
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
-
-precross: bin/testclient bin/testserver
 
 ThriftTest.thrift: $(THRIFTTEST)
 	grep -v list.*map.*list.*map $(THRIFTTEST) > ThriftTest.thrift
 
-.PHONY: gopath
-
-# Thrift for GO has problems with complex map keys: THRIFT-2063
 gopath: $(THRIFT) ThriftTest.thrift
-	mkdir -p src/gen
+	mkdir -p gen
 	$(THRIFTCMD) ThriftTest.thrift
 	$(THRIFTCMD) ../StressTest.thrift
-	GOPATH=`pwd` $(GO) get github.com/golang/mock/gomock || true
-	sed -i 's/\"context\"/\"golang.org\/x\/net\/context\"/g' src/github.com/golang/mock/gomock/controller.go || true
-	GOPATH=`pwd` $(GO) get github.com/golang/mock/gomock
-	ln -nfs ../../../lib/go/thrift src/thrift
-	touch gopath
-
-bin/testclient: gopath
-	GOPATH=`pwd` $(GO) install bin/testclient
-
-bin/testserver: gopath
-	GOPATH=`pwd` $(GO) install bin/testserver
-
-bin/stress: gopath
-	GOPATH=`pwd` $(GO) install bin/stress
-
-clean-local:
-	$(RM) -r src/gen src/github.com/golang src/thrift bin pkg gopath ThriftTest.thrift
-
-check_PROGRAMS: bin/testclient bin/testserver bin/stress
-
-check: gopath genmock
-	GOPATH=`pwd` $(GO) test -v common/...
+	$(GO) mod tidy
+	touch gen.stamp
 
 genmock: gopath
-	sh genmock.sh
+	$(GO) install github.com/golang/mock/mockgen@v1.6.0
+	mockgen -source=gen/thrifttest/ThriftTest.go \
+		-destination=src/common/mock_handler.go \
+		-package=common
+
+check: gopath genmock
+	$(GO) test -v ./src/common/...
+
+clean-local:
+	$(RM) -r gen gen.stamp bin ThriftTest.thrift go.sum
 
 EXTRA_DIST = \
 	src/bin \

@@ -42,13 +42,13 @@ generate-types: $(TYPE_FILES)
 .PHONY: generate-types $(TYPE_FILES)
 
 check-local:
-	GOPATH=`pwd` $(GO) test -race ./thrift
+	cd $(abs_top_srcdir) && $(GO) test -race ./lib/go/thrift/...
 
 clean-local:
 	$(RM) -rf pkg
 
 all-local:
-	GOPATH=`pwd` $(GO) build ./thrift
+	$(GO) build ./thrift/...
 
 EXTRA_DIST = \
 	thrift \

@@ -185,3 +185,5 @@ EXTRA_DIST = \
 precross-%:
 	$(MAKE) -C $* precross
 precross: $(PRECROSS_TARGET)
+
+.PHONY: $(CHECK_TARGET) check

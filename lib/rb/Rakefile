@@ -22,7 +22,7 @@ require 'rake'
 require 'rake/clean'
 require "bundler/gem_tasks"
 
-THRIFT = '../../compiler/cpp/thrift'
+THRIFT = ENV.fetch('THRIFT', '../../bin/thrift')
 
 task :default => [:gem]
 task :spec => [:'gen-rb', :build_ext]

@@ -37,6 +37,7 @@ clean-local:
 check-local: all
 	$(BUNDLER) install
 	$(BUNDLER) exec rake
+	$(BUNDLER) exec rspec spec/
 
 endif
 
