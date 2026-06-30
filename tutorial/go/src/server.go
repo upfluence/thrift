@@ -22,8 +22,9 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
-	"tutorial"
+
+	"github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/tutorial/go/gen-go/tutorial"
 )
 
 func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, addr string, secure bool) error {
@@ -46,7 +47,7 @@ func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift
 	}
 	fmt.Printf("%T\n", transport)
 	handler := NewCalculatorHandler()
-	processor := tutorial.NewCalculatorProcessor(handler)
+	processor := tutorial.NewCalculatorProcessor(handler, nil)
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
 	fmt.Println("Starting the simple server... on ", addr)

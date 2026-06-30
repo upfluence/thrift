@@ -23,9 +23,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"tutorial"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/tutorial/go/gen-go/tutorial"
 )
 
 var defaultCtx = context.Background()
@@ -94,15 +94,12 @@ func runClient(transportFactory thrift.TTransportFactory, protocolFactory thrift
 		fmt.Println("Error opening socket:", err)
 		return err
 	}
-	transport, err = transportFactory.GetTransport(transport)
-	if err != nil {
-		return err
-	}
+	transport = transportFactory.GetTransport(transport)
 	defer transport.Close()
+
 	if err := transport.Open(); err != nil {
 		return err
 	}
-	iprot := protocolFactory.GetProtocol(transport)
-	oprot := protocolFactory.GetProtocol(transport)
-	return handleClient(tutorial.NewCalculatorClient(thrift.NewTStandardClient(iprot, oprot)))
+
+	return handleClient(tutorial.NewCalculatorClient(thrift.NewTSyncClient(transport, protocolFactory)))
 }
