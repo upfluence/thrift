@@ -20,72 +20,83 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"net"
-	"onewaytest"
 	"testing"
-	"thrift"
 	"time"
+
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/lib/go/test/gen/onewaytest"
 )
-
-func findPort() net.Addr {
-	if l, err := net.Listen("tcp", "127.0.0.1:0"); err != nil {
-		panic("Could not find available server port")
-	} else {
-		defer l.Close()
-		return l.Addr()
-	}
-}
-
-type impl struct{}
-
-func (i *impl) Hi(ctx context.Context, in int64, s string) (err error)        { fmt.Println("Hi!"); return }
-func (i *impl) Emptyfunc(ctx context.Context) (err error)                     { return }
-func (i *impl) EchoInt(ctx context.Context, param int64) (r int64, err error) { return param, nil }
 
 const TIMEOUT = time.Second
 
-var addr net.Addr
-var server *thrift.TSimpleServer
-var client *onewaytest.OneWayClient
+func FindAvailableTCPServerPort() net.Addr {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic("Could not find available server port")
+	}
 
-func TestInitOneway(t *testing.T) {
-	var err error
-	addr = findPort()
+	defer l.Close()
+
+	return l.Addr()
+}
+
+type oneWayImpl struct{}
+
+func (i *oneWayImpl) Hi(ctx thrift.Context, in int64, s string) (err error) {
+	fmt.Println("Hi!")
+	return
+}
+
+func (i *oneWayImpl) Emptyfunc(ctx thrift.Context) (err error) { return }
+
+func (i *oneWayImpl) EchoInt(ctx thrift.Context, param int64) (r int64, err error) {
+	return param, nil
+}
+
+func TestOneway(t *testing.T) {
+	addr := FindAvailableTCPServerPort()
+
 	serverTransport, err := thrift.NewTServerSocketTimeout(addr.String(), TIMEOUT)
 	if err != nil {
 		t.Fatal("Unable to create server socket", err)
 	}
-	processor := onewaytest.NewOneWayProcessor(&impl{})
-	server = thrift.NewTSimpleServer2(processor, serverTransport)
+
+	processor := onewaytest.NewOneWayProcessor(&oneWayImpl{}, nil)
+	server := thrift.NewTSimpleServer2(processor, serverTransport)
 
 	go server.Serve()
-	time.Sleep(10 * time.Millisecond)
-}
 
-func TestInitOnewayClient(t *testing.T) {
+	time.Sleep(10 * time.Millisecond)
+
 	transport := thrift.NewTSocketFromAddrTimeout(addr, TIMEOUT)
 	protocol := thrift.NewTBinaryProtocolTransport(transport)
-	client = onewaytest.NewOneWayClient(thrift.NewTStandardClient(protocol, protocol))
-	err := transport.Open()
+
+	client := onewaytest.NewOneWayClient(thrift.NewTSyncClient(transport, thrift.NewTBinaryProtocolFactoryDefault()))
+
+	err = transport.Open()
 	if err != nil {
 		t.Fatal("Unable to open client socket", err)
 	}
-}
 
-func TestCallOnewayServer(t *testing.T) {
-	//call oneway function
-	err := client.Hi(defaultCtx, 1, "")
+	defer transport.Close()
+
+	_ = protocol
+
+	err = client.Hi(defaultCtx, 1, "")
 	if err != nil {
 		t.Fatal("Unexpected error: ", err)
 	}
-	//There is no way to detect protocol problems with single oneway call so we call it second time
+
 	i, err := client.EchoInt(defaultCtx, 42)
 	if err != nil {
 		t.Fatal("Unexpected error: ", err)
 	}
+
 	if i != 42 {
 		t.Fatal("Unexpected returned value: ", i)
 	}
+
+	server.Stop()
 }

@@ -20,32 +20,46 @@
 package tests
 
 import (
-	"ignoreinitialismstest"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/ignoreinitialismstest"
 )
 
 func TestIgnoreInitialismsFlagIsHonoured(t *testing.T) {
-	s := ignoreinitialismstest.IgnoreInitialismsTest{}
-	st := reflect.TypeOf(s)
-	_, ok := st.FieldByName("Id")
-	if !ok {
-		t.Error("Id attribute is missing!")
-	}
-	_, ok = st.FieldByName("MyId")
-	if !ok {
-		t.Error("MyId attribute is missing!")
-	}
-	_, ok = st.FieldByName("NumCpu")
-	if !ok {
-		t.Error("NumCpu attribute is missing!")
-	}
-	_, ok = st.FieldByName("NumGpu")
-	if !ok {
-		t.Error("NumGpu attribute is missing!")
-	}
-	_, ok = st.FieldByName("My_ID")
-	if !ok {
-		t.Error("My_ID attribute is missing!")
+	st := reflect.TypeOf(ignoreinitialismstest.IgnoreInitialismsTest{})
+
+	for _, tc := range []struct {
+		name          string
+		haveFieldName string
+	}{
+		{
+			name:          "Id",
+			haveFieldName: "Id",
+		},
+		{
+			name:          "MyId",
+			haveFieldName: "MyId",
+		},
+		{
+			name:          "NumCpu",
+			haveFieldName: "NumCpu",
+		},
+		{
+			name:          "NumGpu",
+			haveFieldName: "NumGpu",
+		},
+		{
+			name:          "My_ID",
+			haveFieldName: "My_ID",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, ok := st.FieldByName(tc.haveFieldName)
+
+			assert.True(t, ok)
+		})
 	}
 }

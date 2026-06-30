@@ -21,7 +21,8 @@ package tests
 
 import (
 	"testing"
-	"uniondefaultvaluetest"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/uniondefaultvaluetest"
 )
 
 func TestUnionDefaultValue(t *testing.T) {

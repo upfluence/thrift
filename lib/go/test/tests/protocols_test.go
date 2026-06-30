@@ -21,74 +21,62 @@ package tests
 
 import (
 	"testing"
-	"thrift"
-	"thrifttest"
+
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/lib/go/test/gen/thrifttest"
 )
 
-func RunSocketTestSuite(t *testing.T, protocolFactory thrift.TProtocolFactory,
-	transportFactory thrift.TTransportFactory) {
-	// server
-	var err error
-	addr = FindAvailableTCPServerPort()
+func RunSocketTestSuite(t *testing.T, protocolFactory thrift.TProtocolFactory, transportFactory thrift.TTransportFactory) {
+	addr := FindAvailableTCPServerPort()
+
 	serverTransport, err := thrift.NewTServerSocketTimeout(addr.String(), TIMEOUT)
 	if err != nil {
 		t.Fatal("Unable to create server socket", err)
 	}
-	processor := thrifttest.NewThriftTestProcessor(NewThriftTestHandler())
-	server = thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
-	server.Listen()
+
+	processor := thrifttest.NewThriftTestProcessor(NewThriftTestHandler(), nil)
+	server := thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
+
+	if err = server.Listen(); err != nil {
+		t.Fatal("Unable to listen on server socket", err)
+	}
 
 	go server.Serve()
 
-	// client
-	var transport thrift.TTransport = thrift.NewTSocketFromAddrTimeout(addr, TIMEOUT)
-	transport = transportFactory.GetTransport(transport)
-	var protocol thrift.TProtocol = protocolFactory.GetProtocol(transport)
-	thriftTestClient := thrifttest.NewThriftTestClient(thrift.NewTStandardClient(protocol, protocol))
+	transport := transportFactory.GetTransport(thrift.NewTSocketFromAddrTimeout(addr, TIMEOUT))
+
 	err = transport.Open()
 	if err != nil {
 		t.Fatal("Unable to open client socket", err)
 	}
 
+	defer transport.Close()
+
+	thriftTestClient := thrifttest.NewThriftTestClient(thrift.NewTSyncClient(transport, protocolFactory))
+
 	driver := NewThriftTestDriver(t, thriftTestClient)
 	driver.Start()
+
+	server.Stop()
 }
 
 // Run test suite using TJSONProtocol
 func TestTJSONProtocol(t *testing.T) {
-	RunSocketTestSuite(t,
-		thrift.NewTJSONProtocolFactory(),
-		thrift.NewTTransportFactory())
-	RunSocketTestSuite(t,
-		thrift.NewTJSONProtocolFactory(),
-		thrift.NewTBufferedTransportFactory(8912))
-	RunSocketTestSuite(t,
-		thrift.NewTJSONProtocolFactory(),
-		thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
+	RunSocketTestSuite(t, thrift.NewTJSONProtocolFactory(), thrift.NewTTransportFactory())
+	RunSocketTestSuite(t, thrift.NewTJSONProtocolFactory(), thrift.NewTBufferedTransportFactory(8912))
+	RunSocketTestSuite(t, thrift.NewTJSONProtocolFactory(), thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
 }
 
 // Run test suite using TBinaryProtocol
 func TestTBinaryProtocol(t *testing.T) {
-	RunSocketTestSuite(t,
-		thrift.NewTBinaryProtocolFactoryDefault(),
-		thrift.NewTTransportFactory())
-	RunSocketTestSuite(t,
-		thrift.NewTBinaryProtocolFactoryDefault(),
-		thrift.NewTBufferedTransportFactory(8912))
-	RunSocketTestSuite(t,
-		thrift.NewTBinaryProtocolFactoryDefault(),
-		thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
+	RunSocketTestSuite(t, thrift.NewTBinaryProtocolFactoryDefault(), thrift.NewTTransportFactory())
+	RunSocketTestSuite(t, thrift.NewTBinaryProtocolFactoryDefault(), thrift.NewTBufferedTransportFactory(8912))
+	RunSocketTestSuite(t, thrift.NewTBinaryProtocolFactoryDefault(), thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
 }
 
-// Run test suite using TCompactBinaryProtocol
+// Run test suite using TCompactProtocol
 func TestTCompactProtocol(t *testing.T) {
-	RunSocketTestSuite(t,
-		thrift.NewTCompactProtocolFactory(),
-		thrift.NewTTransportFactory())
-	RunSocketTestSuite(t,
-		thrift.NewTCompactProtocolFactory(),
-		thrift.NewTBufferedTransportFactory(8912))
-	RunSocketTestSuite(t,
-		thrift.NewTCompactProtocolFactory(),
-		thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
+	RunSocketTestSuite(t, thrift.NewTCompactProtocolFactory(), thrift.NewTTransportFactory())
+	RunSocketTestSuite(t, thrift.NewTCompactProtocolFactory(), thrift.NewTBufferedTransportFactory(8912))
+	RunSocketTestSuite(t, thrift.NewTCompactProtocolFactory(), thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory()))
 }

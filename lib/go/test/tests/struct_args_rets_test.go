@@ -20,7 +20,7 @@
 package tests
 
 import (
-	st "servicestest"
+	st "github.com/upfluence/thrift/lib/go/test/gen/servicestest"
 )
 
 //this function is never called, it will fail to compile if check is failed

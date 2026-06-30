@@ -20,8 +20,9 @@
 package tests
 
 import (
-	"binarykeytest"
 	"testing"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/binarykeytest"
 )
 
 func TestBinaryMapKeyGeneratesString(t *testing.T) {

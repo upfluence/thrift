@@ -20,43 +20,49 @@
 package tests
 
 import (
-	"gotagtest"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/gotagtest"
 )
 
-func TestDefaultTag(t *testing.T) {
-	s := gotagtest.Tagged{}
-	st := reflect.TypeOf(s)
-	field, ok := st.FieldByName("StringThing")
-	if !ok || field.Tag.Get("json") != "string_thing" {
-		t.Error("Unexpected default tag value")
-	}
-}
+func TestGoTag(t *testing.T) {
+	st := reflect.TypeOf(gotagtest.Tagged{})
 
-func TestCustomTag(t *testing.T) {
-	s := gotagtest.Tagged{}
-	st := reflect.TypeOf(s)
-	field, ok := st.FieldByName("IntThing")
-	if !ok || field.Tag.Get("json") != "int_thing,string" {
-		t.Error("Unexpected custom tag value")
-	}
-}
+	for _, tc := range []struct {
+		name          string
+		haveFieldName string
+		wantJSONTag   string
+	}{
+		{
+			name:          "default tag",
+			haveFieldName: "StringThing",
+			wantJSONTag:   "string_thing",
+		},
+		{
+			name:          "custom tag",
+			haveFieldName: "IntThing",
+			wantJSONTag:   "int_thing,string",
+		},
+		{
+			name:          "optional tag",
+			haveFieldName: "OptionalIntThing",
+			wantJSONTag:   "optional_int_thing,omitempty",
+		},
+		{
+			name:          "optional tag with default value",
+			haveFieldName: "OptionalBoolThing",
+			wantJSONTag:   "optional_bool_thing",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			field, ok := st.FieldByName(tc.haveFieldName)
 
-func TestOptionalTag(t *testing.T) {
-	s := gotagtest.Tagged{}
-	st := reflect.TypeOf(s)
-	field, ok := st.FieldByName("OptionalIntThing")
-	if !ok || field.Tag.Get("json") != "optional_int_thing,omitempty" {
-		t.Error("Unexpected default tag value for optional field")
-	}
-}
-
-func TestOptionalTagWithDefaultValue(t *testing.T) {
-	s := gotagtest.Tagged{}
-	st := reflect.TypeOf(s)
-	field, ok := st.FieldByName("OptionalBoolThing")
-	if !ok || field.Tag.Get("json") != "optional_bool_thing" {
-		t.Error("Unexpected default tag value for optional field that has a default value")
+			require.True(t, ok)
+			assert.Equal(t, tc.wantJSONTag, field.Tag.Get("json"))
+		})
 	}
 }

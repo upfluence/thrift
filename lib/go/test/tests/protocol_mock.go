@@ -23,7 +23,7 @@
 package tests
 
 import (
-	thrift "thrift"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
 
 	gomock "github.com/golang/mock/gomock"
 )

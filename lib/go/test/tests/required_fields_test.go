@@ -22,10 +22,10 @@ package tests
 import (
 	"context"
 	"github.com/golang/mock/gomock"
-	"optionalfieldstest"
-	"requiredfieldtest"
+	"github.com/upfluence/thrift/lib/go/test/gen/optionalfieldstest"
+	"github.com/upfluence/thrift/lib/go/test/gen/requiredfieldtest"
 	"testing"
-	"thrift"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
 )
 
 func TestRequiredField_SucecssWhenSet(t *testing.T) {

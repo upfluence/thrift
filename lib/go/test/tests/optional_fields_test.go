@@ -21,10 +21,11 @@ package tests
 
 import (
 	"bytes"
-	gomock "github.com/golang/mock/gomock"
-	"optionalfieldstest"
 	"testing"
-	"thrift"
+
+	gomock "github.com/golang/mock/gomock"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/lib/go/test/gen/optionalfieldstest"
 )
 
 func TestIsSetReturnFalseOnCreation(t *testing.T) {
@@ -53,14 +54,8 @@ func TestIsSetReturnFalseOnCreation(t *testing.T) {
 	if ao.IsSetL() {
 		t.Errorf("Optional field L is set on initialization")
 	}
-	if ao.IsSetL2() {
-		t.Errorf("Optional field L2 is set on initialization")
-	}
 	if ao.IsSetM() {
 		t.Errorf("Optional field M is set on initialization")
-	}
-	if ao.IsSetM2() {
-		t.Errorf("Optional field M2 is set on initialization")
 	}
 	if ao.IsSetBin() {
 		t.Errorf("Optional field Bin is set on initialization")
@@ -134,13 +129,13 @@ func TestInitialValuesOnCreation(t *testing.T) {
 	if ao.L != nil || len(ao.L) != 0 {
 		t.Errorf("Unexpected initial value %#v for field L", ao.L)
 	}
-	if ao.L2 != nil {
+	if l := ao.L2; len(l) != 2 || l[0] != 1 || l[1] != 2 {
 		t.Errorf("Unexpected initial value %#v for field L2", ao.L2)
 	}
 	if ao.M != nil {
 		t.Errorf("Unexpected initial value %#v for field M", ao.M)
 	}
-	if ao.M2 != nil {
+	if m := ao.M2; len(m) != 2 || m[1] != 2 || m[3] != 4 {
 		t.Errorf("Unexpected initial value %#v for field M2", ao.M2)
 	}
 	if ao.Bin != nil || len(ao.Bin) != 0 {
@@ -186,6 +181,17 @@ func TestNoOptionalUnsetFieldsOnWire(t *testing.T) {
 	proto := NewMockTProtocol(mockCtrl)
 	gomock.InOrder(
 		proto.EXPECT().WriteStructBegin("all_optional").Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldStop().Return(nil),
 		proto.EXPECT().WriteStructEnd().Return(nil),
 	)
@@ -199,6 +205,17 @@ func TestNoSetToDefaultFieldsOnWire(t *testing.T) {
 	proto := NewMockTProtocol(mockCtrl)
 	gomock.InOrder(
 		proto.EXPECT().WriteStructBegin("all_optional").Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldStop().Return(nil),
 		proto.EXPECT().WriteStructEnd().Return(nil),
 	)
@@ -216,6 +233,17 @@ func TestOneISetFieldOnWire(t *testing.T) {
 		proto.EXPECT().WriteStructBegin("all_optional").Return(nil),
 		proto.EXPECT().WriteFieldBegin("i", thrift.TType(thrift.I64), int16(2)).Return(nil),
 		proto.EXPECT().WriteI64(int64(123)).Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
 		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldStop().Return(nil),
 		proto.EXPECT().WriteStructEnd().Return(nil),
@@ -237,6 +265,17 @@ func TestOneLSetFieldOnWire(t *testing.T) {
 		proto.EXPECT().WriteI64(int64(2)).Return(nil),
 		proto.EXPECT().WriteListEnd().Return(nil),
 		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldStop().Return(nil),
 		proto.EXPECT().WriteStructEnd().Return(nil),
 	)
@@ -251,6 +290,17 @@ func TestOneBinSetFieldOnWire(t *testing.T) {
 	proto := NewMockTProtocol(mockCtrl)
 	gomock.InOrder(
 		proto.EXPECT().WriteStructBegin("all_optional").Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldBegin("bin", thrift.TType(thrift.STRING), int16(13)).Return(nil),
 		proto.EXPECT().WriteBinary([]byte("somebytestring")).Return(nil),
 		proto.EXPECT().WriteFieldEnd().Return(nil),
@@ -268,6 +318,17 @@ func TestOneEmptyBinSetFieldOnWire(t *testing.T) {
 	proto := NewMockTProtocol(mockCtrl)
 	gomock.InOrder(
 		proto.EXPECT().WriteStructBegin("all_optional").Return(nil),
+		proto.EXPECT().WriteFieldBegin("l2", thrift.TType(thrift.LIST), int16(10)).Return(nil),
+		proto.EXPECT().WriteListBegin(thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(int64(1)).Return(nil),
+		proto.EXPECT().WriteI64(int64(2)).Return(nil),
+		proto.EXPECT().WriteListEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
+		proto.EXPECT().WriteFieldBegin("m2", thrift.TType(thrift.MAP), int16(12)).Return(nil),
+		proto.EXPECT().WriteMapBegin(thrift.TType(thrift.I64), thrift.TType(thrift.I64), 2).Return(nil),
+		proto.EXPECT().WriteI64(gomock.Any()).Return(nil).Times(4),
+		proto.EXPECT().WriteMapEnd().Return(nil),
+		proto.EXPECT().WriteFieldEnd().Return(nil),
 		proto.EXPECT().WriteFieldBegin("bin", thrift.TType(thrift.STRING), int16(13)).Return(nil),
 		proto.EXPECT().WriteBinary([]byte{}).Return(nil),
 		proto.EXPECT().WriteFieldEnd().Return(nil),

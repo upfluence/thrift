@@ -20,24 +20,38 @@
 package tests
 
 import (
-	"initialismstest"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/initialismstest"
 )
 
 func TestThatCommonInitialismsAreFixed(t *testing.T) {
-	s := initialismstest.InitialismsTest{}
-	st := reflect.TypeOf(s)
-	_, ok := st.FieldByName("UserID")
-	if !ok {
-		t.Error("UserID attribute is missing!")
-	}
-	_, ok = st.FieldByName("ServerURL")
-	if !ok {
-		t.Error("ServerURL attribute is missing!")
-	}
-	_, ok = st.FieldByName("ID")
-	if !ok {
-		t.Error("ID attribute is missing!")
+	st := reflect.TypeOf(initialismstest.InitialismsTest{})
+
+	for _, tc := range []struct {
+		name          string
+		haveFieldName string
+	}{
+		{
+			name:          "UserID",
+			haveFieldName: "UserID",
+		},
+		{
+			name:          "ServerURL",
+			haveFieldName: "ServerURL",
+		},
+		{
+			name:          "ID",
+			haveFieldName: "ID",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, ok := st.FieldByName(tc.haveFieldName)
+
+			assert.True(t, ok)
+		})
 	}
 }

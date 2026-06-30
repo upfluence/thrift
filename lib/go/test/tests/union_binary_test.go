@@ -21,7 +21,8 @@ package tests
 
 import (
 	"testing"
-	"unionbinarytest"
+
+	"github.com/upfluence/thrift/lib/go/test/gen/unionbinarytest"
 )
 
 

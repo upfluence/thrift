@@ -20,11 +20,11 @@
 package tests
 
 import (
-	"context"
 	"errors"
-	"thrift"
-	"thrifttest"
 	"time"
+
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/lib/go/test/gen/thrifttest"
 )
 
 type SecondServiceHandler struct {
@@ -34,11 +34,11 @@ func NewSecondServiceHandler() *SecondServiceHandler {
 	return &SecondServiceHandler{}
 }
 
-func (p *SecondServiceHandler) BlahBlah(ctx context.Context) (err error) {
+func (p *SecondServiceHandler) BlahBlah(ctx thrift.Context) (err error) {
 	return nil
 }
 
-func (p *SecondServiceHandler) SecondtestString(ctx context.Context, thing string) (r string, err error) {
+func (p *SecondServiceHandler) SecondtestString(ctx thrift.Context, thing string) (r string, err error) {
 	return thing, nil
 }
 
@@ -49,71 +49,71 @@ func NewThriftTestHandler() *ThriftTestHandler {
 	return &ThriftTestHandler{}
 }
 
-func (p *ThriftTestHandler) TestVoid(ctx context.Context) (err error) {
+func (p *ThriftTestHandler) TestVoid(ctx thrift.Context) (err error) {
 	return nil
 }
 
-func (p *ThriftTestHandler) TestString(ctx context.Context, thing string) (r string, err error) {
+func (p *ThriftTestHandler) TestString(ctx thrift.Context, thing string) (r string, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestBool(ctx context.Context, thing bool) (r bool, err error) {
+func (p *ThriftTestHandler) TestBool(ctx thrift.Context, thing bool) (r bool, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestByte(ctx context.Context, thing int8) (r int8, err error) {
+func (p *ThriftTestHandler) TestByte(ctx thrift.Context, thing int8) (r int8, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestI32(ctx context.Context, thing int32) (r int32, err error) {
+func (p *ThriftTestHandler) TestI32(ctx thrift.Context, thing int32) (r int32, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestI64(ctx context.Context, thing int64) (r int64, err error) {
+func (p *ThriftTestHandler) TestI64(ctx thrift.Context, thing int64) (r int64, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestDouble(ctx context.Context, thing float64) (r float64, err error) {
+func (p *ThriftTestHandler) TestDouble(ctx thrift.Context, thing float64) (r float64, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestBinary(ctx context.Context, thing []byte) (r []byte, err error) {
+func (p *ThriftTestHandler) TestBinary(ctx thrift.Context, thing []byte) (r []byte, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestStruct(ctx context.Context, thing *thrifttest.Xtruct) (r *thrifttest.Xtruct, err error) {
+func (p *ThriftTestHandler) TestStruct(ctx thrift.Context, thing *thrifttest.Xtruct) (r *thrifttest.Xtruct, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestNest(ctx context.Context, thing *thrifttest.Xtruct2) (r *thrifttest.Xtruct2, err error) {
+func (p *ThriftTestHandler) TestNest(ctx thrift.Context, thing *thrifttest.Xtruct2) (r *thrifttest.Xtruct2, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestMap(ctx context.Context, thing map[int32]int32) (r map[int32]int32, err error) {
+func (p *ThriftTestHandler) TestMap(ctx thrift.Context, thing map[int32]int32) (r map[int32]int32, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestStringMap(ctx context.Context, thing map[string]string) (r map[string]string, err error) {
+func (p *ThriftTestHandler) TestStringMap(ctx thrift.Context, thing map[string]string) (r map[string]string, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestSet(ctx context.Context, thing []int32) (r []int32, err error) {
+func (p *ThriftTestHandler) TestSet(ctx thrift.Context, thing []int32) (r []int32, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestList(ctx context.Context, thing []int32) (r []int32, err error) {
+func (p *ThriftTestHandler) TestList(ctx thrift.Context, thing []int32) (r []int32, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestEnum(ctx context.Context, thing thrifttest.Numberz) (r thrifttest.Numberz, err error) {
+func (p *ThriftTestHandler) TestEnum(ctx thrift.Context, thing thrifttest.Numberz) (r thrifttest.Numberz, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestTypedef(ctx context.Context, thing thrifttest.UserId) (r thrifttest.UserId, err error) {
+func (p *ThriftTestHandler) TestTypedef(ctx thrift.Context, thing thrifttest.UserId) (r thrifttest.UserId, err error) {
 	return thing, nil
 }
 
-func (p *ThriftTestHandler) TestMapMap(ctx context.Context, hello int32) (r map[int32]map[int32]int32, err error) {
+func (p *ThriftTestHandler) TestMapMap(ctx thrift.Context, hello int32) (r map[int32]map[int32]int32, err error) {
 	r = make(map[int32]map[int32]int32)
 	pos := make(map[int32]int32)
 	neg := make(map[int32]int32)
@@ -128,7 +128,7 @@ func (p *ThriftTestHandler) TestMapMap(ctx context.Context, hello int32) (r map[
 	return r, nil
 }
 
-func (p *ThriftTestHandler) TestInsanity(ctx context.Context, argument *thrifttest.Insanity) (r map[thrifttest.UserId]map[thrifttest.Numberz]*thrifttest.Insanity, err error) {
+func (p *ThriftTestHandler) TestInsanity(ctx thrift.Context, argument *thrifttest.Insanity) (r map[thrifttest.UserId]map[thrifttest.Numberz]*thrifttest.Insanity, err error) {
 	hello := thrifttest.NewXtruct()
 	hello.StringThing = "Hello2"
 	hello.ByteThing = 2
@@ -163,7 +163,7 @@ func (p *ThriftTestHandler) TestInsanity(ctx context.Context, argument *thriftte
 	return insane, nil
 }
 
-func (p *ThriftTestHandler) TestMulti(ctx context.Context, arg0 int8, arg1 int32, arg2 int64, arg3 map[int16]string, arg4 thrifttest.Numberz, arg5 thrifttest.UserId) (r *thrifttest.Xtruct, err error) {
+func (p *ThriftTestHandler) TestMulti(ctx thrift.Context, arg0 int8, arg1 int32, arg2 int64, arg3 map[int16]string, arg4 thrifttest.Numberz, arg5 thrifttest.UserId) (r *thrifttest.Xtruct, err error) {
 	r = thrifttest.NewXtruct()
 	r.StringThing = "Hello2"
 	r.ByteThing = arg0
@@ -172,7 +172,7 @@ func (p *ThriftTestHandler) TestMulti(ctx context.Context, arg0 int8, arg1 int32
 	return r, nil
 }
 
-func (p *ThriftTestHandler) TestException(ctx context.Context, arg string) (err error) {
+func (p *ThriftTestHandler) TestException(ctx thrift.Context, arg string) (err error) {
 	if arg == "Xception" {
 		x := thrifttest.NewXception()
 		x.ErrorCode = 1001
@@ -185,7 +185,7 @@ func (p *ThriftTestHandler) TestException(ctx context.Context, arg string) (err 
 	}
 }
 
-func (p *ThriftTestHandler) TestMultiException(ctx context.Context, arg0 string, arg1 string) (r *thrifttest.Xtruct, err error) {
+func (p *ThriftTestHandler) TestMultiException(ctx thrift.Context, arg0 string, arg1 string) (r *thrifttest.Xtruct, err error) {
 	if arg0 == "Xception" {
 		x := thrifttest.NewXception()
 		x.ErrorCode = 1001
@@ -204,7 +204,7 @@ func (p *ThriftTestHandler) TestMultiException(ctx context.Context, arg0 string,
 	return res, nil
 }
 
-func (p *ThriftTestHandler) TestOneway(ctx context.Context, secondsToSleep int32) (err error) {
+func (p *ThriftTestHandler) TestOneway(ctx thrift.Context, secondsToSleep int32) (err error) {
 	time.Sleep(time.Second * time.Duration(secondsToSleep))
 	return nil
 }
