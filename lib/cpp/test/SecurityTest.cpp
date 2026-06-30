@@ -231,6 +231,18 @@ BOOST_AUTO_TEST_CASE(ssl_security_matrix)
     /* TLSv1_2 */  { true,    false,   false,   false,   false,   true    }
         };
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+        // OpenSSL 3.x disables TLSv1.0 and TLSv1.1 by default; mark them as
+        // not expected to connect so the matrix stays consistent.
+        // SSLTLS client/server falls back to TLSv1.2+ only.
+        matrix[apache::thrift::transport::SSLTLS][apache::thrift::transport::TLSv1_0] = false;
+        matrix[apache::thrift::transport::SSLTLS][apache::thrift::transport::TLSv1_1] = false;
+        matrix[apache::thrift::transport::TLSv1_0][apache::thrift::transport::SSLTLS] = false;
+        matrix[apache::thrift::transport::TLSv1_0][apache::thrift::transport::TLSv1_0] = false;
+        matrix[apache::thrift::transport::TLSv1_1][apache::thrift::transport::SSLTLS] = false;
+        matrix[apache::thrift::transport::TLSv1_1][apache::thrift::transport::TLSv1_1] = false;
+#endif
+
         for (size_t si = 0; si <= apache::thrift::transport::LATEST; ++si)
         {
             for (size_t ci = 0; ci <= apache::thrift::transport::LATEST; ++ci)
@@ -245,6 +257,17 @@ BOOST_AUTO_TEST_CASE(ssl_security_matrix)
                 if (si == 2 || ci == 2)
                 {
                     // Skip all SSLv3 cases - protocol not supported
+                    continue;
+                }
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+                if (si == apache::thrift::transport::TLSv1_0
+                    || si == apache::thrift::transport::TLSv1_1
+                    || ci == apache::thrift::transport::TLSv1_0
+                    || ci == apache::thrift::transport::TLSv1_1)
+                {
+                    // Skip TLSv1.0 and TLSv1.1 - disabled by default in OpenSSL 3.x
                     continue;
                 }
 #endif

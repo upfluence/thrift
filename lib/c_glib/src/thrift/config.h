@@ -28,7 +28,7 @@
 #define HAVE_ARPA_INET_H 1
 
 /* define if the Boost library is available */
-/* #undef HAVE_BOOST */
+#define HAVE_BOOST /**/
 
 /* Define to 1 if you have the 'bzero' function. */
 #define HAVE_BZERO 1
@@ -77,7 +77,7 @@
 /* #undef HAVE_LAUXLIB_H */
 
 /* define if libevent is available */
-/* #undef HAVE_LIBEVENT */
+#define HAVE_LIBEVENT /**/
 
 /* Define to 1 if you have the <libintl.h> header file. */
 /* #undef HAVE_LIBINTL_H */
@@ -281,7 +281,7 @@
 #define HAVE_WORKING_VFORK 1
 
 /* define if zlib is available */
-/* #undef HAVE_ZLIB */
+#define HAVE_ZLIB /**/
 
 /* Define to 1 if the system has the type '_Bool'. */
 /* #undef HAVE__BOOL */
