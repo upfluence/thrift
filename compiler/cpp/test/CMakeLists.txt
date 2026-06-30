@@ -36,8 +36,8 @@ endforeach()
 
 
 find_package(PythonInterp QUIET)
-if(PYTHONINTERP_FOUND)
-  add_test(NAME StalenessCheckTest COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/compiler/staleness_check.py ${THRIFT_COMPILER})
+if(PYTHONINTERP_FOUND AND THRIFT_COMPILER_EXECUTABLE)
+  add_test(NAME StalenessCheckTest COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/compiler/staleness_check.py ${THRIFT_COMPILER_EXECUTABLE})
 else()
-  message(WARNING "Skipping StalenessCheckTest as there is no python interpreter available.")
+  message(WARNING "Skipping StalenessCheckTest as there is no python interpreter or thrift compiler available.")
 endif()

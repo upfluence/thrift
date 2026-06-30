@@ -18,7 +18,7 @@
 #
 
 DESTDIR ?= /
-THRIFT = $(top_builddir)/compiler/cpp/thrift
+THRIFT = $(top_builddir)/bin/thrift
 
 if HAVE_BUNDLER
 

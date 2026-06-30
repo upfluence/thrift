@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = 'upfluence-thrift'
-  s.version     = `git describe --tag`.chomp[1..]
+  s.version     = (`git describe --tag 2>/dev/null` || '').chomp.sub(/\Av/, '').then { |v| v.empty? ? '0.0.0' : v }
   s.authors     = ['Thrift Developers']
   s.email       = ['dev@thrift.apache.org']
   s.homepage    = 'http://thrift.apache.org'

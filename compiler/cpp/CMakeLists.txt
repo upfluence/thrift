@@ -133,6 +133,7 @@ set_target_properties(thrift-compiler PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 set_target_properties(thrift-compiler PROPERTIES OUTPUT_NAME thrift)
 
 target_link_libraries(thrift-compiler parse)
+
 if(TARGET thrift)
     target_link_libraries(thrift-compiler thrift)
 else()
@@ -147,6 +148,6 @@ endif()
 
 install(TARGETS thrift-compiler RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin")
 
-if(BUILD_TESTING)
+if(BUILD_TESTING OR BUILD_COMPILER_TESTING)
     add_subdirectory(test)
 endif()

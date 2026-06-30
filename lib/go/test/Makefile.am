@@ -77,6 +77,8 @@ gopath: $(THRIFT) $(THRIFTTEST) \
 check: gopath
 	$(GO) test -vet=off ./tests/... ./gen/dontexportrwtest/...
 
+.PHONY: gopath
+
 clean-local:
 	$(RM) -r gen ThriftTest.thrift gen-go
 

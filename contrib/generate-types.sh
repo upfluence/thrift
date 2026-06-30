@@ -7,8 +7,13 @@ tag=${TAG:-$git_tag}
 version="${tag%-upfluence}-upfluence"
 
 thrift_bin="$(pwd)/bin/thrift"
-if ! "$thrift_bin" --version &>/dev/null; then
-  thrift_bin="$(which thrift)"
+if ! "$thrift_bin" --version &>/dev/null 2>&1; then
+  thrift_bin="$(which thrift 2>/dev/null || true)"
+fi
+
+if [ -z "$thrift_bin" ] || ! "$thrift_bin" --version &>/dev/null 2>&1; then
+  echo "error: thrift compiler not found; install thrift or build it first (output goes to bin/thrift)" >&2
+  exit 1
 fi
 
 build_dir="$(mktemp -d)"

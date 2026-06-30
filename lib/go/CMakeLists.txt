@@ -18,35 +18,26 @@
 #
 
 set(THRIFT_TYPES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../types")
-if(THRIFT_COMPILER)
-    set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER}")
+if(THRIFT_COMPILER_EXECUTABLE)
+    file(GLOB_RECURSE THRIFT_TYPE_FILES "${THRIFT_TYPES_DIR}/*.thrift")
+    set(THRIFT_TYPE_STAMPS "")
+    foreach(THRIFT_TYPE_FILE ${THRIFT_TYPE_FILES})
+        file(RELATIVE_PATH THRIFT_TYPE_RELATIVE "${THRIFT_TYPES_DIR}" "${THRIFT_TYPE_FILE}")
+        set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_RELATIVE}.stamp")
+        get_filename_component(THRIFT_TYPE_STAMP_DIR "${THRIFT_TYPE_STAMP}" DIRECTORY)
+        add_custom_command(
+            OUTPUT "${THRIFT_TYPE_STAMP}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/thrift"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_STAMP_DIR}"
+            COMMAND ${THRIFT_COMPILER_EXECUTABLE} --gen go:package_prefix=github.com/upfluence/thrift/lib/go/thrift/ -I "${THRIFT_TYPES_DIR}/.." --out "${CMAKE_CURRENT_SOURCE_DIR}/thrift" "${THRIFT_TYPE_FILE}"
+            COMMAND ${CMAKE_COMMAND} -E touch "${THRIFT_TYPE_STAMP}"
+            DEPENDS "${THRIFT_TYPE_FILE}"
+            COMMENT "Generating Go thrift types from ${THRIFT_TYPE_RELATIVE}"
+        )
+        list(APPEND THRIFT_TYPE_STAMPS "${THRIFT_TYPE_STAMP}")
+    endforeach()
+    add_custom_target(generate-types-go DEPENDS ${THRIFT_TYPE_STAMPS})
 else()
-    set(THRIFT_COMPILER_REPO_BIN "${CMAKE_SOURCE_DIR}/bin/thrift")
-    if(EXISTS "${THRIFT_COMPILER_REPO_BIN}")
-        set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_REPO_BIN}")
-    else()
-        find_program(THRIFT_COMPILER_PATH thrift)
-        if(THRIFT_COMPILER_PATH)
-            set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_PATH}")
-        endif()
-    endif()
+    message(STATUS "No thrift compiler available; skipping generate-types-go")
+    add_custom_target(generate-types-go)
 endif()
-file(GLOB_RECURSE THRIFT_TYPE_FILES "${THRIFT_TYPES_DIR}/*.thrift")
-set(THRIFT_TYPE_STAMPS "")
-foreach(THRIFT_TYPE_FILE ${THRIFT_TYPE_FILES})
-    file(RELATIVE_PATH THRIFT_TYPE_RELATIVE "${THRIFT_TYPES_DIR}" "${THRIFT_TYPE_FILE}")
-    set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_RELATIVE}.stamp")
-    get_filename_component(THRIFT_TYPE_STAMP_DIR "${THRIFT_TYPE_STAMP}" DIRECTORY)
-    add_custom_command(
-        OUTPUT "${THRIFT_TYPE_STAMP}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/thrift"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_STAMP_DIR}"
-        COMMAND ${THRIFT_COMPILER_EXECUTABLE} --gen go:package_prefix=github.com/upfluence/thrift/lib/go/thrift/ -I "${THRIFT_TYPES_DIR}/.." --out "${CMAKE_CURRENT_SOURCE_DIR}/thrift" "${THRIFT_TYPE_FILE}"
-        COMMAND ${CMAKE_COMMAND} -E touch "${THRIFT_TYPE_STAMP}"
-        DEPENDS "${THRIFT_TYPE_FILE}"
-        COMMENT "Generating Go thrift types from ${THRIFT_TYPE_RELATIVE}"
-    )
-    list(APPEND THRIFT_TYPE_STAMPS "${THRIFT_TYPE_STAMP}")
-endforeach()
-
-add_custom_target(generate-types-go DEPENDS ${THRIFT_TYPE_STAMPS})

@@ -105,18 +105,45 @@ else ()
   message(STATUS "Building without tests")
 endif ()
 
-if(BUILD_COMPILER)
-    if(NOT EXISTS ${THRIFT_COMPILER})
-        set(THRIFT_COMPILER $<TARGET_FILE:thrift-compiler>)
+if(BUILD_COMPILER AND NOT BUILD_CPP)
+    message(STATUS "BUILD_COMPILER requires lib/cpp — enabling BUILD_CPP")
+    set(BUILD_CPP ON CACHE BOOL "Build C++ library (required by compiler)" FORCE)
+endif()
+
+# Resolve the thrift compiler executable used by all generate-types-* targets.
+# Resolution order:
+#   1. THRIFT_COMPILER cache variable if it points at an existing binary.
+#   2. bin/thrift inside the source tree (a previously installed build output).
+#   3. A thrift binary found on PATH.
+# When BUILD_COMPILER is ON we intentionally do NOT use $<TARGET_FILE:thrift-compiler>
+# here because the generate-types-* targets run before thrift-compiler is linked,
+# and wiring them to the target would create a dependency cycle:
+#   thrift → generate-types-cpp → thrift-compiler → thrift
+if(EXISTS "${THRIFT_COMPILER}")
+    set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER}")
+else()
+    set(THRIFT_COMPILER_REPO_BIN "${CMAKE_SOURCE_DIR}/bin/thrift")
+    if(EXISTS "${THRIFT_COMPILER_REPO_BIN}")
+        set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_REPO_BIN}")
+    else()
+        find_program(THRIFT_COMPILER_PATH thrift)
+        if(THRIFT_COMPILER_PATH)
+            set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_PATH}")
+        else()
+            message(WARNING "No thrift compiler found; generate-types-* targets will be skipped. "
+                "Pass -DTHRIFT_COMPILER=/path/to/thrift or ensure 'thrift' is on PATH.")
+        endif()
     endif()
-elseif(EXISTS ${THRIFT_COMPILER})
+endif()
+
+if(NOT BUILD_COMPILER AND EXISTS "${THRIFT_COMPILER}")
     add_executable(thrift-compiler IMPORTED)
-    set_property(TARGET thrift-compiler PROPERTY IMPORTED_LOCATION ${THRIFT_COMPILER})
+    set_property(TARGET thrift-compiler PROPERTY IMPORTED_LOCATION "${THRIFT_COMPILER}")
 endif()
 
 if(BUILD_CPP)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/cpp)
-    if(BUILD_TUTORIALS)
+    if(BUILD_TUTORIALS AND BUILD_LIBRARIES)
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tutorial/cpp)
     endif()
     if(BUILD_TESTING)

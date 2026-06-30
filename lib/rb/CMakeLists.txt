@@ -18,41 +18,32 @@
 #
 
 set(THRIFT_TYPES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../types")
-if(THRIFT_COMPILER)
-    set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER}")
-else()
-    set(THRIFT_COMPILER_REPO_BIN "${CMAKE_SOURCE_DIR}/bin/thrift")
-    if(EXISTS "${THRIFT_COMPILER_REPO_BIN}")
-        set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_REPO_BIN}")
-    else()
-        find_program(THRIFT_COMPILER_PATH thrift)
-        if(THRIFT_COMPILER_PATH)
-            set(THRIFT_COMPILER_EXECUTABLE "${THRIFT_COMPILER_PATH}")
+if(THRIFT_COMPILER_EXECUTABLE)
+    file(GLOB_RECURSE THRIFT_TYPE_FILES "${THRIFT_TYPES_DIR}/*.thrift")
+    set(THRIFT_TYPE_STAMPS "")
+    foreach(THRIFT_TYPE_FILE ${THRIFT_TYPE_FILES})
+        file(RELATIVE_PATH THRIFT_TYPE_RELATIVE "${THRIFT_TYPES_DIR}" "${THRIFT_TYPE_FILE}")
+        get_filename_component(THRIFT_TYPE_RELATIVE_DIR "${THRIFT_TYPE_RELATIVE}" DIRECTORY)
+        set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_RELATIVE}.stamp")
+        get_filename_component(THRIFT_TYPE_STAMP_DIR "${THRIFT_TYPE_STAMP}" DIRECTORY)
+        if(THRIFT_TYPE_RELATIVE_DIR)
+            set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/thrift/${THRIFT_TYPE_RELATIVE_DIR}")
+        else()
+            set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/thrift")
         endif()
-    endif()
+        add_custom_command(
+            OUTPUT "${THRIFT_TYPE_STAMP}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_OUT_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_STAMP_DIR}"
+            COMMAND ${THRIFT_COMPILER_EXECUTABLE} -gen rb:namespaced,namespace_wrapper=thrift -I "${THRIFT_TYPES_DIR}/.." --out "${CMAKE_CURRENT_SOURCE_DIR}/lib" "${THRIFT_TYPE_FILE}"
+            COMMAND ${CMAKE_COMMAND} -E touch "${THRIFT_TYPE_STAMP}"
+            DEPENDS "${THRIFT_TYPE_FILE}"
+            COMMENT "Generating Ruby thrift types from ${THRIFT_TYPE_RELATIVE}"
+        )
+        list(APPEND THRIFT_TYPE_STAMPS "${THRIFT_TYPE_STAMP}")
+    endforeach()
+    add_custom_target(generate-types-rb DEPENDS ${THRIFT_TYPE_STAMPS})
+else()
+    message(STATUS "No thrift compiler available; skipping generate-types-rb")
+    add_custom_target(generate-types-rb)
 endif()
-file(GLOB_RECURSE THRIFT_TYPE_FILES "${THRIFT_TYPES_DIR}/*.thrift")
-set(THRIFT_TYPE_STAMPS "")
-foreach(THRIFT_TYPE_FILE ${THRIFT_TYPE_FILES})
-    file(RELATIVE_PATH THRIFT_TYPE_RELATIVE "${THRIFT_TYPES_DIR}" "${THRIFT_TYPE_FILE}")
-    get_filename_component(THRIFT_TYPE_RELATIVE_DIR "${THRIFT_TYPE_RELATIVE}" DIRECTORY)
-    set(THRIFT_TYPE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/generated-types/${THRIFT_TYPE_RELATIVE}.stamp")
-    get_filename_component(THRIFT_TYPE_STAMP_DIR "${THRIFT_TYPE_STAMP}" DIRECTORY)
-    if(THRIFT_TYPE_RELATIVE_DIR)
-        set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/thrift/${THRIFT_TYPE_RELATIVE_DIR}")
-    else()
-        set(THRIFT_TYPE_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/thrift")
-    endif()
-    add_custom_command(
-        OUTPUT "${THRIFT_TYPE_STAMP}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_OUT_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${THRIFT_TYPE_STAMP_DIR}"
-        COMMAND ${THRIFT_COMPILER_EXECUTABLE} -gen rb:namespaced,namespace_wrapper=thrift -I "${THRIFT_TYPES_DIR}/.." --out "${CMAKE_CURRENT_SOURCE_DIR}/lib" "${THRIFT_TYPE_FILE}"
-        COMMAND ${CMAKE_COMMAND} -E touch "${THRIFT_TYPE_STAMP}"
-        DEPENDS "${THRIFT_TYPE_FILE}"
-        COMMENT "Generating Ruby thrift types from ${THRIFT_TYPE_RELATIVE}"
-    )
-    list(APPEND THRIFT_TYPE_STAMPS "${THRIFT_TYPE_STAMP}")
-endforeach()
-
-add_custom_target(generate-types-rb DEPENDS ${THRIFT_TYPE_STAMPS})

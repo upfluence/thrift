@@ -26,7 +26,6 @@ SUBDIRS += as3
 endif
 
 if WITH_CPP
-SUBDIRS += cpp
 GENERATE_TYPES_TARGET += generate-types-cpp
 endif
 

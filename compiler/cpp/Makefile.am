@@ -30,8 +30,6 @@ endif
 
 bin_PROGRAMS = thrift
 
-# Build the binary into $(abs_top_builddir)/bin/ so both autotools and cmake
-# output to the same path (bin/thrift from the repo root).
 bindir = $(abs_top_builddir)/bin
 
 thrift_OBJDIR = obj
@@ -146,7 +144,7 @@ libthrift_types_a_SOURCES = \
   $(top_srcdir)/lib/cpp/src/thrift/types/value_types.cpp
 
 thrift_CPPFLAGS = -I$(srcdir)/src -I$(top_srcdir)/lib/cpp/src $(BOOST_CPPFLAGS)
-thrift_CXXFLAGS = -Wall -Wextra -pedantic -Werror -Wno-overloaded-virtual
+thrift_CXXFLAGS = -Wall -Wextra -pedantic -Werror -Wno-overloaded-virtual -Wno-implicit-fallthrough
 thrift_LDADD = @LEXLIB@ src/thrift/libparse.a libthrift_types.a $(top_builddir)/lib/cpp/.libs/libthrift.a
 
 WINDOWS_DIST = \

@@ -2,13 +2,83 @@ name: ci
 
 on:
   push:
-    branches:
-      - 'master'
   pull_request:
 
 jobs:
+  test:
+    name: Test libraries
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          working-directory: lib/rb
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y \
+            automake \
+            bison \
+            cmake \
+            flex \
+            libboost-dev \
+            libboost-test-dev \
+            libboost-filesystem-dev \
+            libboost-program-options-dev \
+            libboost-thread-dev \
+            libboost-chrono-dev \
+            libboost-system-dev \
+            libevent-dev \
+            libssl-dev \
+            zlib1g-dev
+      - name: Build thrift compiler
+        run: |
+          cmake \
+            -DTHRIFT_VERSION=0.0.1-upfluence \
+            -DBUILD_COMPILER=ON \
+            -DBUILD_LIBRARIES=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_TUTORIALS=OFF \
+            -DTYPES_PREFIX=${HOME} \
+            -DBUILD_EXAMPLES=OFF
+          cmake --build . --config Release
+      - name: Test thrift compiler
+        run: |
+          cmake \
+            -DTHRIFT_VERSION=0.0.1-upfluence \
+            -DBUILD_COMPILER=ON \
+            -DBUILD_LIBRARIES=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_COMPILER_TESTING=ON \
+            -DBUILD_TUTORIALS=OFF \
+            -DTYPES_PREFIX=${HOME} \
+            -DBUILD_EXAMPLES=OFF \
+            -DTHRIFT_COMPILER=$(pwd)/bin/thrift \
+            -S . -B build_test
+          cmake --build build_test --config Release
+          ctest --test-dir build_test/compiler/cpp -V
+      - name: Configure
+        run: |
+          touch AUTHORS ChangeLog NEWS
+          autoreconf -if
+          ./configure --with-cpp --with-ruby --with-go
+      - name: Check lib
+        run: make -C lib check THRIFT=$(pwd)/bin/thrift
+      - name: Check test
+        run: make -C lib/cpp all && make -C test check THRIFT=$(pwd)/bin/thrift
+
   compute-version:
     runs-on: ubuntu-24.04
+    needs: test
+    if: github.ref == 'refs/heads/master'
     outputs:
       version: ${{ steps.bump-version.outputs.version }}
     steps:
@@ -19,6 +89,7 @@ jobs:
   build:
     name: Build the thrift compiler
     needs: compute-version
+    if: github.ref == 'refs/heads/master'
     strategy:
       matrix:
         os: [ubuntu-24.04, macos-26-intel, macos-26]
@@ -43,6 +114,7 @@ jobs:
             -DBUILD_COMPILER=ON \
             -DBUILD_LIBRARIES=OFF \
             -DBUILD_TESTING=OFF \
+            -DBUILD_TUTORIALS=OFF \
             -DTYPES_PREFIX=${HOME} \
             -DBUILD_EXAMPLES=OFF
       - name: Build
@@ -56,46 +128,13 @@ jobs:
           retention-days: 2
           path: bin/*
 
-  test:
-    name: Test libraries
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
-          bundler-cache: true
-          working-directory: lib/rb
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y \
-            libboost-dev \
-            libboost-test-dev \
-            libboost-filesystem-dev \
-            libboost-thread-dev \
-            libboost-chrono-dev \
-            libboost-system-dev \
-            libevent-dev \
-            libssl-dev \
-            zlib1g-dev
-      - name: Configure
-        run: ./configure --with-cpp --with-ruby --with-go
-      - name: Check
-        run: make check
-
   release:
     name: "Release binaries"
     runs-on: ubuntu-24.04
     needs:
       - compute-version
       - build
-    if: contains('refs/heads/master', github.ref)
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
