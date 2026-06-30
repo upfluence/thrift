@@ -30,6 +30,10 @@ endif
 
 bin_PROGRAMS = thrift
 
+# Build the binary into $(abs_top_builddir)/bin/ so both autotools and cmake
+# output to the same path (bin/thrift from the repo root).
+bindir = $(abs_top_builddir)/bin
+
 thrift_OBJDIR = obj
 
 thrift_SOURCES = src/thrift/audit/t_audit.cpp \
@@ -104,9 +108,46 @@ thrift_SOURCES += src/thrift/generate/t_as3_generator.cc \
                   src/thrift/generate/t_xml_generator.cc \
                   src/thrift/generate/t_xsd_generator.cc
 
-thrift_CPPFLAGS = -I$(srcdir)/src
-thrift_CXXFLAGS = -Wall -Wextra -pedantic -Werror
-thrift_LDADD = @LEXLIB@ src/thrift/libparse.a
+noinst_LIBRARIES = libthrift_types.a
+
+libthrift_types_a_CPPFLAGS = -I$(srcdir)/src -I$(top_srcdir)/lib/cpp/src $(BOOST_CPPFLAGS)
+libthrift_types_a_CXXFLAGS = -Wall -Wextra -pedantic -Werror -Wno-overloaded-virtual
+libthrift_types_a_SOURCES = \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation/deprecation_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation/deprecation_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation/naming_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/annotation/naming_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/constant_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/constant_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/core_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/core_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/enum_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/enum_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/any_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/any_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/duration_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/duration_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/timestamp_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/known/timestamp_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/plugin_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/plugin_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/Plugin.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/program_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/program_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/service_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/service_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/struct_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/struct_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/type_definition_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/type_definition_types.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/value_constants.cpp \
+  $(top_srcdir)/lib/cpp/src/thrift/types/value_types.cpp
+
+thrift_CPPFLAGS = -I$(srcdir)/src -I$(top_srcdir)/lib/cpp/src $(BOOST_CPPFLAGS)
+thrift_CXXFLAGS = -Wall -Wextra -pedantic -Werror -Wno-overloaded-virtual
+thrift_LDADD = @LEXLIB@ src/thrift/libparse.a libthrift_types.a $(top_builddir)/lib/cpp/.libs/libthrift.a
 
 WINDOWS_DIST = \
              compiler.sln \

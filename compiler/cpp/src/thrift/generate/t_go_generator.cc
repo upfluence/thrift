@@ -766,6 +766,8 @@ void t_go_generator::init_generator() {
     }
   }
 
+  MKDIR(package_dir_.c_str());
+
   string::size_type loc;
 
   while ((loc = target.find(".")) != string::npos) {
@@ -1205,11 +1207,8 @@ string t_go_generator::render_const_value(t_type* type, t_const_value* value, co
         out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
             << render_const_value(field_type, v_iter->second, name, field->get_req() == t_field::e_req::T_OPTIONAL) << ",";
       } else {
-        string k(tmp("k"));
-        string v(tmp("v"));
-        out << endl << indent() << v << " := " << render_const_value(field_type, v_iter->second, v)
-            << endl << indent() << name << "." << publicize(v_iter->first->get_string()) << " = "
-            << v;
+        out << endl << indent() << publicize(v_iter->first->get_string()) << ": "
+            << render_const_value(field_type, v_iter->second, name) << ",";
       }
     }
 
@@ -2638,7 +2637,7 @@ void t_go_generator::generate_deserialize_struct(ostream& out,
     generate_go_struct_initializer(out, tstruct);
   }
 
-  out << indent() << "if err := " << prefix << ".Read(iprot); err != nil {" << endl;
+  out << indent() << "if err := " << prefix << "." << (read_write_private_ ? "read" : "Read") << "(iprot); err != nil {" << endl;
   out << indent() << "  return thrift.PrependError(fmt.Sprintf(\"%T error reading struct: \", "
       << prefix << "), err)" << endl;
   out << indent() << "}" << endl;
