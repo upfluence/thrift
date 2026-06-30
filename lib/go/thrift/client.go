@@ -82,7 +82,7 @@ func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
 			fmt.Sprintf("%s: out of order sequence response", method),
 		)
 	} else if rTypeID == EXCEPTION {
-		var exception tApplicationException
+		exception := &tApplicationException{}
 
 		if err := exception.Read(iprot); err != nil {
 			return err

@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	. "gen/thrifttest"
+	. "github.com/upfluence/thrift/test/go/gen/thrifttest"
 	"time"
 )
 

@@ -22,11 +22,11 @@ package common
 import (
 	"context"
 	"errors"
-	"gen/thrifttest"
+	"github.com/upfluence/thrift/test/go/gen/thrifttest"
 	"reflect"
 	"sync"
 	"testing"
-	"thrift"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
 
 	"github.com/golang/mock/gomock"
 )

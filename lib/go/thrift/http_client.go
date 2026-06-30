@@ -21,6 +21,7 @@ package thrift
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -41,6 +42,7 @@ type THttpClient struct {
 	header             http.Header
 	nsecConnectTimeout int64
 	nsecReadTimeout    int64
+	ctx                Context
 }
 
 type THttpClientTransportFactory struct {
@@ -97,7 +99,10 @@ func NewTHttpClient(urlstr string) (TTransport, error) {
 	return NewTHttpClientWithOptions(urlstr, THttpClientOptions{})
 }
 
-func (p *THttpClient) WriteContext(_ Context) error { return nil }
+func (p *THttpClient) WriteContext(ctx Context) error {
+	p.ctx = ctx
+	return nil
+}
 
 // Set the HTTP Header for this specific Thrift Transport
 // It is important that you first assert the TTransport as a THttpClient type
@@ -195,7 +200,12 @@ func (p *THttpClient) Flush() error {
 	// Close any previous response body to avoid leaking connections.
 	p.closeResponse()
 
-	req, err := http.NewRequest("POST", p.url.String(), p.requestBuffer)
+	ctx := p.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", p.url.String(), p.requestBuffer)
 	if err != nil {
 		return NewTTransportExceptionFromError(err)
 	}

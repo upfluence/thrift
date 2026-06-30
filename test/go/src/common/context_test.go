@@ -28,8 +28,10 @@ import (
 	"os"
 	"syscall"
 	"testing"
-	"thrift"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
 	"time"
+
+	"github.com/upfluence/errors"
 )
 
 type slowHttpHandler struct{}
@@ -54,10 +56,13 @@ func TestHttpContextTimeout(t *testing.T) {
 	defer trans.Close()
 
 	unwrapErr := func(err error) error {
+		// Peel errors.WithStack and similar wrappers first, then
+		// type-switch through the remaining concrete error chain.
+		err = errors.Cause(err)
 		for {
 			switch err.(type) {
 			case thrift.TTransportException:
-				err = err.(thrift.TTransportException).Err()
+				err = errors.Cause(err.(thrift.TTransportException).Err())
 			case *url.Error:
 				err = err.(*url.Error).Err
 			case *net.OpError:

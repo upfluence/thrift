@@ -24,9 +24,9 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"gen/thrifttest"
+	"github.com/upfluence/thrift/test/go/gen/thrifttest"
 	"net/http"
-	"thrift"
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
 )
 
 var debugClientProtocol bool
@@ -104,8 +104,6 @@ func StartClient(
 	if err = trans.Open(); err != nil {
 		return nil, nil, err
 	}
-	iprot := protocolFactory.GetProtocol(trans)
-	oprot := protocolFactory.GetProtocol(trans)
-	client = thrifttest.NewThriftTestClient(thrift.NewTStandardClient(iprot, oprot))
+	client = thrifttest.NewThriftTestClient(thrift.NewTSyncClient(trans, protocolFactory))
 	return
 }

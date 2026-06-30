@@ -21,7 +21,7 @@ package common
 
 import (
 	"errors"
-	. "gen/thrifttest"
+	. "github.com/upfluence/thrift/test/go/gen/thrifttest"
 	"time"
 )
 
