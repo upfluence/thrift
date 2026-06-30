@@ -117,8 +117,9 @@ AC_SUBST(CPPSTYLE_CMD, 'find . -type f \( -iname "*.h" -or -iname "*.cpp" -or -i
 
 AC_ARG_ENABLE([libs],
   AS_HELP_STRING([--enable-libs], [build the Apache Thrift libraries [default=no]]),
-  [], enable_libs=no
+  [], enable_libs=yes
 )
+
 if test "$enable_libs" = "no"; then
   have_libs="no"
   with_as3="no"
@@ -148,7 +149,7 @@ if test "$enable_libs" = "no"; then
   with_swift="no"
 fi
 
-AX_THRIFT_LIB(as3, [as3], yes)
+AX_THRIFT_LIB(as3, [as3], no)
 have_as3=no
 if test "$with_as3" = "yes"; then
   if test "${FLEX_HOME+set}" = set; then
@@ -166,11 +167,39 @@ if test "$with_cpp" = "yes";  then
   AX_BOOST_BASE([1.56.0])
   if test "x$succeeded" = "xyes" ; then
     AC_SUBST([BOOST_LIB_DIR], [$(echo "$BOOST_LDFLAGS" | sed -e 's/^\-L//')])
-    AC_SUBST([BOOST_CHRONO_LDADD], [$(echo "$BOOST_LIB_DIR/libboost_chrono.a")])
-    AC_SUBST([BOOST_FILESYSTEM_LDADD], [$(echo "$BOOST_LIB_DIR/libboost_filesystem.a")])
-    AC_SUBST([BOOST_SYSTEM_LDADD], [$(echo "$BOOST_LIB_DIR/libboost_system.a")])
-    AC_SUBST([BOOST_TEST_LDADD], [$(echo "$BOOST_LIB_DIR/libboost_unit_test_framework.a")])
-    AC_SUBST([BOOST_THREAD_LDADD], [$(echo "$BOOST_LIB_DIR/libboost_thread.a")])
+    dnl Some distributions (e.g. homebrew on macOS) only ship the -mt variant
+    dnl for certain boost libraries. Use the bare name when available, fall
+    dnl back to the -mt suffix otherwise.
+    if test -f "$BOOST_LIB_DIR/libboost_chrono.a"; then
+      BOOST_CHRONO_LDADD="$BOOST_LIB_DIR/libboost_chrono.a"
+    else
+      BOOST_CHRONO_LDADD="$BOOST_LIB_DIR/libboost_chrono-mt.a"
+    fi
+    if test -f "$BOOST_LIB_DIR/libboost_filesystem.a"; then
+      BOOST_FILESYSTEM_LDADD="$BOOST_LIB_DIR/libboost_filesystem.a"
+    else
+      BOOST_FILESYSTEM_LDADD="$BOOST_LIB_DIR/libboost_filesystem-mt.a"
+    fi
+    if test -f "$BOOST_LIB_DIR/libboost_system.a"; then
+      BOOST_SYSTEM_LDADD="$BOOST_LIB_DIR/libboost_system.a"
+    else
+      BOOST_SYSTEM_LDADD="$BOOST_LIB_DIR/libboost_system-mt.a"
+    fi
+    if test -f "$BOOST_LIB_DIR/libboost_unit_test_framework.a"; then
+      BOOST_TEST_LDADD="$BOOST_LIB_DIR/libboost_unit_test_framework.a"
+    else
+      BOOST_TEST_LDADD="$BOOST_LIB_DIR/libboost_unit_test_framework-mt.a"
+    fi
+    if test -f "$BOOST_LIB_DIR/libboost_thread.a"; then
+      BOOST_THREAD_LDADD="$BOOST_LIB_DIR/libboost_thread.a"
+    else
+      BOOST_THREAD_LDADD="$BOOST_LIB_DIR/libboost_thread-mt.a"
+    fi
+    AC_SUBST([BOOST_CHRONO_LDADD])
+    AC_SUBST([BOOST_FILESYSTEM_LDADD])
+    AC_SUBST([BOOST_SYSTEM_LDADD])
+    AC_SUBST([BOOST_TEST_LDADD])
+    AC_SUBST([BOOST_THREAD_LDADD])
     have_cpp="yes"
   fi
 
@@ -180,7 +209,7 @@ if test "$with_cpp" = "yes";  then
   AX_LIB_ZLIB([1.2.3])
   have_zlib=$success
 
-  AX_THRIFT_LIB(qt5, [Qt5], yes)
+  AX_THRIFT_LIB(qt5, [Qt5], no)
   have_qt5=no
   qt_reduce_reloc=""
   if test "$with_qt5" = "yes";  then
@@ -201,7 +230,7 @@ AM_CONDITIONAL([AMX_HAVE_ZLIB], [test "$have_zlib" = "yes"])
 AM_CONDITIONAL([AMX_HAVE_QT5], [test "$have_qt5" = "yes"])
 AM_CONDITIONAL([QT5_REDUCE_RELOCATIONS], [test "x$qt_reduce_reloc" != "x"])
 
-AX_THRIFT_LIB(c_glib, [C (GLib)], yes)
+AX_THRIFT_LIB(c_glib, [C (GLib)], no)
 if test "$with_c_glib" = "yes"; then
   PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.0], have_glib2=yes, have_glib2=no)
   PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.0], have_gobject2=yes, have_gobject2=no)
@@ -218,7 +247,7 @@ if test "$have_cpp" = "yes" -o "$have_c_glib" = "yes";  then
   AX_CHECK_OPENSSL()
 fi
 
-AX_THRIFT_LIB(csharp, [C#], yes)
+AX_THRIFT_LIB(csharp, [C#], no)
 if test "$with_csharp" = "yes";  then
   PKG_CHECK_MODULES(MONO, mono >= 2.11.0, mono_2_11=yes, mono_2_11=no)
   if test "$mono_2_11" == "yes"; then
@@ -237,7 +266,7 @@ AM_CONDITIONAL(WITH_MONO, [test "$have_csharp" = "yes"])
 AM_CONDITIONAL(NET_2_0, [test "$net_3_5" = "no"])
 AM_CONDITIONAL(MONO_MCS, [test "$mono_mcs" = "yes"])
 
-AX_THRIFT_LIB(java, [Java], yes)
+AX_THRIFT_LIB(java, [Java], no)
 if test "$with_java" = "yes";  then
   AX_JAVAC_AND_JAVA
   AC_PATH_PROG([ANT], [ant])
@@ -251,7 +280,7 @@ if test "$with_java" = "yes";  then
 fi
 AM_CONDITIONAL([WITH_JAVA], [test "$have_java" = "yes"])
 
-AX_THRIFT_LIB(erlang, [Erlang], yes)
+AX_THRIFT_LIB(erlang, [Erlang], no)
 if test "$with_erlang" = "yes";  then
   AC_ERLANG_PATH_ERL
   AC_ERLANG_PATH_ERLC
@@ -275,7 +304,7 @@ fi
 AM_CONDITIONAL(WITH_ERLANG, [test "$have_erlang" = "yes"])
 AM_CONDITIONAL(ERLANG_OTP16, [test "$erlang_otp16_or_less" = "yes"])
 
-AX_THRIFT_LIB(nodejs, [Nodejs], yes)
+AX_THRIFT_LIB(nodejs, [Nodejs], no)
 have_nodejs=no
 if test "$with_nodejs" = "yes"; then
   AC_PATH_PROGS([NODEJS], [nodejs node])
@@ -287,7 +316,7 @@ fi
 AM_CONDITIONAL(WITH_NODEJS, [test "$have_nodejs" = "yes"])
 AM_CONDITIONAL(HAVE_NPM, [test "x$NPM" != "x"])
 
-AX_THRIFT_LIB(nodets, [Nodets], yes)
+AX_THRIFT_LIB(nodets, [Nodets], no)
 have_nodets=no
 if test "$with_nodets" = "yes"; then
   AC_PATH_PROGS([NODETS], [nodets node])
@@ -299,7 +328,7 @@ fi
 AM_CONDITIONAL(WITH_NODETS, [test "$have_nodets" = "yes"])
 AM_CONDITIONAL(HAVE_NPM, [test "x$NPM" != "x"])
 
-AX_THRIFT_LIB(lua, [Lua], yes)
+AX_THRIFT_LIB(lua, [Lua], no)
 have_lua=no
 if test "$with_lua" = "yes"; then
   AX_PROG_LUA(5.2,, have_lua="yes", have_lua="no")
@@ -312,7 +341,7 @@ AM_CONDITIONAL(WITH_LUA, [test "$have_lua" = "yes"])
 
 # Find python regardless of with_python value, because it's needed by make cross
 AM_PATH_PYTHON(2.6,, :)
-AX_THRIFT_LIB(python, [Python], yes)
+AX_THRIFT_LIB(python, [Python], no)
 if test "$with_python" = "yes";  then
   if test -n "$PYTHON"; then
     have_python="yes"
@@ -329,7 +358,7 @@ AM_CONDITIONAL(WITH_TWISTED_TEST, [test "$have_trial" = "yes"])
 # It's distro specific and far from ideal but needed to cross test py2-3 at once.
 # TODO: find "python2" if it's 3.x
 have_py3="no"
-AX_THRIFT_LIB(py3, [Py3], yes)
+AX_THRIFT_LIB(py3, [Py3], no)
 if test "$with_py3" = "yes"; then
   if $PYTHON --version 2>&1 | grep -q "Python 2"; then
     AC_PATH_PROGS([PYTHON3], [python3 python3.7 python37 python3.6 python36 python3.5 python35 python3.4 python34])
@@ -340,7 +369,7 @@ if test "$with_py3" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_PY3, [test "$have_py3" = "yes"])
 
-AX_THRIFT_LIB(perl, [Perl], yes)
+AX_THRIFT_LIB(perl, [Perl], no)
 if test "$with_perl" = "yes"; then
   AC_PATH_PROG([PERL], [perl])
   if test -n "$PERL" ; then
@@ -357,7 +386,7 @@ if test "$with_perl" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_PERL, [test "$have_perl" = "yes"])
 
-AX_THRIFT_LIB(php, [PHP], yes)
+AX_THRIFT_LIB(php, [PHP], no)
 if test "$with_php" = "yes"; then
   AC_PATH_PROG([PHP], [php])
   if test -n "$PHP" ; then
@@ -366,7 +395,7 @@ if test "$with_php" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_PHP, [test "$have_php" = "yes"])
 
-AX_THRIFT_LIB(php_extension, [PHP_EXTENSION], yes)
+AX_THRIFT_LIB(php_extension, [PHP_EXTENSION], no)
 if test "$with_php_extension" = "yes"; then
   if test -f "lib/php/src/ext/thrift_protocol/configure"; then
     AC_PATH_PROG([PHP_CONFIG], [php-config])
@@ -378,7 +407,7 @@ if test "$with_php_extension" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_PHP_EXTENSION, [test "$have_php_extension" = "yes"])
 
-AX_THRIFT_LIB(dart, [DART], yes)
+AX_THRIFT_LIB(dart, [DART], no)
 if test "$with_dart" = "yes"; then
   AC_PATH_PROG([DART], [dart])
   AC_PATH_PROG([DARTPUB], [pub])
@@ -400,7 +429,7 @@ fi
 AM_CONDITIONAL(WITH_RUBY, [test "$have_ruby" = "yes"])
 AM_CONDITIONAL(HAVE_BUNDLER, [test "x$BUNDLER" != "x"])
 
-AX_THRIFT_LIB(haskell, [Haskell], yes)
+AX_THRIFT_LIB(haskell, [Haskell], no)
 have_haskell=no
 RUNHASKELL=true
 CABAL=true
@@ -453,7 +482,7 @@ fi
 AM_CONDITIONAL(WITH_GO, [test "$have_go" = "yes"])
 AM_CONDITIONAL([GOVERSION_LT_17], [test "$go_version_lt_17" = "yes"])
 
-AX_THRIFT_LIB(swift, [Swift], yes)
+AX_THRIFT_LIB(swift, [Swift], no)
 have_swift="no"
 if test "$with_swift" = "yes"; then
   AC_PATH_PROG([SWIFT], [swift])
@@ -463,7 +492,7 @@ if test "$with_swift" = "yes"; then
 fi
 AM_CONDITIONAL([WITH_SWIFT], [test "$have_swift" = "yes"])
 
-AX_THRIFT_LIB(rs, [Rust], yes)
+AX_THRIFT_LIB(rs, [Rust], no)
 have_rs="no"
 if test "$with_rs" = "yes";  then
   AC_PATH_PROG([CARGO], [cargo])
@@ -487,7 +516,7 @@ if test "$with_rs" = "yes";  then
 fi
 AM_CONDITIONAL(WITH_RS, [test "$have_rs" = "yes"])
 
-AX_THRIFT_LIB(cl, [Common Lisp], yes)
+AX_THRIFT_LIB(cl, [Common Lisp], no)
 have_cl="no"
 if test "$with_cl" = "yes";  then
   AC_PATH_PROG([SBCL], [sbcl])
@@ -497,7 +526,7 @@ if test "$with_cl" = "yes";  then
 fi
 AM_CONDITIONAL(WITH_CL, [test "$have_cl" = "yes"])
 
-AX_THRIFT_LIB(haxe, [Haxe], yes)
+AX_THRIFT_LIB(haxe, [Haxe], no)
 if test "$with_haxe" = "yes";  then
   AC_PATH_PROG([HAXE], [haxe])
   if [[ -x "$HAXE" ]] ; then
@@ -507,7 +536,7 @@ fi
 AM_CONDITIONAL(WITH_HAXE, [test "$have_haxe" = "yes"])
 
 
-AX_THRIFT_LIB(dotnetcore, [.NET Core], yes)
+AX_THRIFT_LIB(dotnetcore, [.NET Core], no)
 if test "$with_dotnetcore" = "yes";  then
   AC_PATH_PROG([DOTNETCORE], [dotnet])
   if [[ -x "$DOTNETCORE" ]] ; then
@@ -517,7 +546,7 @@ fi
 AM_CONDITIONAL(WITH_DOTNET, [test "$have_dotnetcore" = "yes"])
 
 
-AX_THRIFT_LIB(d, [D], yes)
+AX_THRIFT_LIB(d, [D], no)
 if test "$with_d" = "yes";  then
   AX_DMD
   AC_SUBST(DMD)
