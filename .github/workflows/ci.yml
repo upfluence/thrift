@@ -113,6 +113,8 @@ jobs:
             -DTHRIFT_VERSION=${THRIFT_VERSION#v}-upfluence \
             -DBUILD_COMPILER=ON \
             -DBUILD_LIBRARIES=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DWITH_OPENSSL=OFF \
             -DBUILD_TESTING=OFF \
             -DBUILD_TUTORIALS=OFF \
             -DTYPES_PREFIX=${HOME} \

@@ -1,3 +1,9 @@
 .git/
-CMakeFiles/
-CMakeCache.txt
+.cache/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+bin/
+build_out/
+build_test/

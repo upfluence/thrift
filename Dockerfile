@@ -48,11 +48,15 @@ RUN buildDeps=" \
        -DTHRIFT_VERSION=${SEMVER_VERSION#v}-upfluence \
        -DBUILD_COMPILER=ON \
        -DBUILD_LIBRARIES=OFF \
+       -DBUILD_SHARED_LIBS=OFF \
+       -DWITH_OPENSSL=OFF \
        -DBUILD_TESTING=OFF \
        -DBUILD_EXAMPLES=OFF \
+       -DBUILD_TUTORIALS=OFF \
        /thrift \
-    && cmake --build . --config Release \
-    && make install \
+     && cmake --build . --config Release \
+     && mv /tmp/cmake-build/bin/thrift /usr/local/bin \
+     && cp -r /thrift/types /usr/local/share/thrift \
     && curl -k -sSL "https://dl.google.com/go/go1.26.4.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar xzf /tmp/go.tar.gz -C /tmp \
     && cp /tmp/go/bin/gofmt /usr/bin/gofmt \
