@@ -41,3 +41,5 @@ if(PYTHONINTERP_FOUND AND THRIFT_COMPILER_EXECUTABLE)
 else()
   message(WARNING "Skipping StalenessCheckTest as there is no python interpreter or thrift compiler available.")
 endif()
+
+add_subdirectory(plugin)

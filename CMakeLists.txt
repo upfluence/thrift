@@ -95,8 +95,10 @@ include(BoostMacros)
 find_package(Threads)
 include(CTest)
 
-if(BUILD_TESTING)
-  message(STATUS "Building with unittests")
+if(BUILD_TESTING OR BUILD_COMPILER_TESTING)
+  if(BUILD_TESTING)
+    message(STATUS "Building with unittests")
+  endif()
 
   enable_testing()
   # Define "make check" as alias for "make test"
