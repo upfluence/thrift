@@ -20,6 +20,19 @@
 find_program(GO_EXECUTABLE go)
 
 if(GO_EXECUTABLE)
+    # Write a minimal root go.mod so that the replace directive in
+    # echo_plugin/go.mod (replace github.com/upfluence/thrift => ../../../../..)
+    # can be resolved by `go build`.  The file is not committed to the repo;
+    # it is generated on demand and the path is gitignored.
+    set(ROOT_GO_MOD ${CMAKE_SOURCE_DIR}/go.mod)
+    add_custom_command(
+        OUTPUT ${ROOT_GO_MOD}
+        COMMAND ${CMAKE_COMMAND} -E echo "module github.com/upfluence/thrift" > ${ROOT_GO_MOD}
+        COMMAND ${CMAKE_COMMAND} -E echo "" >> ${ROOT_GO_MOD}
+        COMMAND ${CMAKE_COMMAND} -E echo "go 1.25.6" >> ${ROOT_GO_MOD}
+        COMMENT "Generating root go.mod"
+    )
+
     # Build the echo plugin from its own module (uses a replace directive to
     # point at the local lib/go/thrift sources).
     add_custom_command(
@@ -28,6 +41,7 @@ if(GO_EXECUTABLE)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/echo_plugin
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/echo_plugin/main.go
                 ${CMAKE_CURRENT_SOURCE_DIR}/echo_plugin/go.mod
+                ${ROOT_GO_MOD}
         COMMENT "Building echo_plugin"
     )
     add_custom_target(build_echo_plugin ALL
