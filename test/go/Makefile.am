@@ -23,25 +23,25 @@ THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
 ThriftTest.thrift: $(THRIFTTEST)
 	grep -v list.*map.*list.*map $(THRIFTTEST) > ThriftTest.thrift
 
-gopath: $(THRIFT) ThriftTest.thrift
+gopath.stamp: $(THRIFT) ThriftTest.thrift
 	mkdir -p gen
 	$(THRIFTCMD) ThriftTest.thrift
 	$(THRIFTCMD) ../StressTest.thrift
-	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo 1.25.6\n' > $(top_srcdir)/go.mod
+	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo $(golang_version)\n' > $(top_srcdir)/go.mod
 	$(GO) mod tidy
-	touch gen.stamp
+	touch gopath.stamp
 
-genmock: gopath
+genmock: gopath.stamp
 	$(GO) install github.com/golang/mock/mockgen@v1.6.0
 	mockgen -source=gen/thrifttest/ThriftTest.go \
 		-destination=src/common/mock_handler.go \
 		-package=common
 
-check: gopath genmock
+check: gopath.stamp genmock
 	$(GO) test -v ./src/common/...
 
 clean-local:
-	$(RM) -r gen gen.stamp bin ThriftTest.thrift go.sum $(top_srcdir)/go.mod $(top_srcdir)/go.sum
+	$(RM) -r gen gopath.stamp bin ThriftTest.thrift go.sum $(top_srcdir)/go.mod $(top_srcdir)/go.sum
 
 EXTRA_DIST = \
 	src/bin \

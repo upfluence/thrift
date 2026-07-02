@@ -41,13 +41,20 @@ generate-types: $(TYPE_FILES)
 
 .PHONY: generate-types $(TYPE_FILES)
 
-check-local:
+GO_MOD_CONTENT = module github.com/upfluence/thrift\n\ngo $(golang_version)\n
+
+gopath.stamp:
+	test -f $(top_srcdir)/go.mod || printf '$(GO_MOD_CONTENT)' > $(top_srcdir)/go.mod
+	test -f $(top_srcdir)/go.sum || (cd $(top_srcdir) && $(GO) mod tidy)
+	touch gopath.stamp
+
+check-local: gopath.stamp
 	cd $(abs_top_srcdir) && $(GO) test -race ./lib/go/thrift/...
 
 clean-local:
-	$(RM) -rf pkg
+	$(RM) -rf pkg gopath.stamp $(top_srcdir)/go.mod $(top_srcdir)/go.sum
 
-all-local:
+all-local: gopath.stamp
 	$(GO) build ./thrift/...
 
 EXTRA_DIST = \

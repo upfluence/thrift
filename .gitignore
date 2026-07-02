@@ -450,12 +450,13 @@ lib/libparsed.a.bak
 # go modules and generated files
 /go.mod
 /go.sum
+/lib/go/gopath.stamp
 /lib/go/test/go.sum
+/lib/go/test/gopath.stamp
 /lib/go/test/gen/
-/lib/go/test/gopath
 /test/go/go.sum
+/test/go/gopath.stamp
 /test/go/bin_out/
-/test/go/gen.stamp
 /test/go/gen/
 /test/go/src/github.com/
 /test/go/src/gopkg.in/
