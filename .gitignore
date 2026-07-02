@@ -448,8 +448,12 @@ lib/libparsed.a.bak
 *.dylib
 
 # go modules and generated files
+/go.mod
+/go.sum
+/lib/go/test/go.sum
 /lib/go/test/gen/
 /lib/go/test/gopath
+/test/go/go.sum
 /test/go/bin_out/
 /test/go/gen.stamp
 /test/go/gen/

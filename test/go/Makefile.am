@@ -27,6 +27,7 @@ gopath: $(THRIFT) ThriftTest.thrift
 	mkdir -p gen
 	$(THRIFTCMD) ThriftTest.thrift
 	$(THRIFTCMD) ../StressTest.thrift
+	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo 1.25.6\n' > $(top_srcdir)/go.mod
 	$(GO) mod tidy
 	touch gen.stamp
 
@@ -40,7 +41,7 @@ check: gopath genmock
 	$(GO) test -v ./src/common/...
 
 clean-local:
-	$(RM) -r gen gen.stamp bin ThriftTest.thrift go.sum
+	$(RM) -r gen gen.stamp bin ThriftTest.thrift go.sum $(top_srcdir)/go.mod $(top_srcdir)/go.sum
 
 EXTRA_DIST = \
 	src/bin \

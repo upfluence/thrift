@@ -16,7 +16,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version-file: lib/go/test/go.mod
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:

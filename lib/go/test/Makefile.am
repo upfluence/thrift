@@ -71,6 +71,7 @@ gopath: $(THRIFT) $(THRIFTTEST) \
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceTestSuperThing.thrift
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceServiceTest.thrift
 	cp -r dontexportrwtest gen/
+	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo 1.25.6\n' > $(top_srcdir)/go.mod
 	$(GO) mod tidy
 	touch gopath
 
@@ -80,7 +81,7 @@ check: gopath
 .PHONY: gopath
 
 clean-local:
-	$(RM) -r gen ThriftTest.thrift gen-go
+	$(RM) -r gen ThriftTest.thrift gen-go $(top_srcdir)/go.mod $(top_srcdir)/go.sum
 
 EXTRA_DIST = \
 	dontexportrwtest \
