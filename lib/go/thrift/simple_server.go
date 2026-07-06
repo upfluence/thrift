@@ -258,9 +258,13 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 		}
 
 		ok, err := processor.Process(ctx, inputProtocol, outputProtocol)
-		if err, ok := err.(TTransportException); ok && err.TypeId() == END_OF_FILE {
+		if terr, ok2 := err.(TTransportException); ok2 && terr.TypeId() == END_OF_FILE {
 			return nil
-		} else if err != nil {
+		}
+		if err != nil && !ok {
+			// Only close the connection on errors where the processor could not
+			// produce a response (ok=false). When ok=true the processor already
+			// wrote an EXCEPTION frame to the client; keep the connection open.
 			if p.errorLogger != nil {
 				(*p.errorLogger)(err)
 			} else {

@@ -235,6 +235,20 @@ module Thrift
         write_result(res, oprot, seqid)
 
         true
+      rescue ApplicationException => e
+        write_exception(e, oprot, @name, seqid)
+        true
+      rescue StandardError => e
+        write_exception(
+          ApplicationException.new(
+            ApplicationException::INTERNAL_ERROR,
+            "Internal error processing #{@name}: #{e.class}: #{e}"
+          ),
+          oprot,
+          @name,
+          seqid
+        )
+        true
       end
 
       protected
