@@ -45,6 +45,9 @@ var units = []test_unit{
 	{"127.0.0.1", 9091, "", "", "compact", false},
 	{"127.0.0.1", 9092, "", "", "binary", true},
 	{"127.0.0.1", 9093, "", "", "compact", true},
+	{"127.0.0.1", 9096, "", "framed", "binary", false},
+	{"127.0.0.1", 9097, "", "buffered", "compact", false},
+	{"127.0.0.1", 9098, "", "framed", "header", false},
 }
 
 func TestAllConnection(t *testing.T) {
