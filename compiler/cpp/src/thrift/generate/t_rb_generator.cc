@@ -1154,6 +1154,16 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
     f_service_.indent() << "'" << tfunction->get_name() << "' => { args_klass: "
                         << argsname;
 
+    t_struct* arg_struct = tfunction->get_arglist();
+    const std::vector<t_field*>& fields = arg_struct->get_members();
+    vector<t_field*>::const_iterator a_iter;
+
+    t_struct* xs = tfunction->get_xceptions();
+    const std::vector<t_field*>& xceptions = xs->get_members();
+    vector<t_field*>::const_iterator x_iter;
+
+    bool first = true;
+
     if (!tfunction->is_oneway()) {
       f_service_ << ", result_klass: " << resultname;
 
@@ -1170,42 +1180,33 @@ void t_rb_generator::generate_service_server(t_service* tservice) {
         f_service_ << ", stream_klass: "
                    << capitalize(tfunction->get_name() + "_stream");
       }
-
-      t_struct* arg_struct = tfunction->get_arglist();
-      const std::vector<t_field*>& fields = arg_struct->get_members();
-      vector<t_field*>::const_iterator a_iter;
-
-      f_service_ << ", args: [";
-      bool first = true;
-      for (a_iter = fields.begin(); a_iter != fields.end(); ++a_iter) {
-        if (first) {
-          first = false;
-        } else {
-          f_service_ << ", ";
-        }
-        f_service_ << ":" << (*a_iter)->get_name();
-      }
-      f_service_ << "]";
-
-      f_service_ << ", exceptions: {";
-      t_struct* xs = tfunction->get_xceptions();
-      const std::vector<t_field*>& xceptions = xs->get_members();
-      vector<t_field*>::const_iterator x_iter;
-
-      first = true;
-
-      for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
-        if (first) {
-          first = false;
-        } else {
-          f_service_ << ", ";
-        }
-
-        f_service_ << (*x_iter)->get_name() << ": "
-                   << full_type_name((*x_iter)->get_type());
-      }
-      f_service_ << "}";
     }
+
+    f_service_ << ", args: [";
+    first = true;
+    for (a_iter = fields.begin(); a_iter != fields.end(); ++a_iter) {
+      if (first) {
+        first = false;
+      } else {
+        f_service_ << ", ";
+      }
+      f_service_ << ":" << (*a_iter)->get_name();
+    }
+    f_service_ << "]";
+
+    f_service_ << ", exceptions: {";
+    first = true;
+    for (x_iter = xceptions.begin(); x_iter != xceptions.end(); ++x_iter) {
+      if (first) {
+        first = false;
+      } else {
+        f_service_ << ", ";
+      }
+
+      f_service_ << (*x_iter)->get_name() << ": "
+                 << full_type_name((*x_iter)->get_type());
+    }
+    f_service_ << "}";
 
     f_service_ << ", oneway: " << (tfunction->is_oneway() ? "true" : "false");
     f_service_ << ", legacy_annotations: THRIFT_METHOD_" << upcase_string(tfunction->get_name()) << "_LEGACY_ANNOTATIONS";
