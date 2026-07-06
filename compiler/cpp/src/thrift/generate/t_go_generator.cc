@@ -947,6 +947,7 @@ string t_go_generator::go_imports_begin(bool consts) {
   std::vector<string> system_packages;
   system_packages.push_back("bytes");
   system_packages.push_back("context");
+  system_packages.push_back("io");
   system_packages.push_back("reflect");
   // If not writing constants, and there are enums, need extra imports.
   if (!consts && get_program()->get_enums().size() > 0) {
@@ -972,7 +973,8 @@ string t_go_generator::go_imports_end() {
       "var _ = fmt.Printf\n"
       "var _ = context.Background\n"
       "var _ = reflect.DeepEqual\n"
-      "var _ = bytes.Equal\n\n");
+      "var _ = bytes.Equal\n"
+      "var _ = io.EOF\n\n");
 
   return r;
 }
@@ -2319,7 +2321,7 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
   f_const_values_ << "  thrift.RegisterService(" << def_name << ")" << endl;
 
     generate_go_docstring(f_types_, tservice);
-    f_types_ << indent() << "type " << interfaceName << "Client interface {";
+    f_types_ << indent() << "type " << interfaceName << "ClientIface interface {";
     indent_up();
     f_types_ << interfaceName << endl;
     indent_down();
@@ -2344,7 +2346,7 @@ void t_go_generator::generate_service_interface(t_service* tservice) {
     }
 
     generate_go_docstring(f_types_, tservice);
-    f_types_ << indent() << "type " << interfaceName << "Client interface {"
+    f_types_ << indent() << "type " << interfaceName << "ClientIface interface {"
                << extends_if_client;
     indent_up();
     vector<t_function*> functions = tservice->get_functions();
@@ -2414,6 +2416,9 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
   extends_field = extends_client.substr(extends_client.find(".") + 1);
 
+  // The embedded client field depends on whether the service has streaming methods.
+  string client_field = tservice->is_streaming() ? "TStreamingClient" : "TClient";
+
   generate_go_docstring(f_types_, tservice);
   f_types_ << indent() << "type " << serviceName << "Client struct {" << endl;
   indent_up();
@@ -2421,7 +2426,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   if (!extends_client.empty()) {
     f_types_ << indent() << "*" << extends_client << endl;
   } else {
-    f_types_ << indent() << "thrift.TClient" << endl;
+    f_types_ << indent() << "thrift." << client_field << endl;
   }
 
   indent_down();
@@ -2439,24 +2444,33 @@ void t_go_generator::generate_service_client(t_service* tservice) {
   f_types_ << indent() << "return nil, err" << endl;
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
-  f_types_ << indent() << "return New" << serviceName << "Client(cl), nil" << endl;
+  if (tservice->is_streaming()) {
+    f_types_ << indent() << "sc, ok := cl.(thrift." << client_field << ")" << endl;
+    f_types_ << indent() << "if !ok {" << endl;
+    indent_up();
+    f_types_ << indent() << "return nil, thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, \"" << serviceName << " requires a thrift.TStreamingClient\")" << endl;
+    indent_down();
+    f_types_ << indent() << "}" << endl;
+    f_types_ << indent() << "return New" << serviceName << "Client(sc), nil" << endl;
+  } else {
+    f_types_ << indent() << "return New" << serviceName << "Client(cl), nil" << endl;
+  }
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
 
   f_types_ << indent() << "func New" << serviceName
-             << "Client(cl thrift.TClient) *" << serviceName
+             << "Client(cl thrift." << client_field << ") *" << serviceName
              << "Client {" << endl;
   indent_up();
 
   if (!extends_client.empty()) {
     f_types_ << indent() << "return &" << serviceName << "Client{" <<  extends_field << ": " << extends_client_new << "(cl)}" << endl;
   } else {
-    f_types_ << indent() << "return &" << serviceName << "Client{TClient: cl}" << endl;
+    f_types_ << indent() << "return &" << serviceName << "Client{" << client_field << ": cl}" << endl;
   }
 
   indent_down();
   f_types_ << indent() << "}" << endl << endl;
-
 
   // Generate client method implementations
   vector<t_function*> functions = tservice->get_functions();
@@ -2470,7 +2484,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     // Open function
     generate_go_docstring(f_types_, (*f_iter));
     f_types_ << indent() << "func (p *" << serviceName << "Client) "
-               << function_signature_if(*f_iter, "", true) << " {" << endl;
+               << function_signature_if(*f_iter, "", true, true) << " {" << endl;
     indent_up();
 
     std::string argsname = publicize((*f_iter)->get_name() + "_args", true);
@@ -2489,11 +2503,11 @@ void t_go_generator::generate_service_client(t_service* tservice) {
 
     switch ((*f_iter)->get_rpc_type()) {
     case t_function::T_ONEWAY:
-      f_types_ << indent() << "return p.client.CallUnary(ctx, \"" << (*f_iter)->get_name() << "\", &args)" << endl;
+      f_types_ << indent() << "return p.CallUnary(ctx, \"" << (*f_iter)->get_name() << "\", &args)" << endl;
       break;
     case t_function::T_REQUEST_RESPONSE:
       f_types_ << indent() << "result := " << resultname << "{}" << endl;
-      f_types_ << indent() << "if err =  p.client.CallBinary(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result); err != nil {" << endl;
+      f_types_ << indent() << "if err =  p.CallBinary(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result); err != nil {" << endl;
       if ((*f_iter)->get_returntype()->is_void()) {
         f_types_ << indent() << "return err" << endl;
       } else {
@@ -2538,7 +2552,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     case t_function::T_STREAM_CLIENT:
       f_types_ << indent() << "result := " << resultname << "{}" << endl;
 
-      f_types_ << indent() << "clientSink, err :=  p.client.StreamClient(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
+      f_types_ << indent() << "clientSink, err :=  p.TStreamingClient.StreamClient(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
       f_types_ << "if err != nil {" << endl;
       if ((*f_iter)->get_returntype()->is_void()) {
         f_types_ << indent() << "return nil, err" << endl;
@@ -2578,7 +2592,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     case t_function::T_STREAM_SERVER:
       f_types_ << indent() << "result := " << resultname << "{}" << endl;
 
-      f_types_ << indent() << "clientStream, err :=  p.client.StreamServer(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
+      f_types_ << indent() << "clientStream, err :=  p.TStreamingClient.StreamServer(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
       f_types_ << "if err != nil {" << endl;
       if ((*f_iter)->get_returntype()->is_void()) {
         f_types_ << indent() << "return nil, err" << endl;
@@ -2618,7 +2632,7 @@ void t_go_generator::generate_service_client(t_service* tservice) {
     case t_function::T_STREAM_BIDI:
       f_types_ << indent() << "result := " << resultname << "{}" << endl;
 
-      f_types_ << indent() << "clientStream, clientSink, err :=  p.client.StreamBidi(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
+      f_types_ << indent() << "clientStream, clientSink, err :=  p.TStreamingClient.StreamBidi(ctx, \"" << (*f_iter)->get_name() << "\", &args, &result)" << endl << endl;
       f_types_ << "if err != nil {" << endl;
       if ((*f_iter)->get_returntype()->is_void()) {
         f_types_ << indent() << "return nil, nil, err" << endl;
@@ -2697,7 +2711,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
 
   string pServiceName(privatize(serviceName));
 
-  f_types_ << indent() << "func New" << serviceName << "ProcessorProvider(handler " << serviceName
+  f_types_ << indent() << "func New" << serviceName << "ProcessorProvider(handler " << serviceName << "Handler"
              << ", provider thrift.TProcessorProvider) (thrift.TProcessor, error) {" << endl;
   f_types_ << indent() << "p, err := provider.Build(\"" << tservice->get_program()->get_namespace("*") << "\", \"" << tservice->get_name() << "\")" << endl;
   f_types_ << indent() << "if err != nil {" << endl;
@@ -2708,7 +2722,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
   f_types_ << indent() << "  return New" << serviceName << "ProcessorFactory(handler, p), nil" << endl;
   f_types_ << indent() << "}" << endl << endl;
 
-  f_types_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName
+  f_types_ << indent() << "func New" << serviceName << "Processor(handler " << serviceName << "Handler"
              << ", middlewares []thrift.TMiddleware) thrift.TProcessor {" << endl;
 
   if (!extends_processor.empty()) {
@@ -2719,7 +2733,7 @@ void t_go_generator::generate_service_server(t_service* tservice) {
   f_types_ << indent() << "  return New" << serviceName << "ProcessorFactory(handler, p)" << endl;
   f_types_ << indent() << "}" << endl << endl;
 
-  f_types_ << indent() << "func New" << serviceName << "ProcessorFactory(handler " << serviceName
+  f_types_ << indent() << "func New" << serviceName << "ProcessorFactory(handler " << serviceName << "Handler"
              << ", p thrift.TProcessor) thrift.TProcessor {" << endl;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     string escapedFuncName(escape_string((*f_iter)->get_name()));
