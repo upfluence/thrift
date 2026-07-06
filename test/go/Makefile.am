@@ -19,6 +19,7 @@
 
 THRIFTCMD = $(THRIFT) -out gen --gen go$(COMPILER_EXTRAFLAG)
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
+STREAMINGTEST = $(top_srcdir)/test/StreamingTest.thrift
 
 ThriftTest.thrift: $(THRIFTTEST)
 	grep -v list.*map.*list.*map $(THRIFTTEST) > ThriftTest.thrift
@@ -27,6 +28,7 @@ gopath.stamp: $(THRIFT) ThriftTest.thrift
 	mkdir -p gen
 	$(THRIFTCMD) ThriftTest.thrift
 	$(THRIFTCMD) ../StressTest.thrift
+	$(THRIFTCMD) $(STREAMINGTEST)
 	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo $(golang_version)\n' > $(top_srcdir)/go.mod
 	$(GO) mod tidy
 	touch gopath.stamp
