@@ -29,6 +29,14 @@ module Thrift
       @ready = true
     end
 
+    def send_message(name, args_class, args = {})
+      @seqid += 1
+      @oprot.write_message_begin(name, MessageTypes::CALL, @seqid)
+      data = args_class.new
+      args.each { |k, v| data.send("#{k}=", v) }
+      send_message_instance(data)
+    end
+
     def send_message_instance(data)
       begin
         data.write(@oprot)

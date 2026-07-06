@@ -116,11 +116,28 @@ module Thrift
                     end
     end
 
+    def read_args(iprot, args_class)
+      args = args_class.new
+      args.read(iprot)
+      iprot.read_message_end
+      args
+    end
+
+    def write_result(result, oprot, name, seqid)
+      oprot.write_message_begin(name, MessageTypes::REPLY, seqid)
+      result.write(oprot)
+      oprot.write_message_end
+      oprot.trans.flush
+    end
+
     def process(iprot, oprot)
-      name, type, seqid = iprot.read_message_begin
+      name, _type, seqid = iprot.read_message_begin
 
       mth = "process_#{name}"
-      send(mth, seqid, iprot, oprot) if self.class.method_defined? mth
+      if respond_to?(mth)
+        send(mth, seqid, iprot, oprot)
+        return true
+      end
 
       (
         @processors[name] || UnkwonFunctionProcessor.new(name)
@@ -179,7 +196,7 @@ module Thrift
       end
     end
 
-    class UnaryProcessor
+    class UnaryProcessor < BaseProcessor
       def initialize(name, info, middleware, handler)
         @middleware = middleware
         @handler = handler
