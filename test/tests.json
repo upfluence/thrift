@@ -122,6 +122,60 @@
     "workdir": "go/bin"
   },
   {
+    "name": "go-streaming",
+    "server": {
+      "command": [
+        "streamingserver",
+        "--certPath=../../keys"
+      ]
+    },
+    "client": {
+      "timeout": 10,
+      "command": [
+        "streamingclient"
+      ]
+    },
+    "transports": [
+      "buffered",
+      "framed"
+    ],
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "streaming-binary:binary"
+    ],
+    "workdir": "go/bin_out"
+  },
+  {
+    "name": "rb-streaming",
+    "server": {
+      "command": [
+        "ruby",
+        "../integration/StreamingServer.rb"
+      ]
+    },
+    "client": {
+      "timeout": 10,
+      "command": [
+        "ruby",
+        "../integration/StreamingClient.rb",
+        "--"
+      ]
+    },
+    "transports": [
+      "buffered",
+      "framed"
+    ],
+    "sockets": [
+      "ip"
+    ],
+    "protocols": [
+      "streaming-binary:binary"
+    ],
+    "workdir": "rb/gen-rb"
+  },
+  {
     "name": "java",
     "join_args": false,
     "server": {

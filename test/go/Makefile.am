@@ -39,11 +39,19 @@ genmock: gopath.stamp
 		-destination=src/common/mock_handler.go \
 		-package=common
 
-check: gopath.stamp genmock
+bin_out/streamingserver bin_out/streamingclient bin_out/testserver bin_out/testclient: gopath.stamp
+	mkdir -p bin_out
+	$(GO) build -o bin_out/testserver ./src/bin/testserver/
+	$(GO) build -o bin_out/testclient ./src/bin/testclient/
+	$(GO) build -o bin_out/streamingserver ./src/bin/streamingserver/
+	$(GO) build -o bin_out/streamingclient ./src/bin/streamingclient/
+
+check: gopath.stamp genmock bin_out/streamingserver bin_out/streamingclient bin_out/testserver bin_out/testclient
 	$(GO) test -v ./src/common/...
 
 clean-local:
 	$(RM) -r gen gopath.stamp bin ThriftTest.thrift go.sum $(top_srcdir)/go.mod $(top_srcdir)/go.sum
+	$(RM) -f bin_out/streamingserver bin_out/streamingclient bin_out/testserver bin_out/testclient
 
 EXTRA_DIST = \
 	src/bin \

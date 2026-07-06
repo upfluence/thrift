@@ -20,13 +20,14 @@
 package main
 
 import (
-	"common"
 	"context"
 	"flag"
-	"gen/thrifttest"
 	t "log"
 	"reflect"
-	"thrift"
+
+	thrift "github.com/upfluence/thrift/lib/go/thrift"
+	"github.com/upfluence/thrift/test/go/gen/thrifttest"
+	"github.com/upfluence/thrift/test/go/src/common"
 )
 
 var host = flag.String("host", "localhost", "Host to connect")
