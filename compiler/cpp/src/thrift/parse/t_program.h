@@ -59,19 +59,47 @@
 class t_program : public t_doc {
 public:
   t_program(std::string path, std::string name)
-    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), scope_(new t_scope), recursive_(false) {}
+    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), scope_(new t_scope), owns_scope_(true), recursive_(false) {}
 
-  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), recursive_(false)  {
+  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), owns_scope_(true), recursive_(false)  {
     name_ = program_name(path);
     scope_ = new t_scope();
   }
 
   ~t_program() override {
-    if (scope_) {
+    if (scope_ && owns_scope_) {
       delete scope_;
       scope_ = nullptr;
     }
   }
+
+  // Shallow copy: all pointer collections are shared; scope is borrowed (not
+  // owned) so the copy's destructor will not free it.
+  t_program(const t_program& other)
+    : t_doc(other),
+      path_(other.path_),
+      name_(other.name_),
+      include_site_(other.include_site_),
+      out_path_(other.out_path_),
+      out_path_is_absolute_(other.out_path_is_absolute_),
+      namespace_(other.namespace_),
+      includes_(other.includes_),
+      include_prefix_(other.include_prefix_),
+      std_path_(other.std_path_),
+      scope_(other.scope_),
+      owns_scope_(false),
+      typedefs_(other.typedefs_),
+      enums_(other.enums_),
+      consts_(other.consts_),
+      objects_(other.objects_),
+      structs_(other.structs_),
+      xceptions_(other.xceptions_),
+      services_(other.services_),
+      namespaces_(other.namespaces_),
+      namespace_annotations_(other.namespace_annotations_),
+      cpp_includes_(other.cpp_includes_),
+      c_includes_(other.c_includes_),
+      recursive_(other.recursive_) {}
 
   bool is_std_path() const {
     return path_.rfind(std_path_ + "/types", 0) == 0;
@@ -162,6 +190,25 @@ public:
     }
 
     return false;
+  }
+
+  /**
+   * Returns a new t_program identical to this one but with all streaming
+   * functions removed from each service. Non-service elements and includes
+   * are shared by pointer. The returned program borrows this program's scope.
+   *
+   * The caller owns the returned program.
+   */
+  t_program* without_streaming() const {
+    t_program* p = new t_program(*this);
+    p->services_.clear();
+
+    for (std::vector<t_service*>::const_iterator svc_iter = services_.begin();
+         svc_iter != services_.end(); ++svc_iter) {
+      p->services_.push_back((*svc_iter)->without_streaming(p));
+    }
+
+    return p;
   }
 
   /**
@@ -440,6 +487,10 @@ private:
 
   // Recursive code generation
   bool recursive_;
+
+  // Whether this program owns its scope (false for filtered copies that borrow
+  // the scope from their parent program)
+  bool owns_scope_;
 };
 
 #endif

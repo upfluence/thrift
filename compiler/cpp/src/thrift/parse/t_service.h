@@ -64,6 +64,33 @@ public:
     return false;
   }
 
+  /**
+   * Returns a new t_service owned by `program` that contains only the
+   * non-streaming functions of this service. extends_ is filtered
+   * recursively. Doc is copied as-is.
+   */
+  t_service* without_streaming(t_program* program) const {
+    t_service* filtered = new t_service(program);
+    filtered->set_name(get_name());
+
+    if (extends_ != nullptr) {
+      filtered->set_extends(extends_->without_streaming(program));
+    }
+
+    if (has_doc()) {
+      filtered->set_doc(get_doc());
+    }
+
+    for (std::vector<t_function*>::const_iterator iter = functions_.begin();
+         iter != functions_.end(); ++iter) {
+      if (!(*iter)->get_return()->is_streaming()) {
+        filtered->add_function(*iter);
+      }
+    }
+
+    return filtered;
+  }
+
   t_service* get_extends() { return extends_; }
 
   const t_service* get_extends() const { return extends_; }

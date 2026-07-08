@@ -1076,8 +1076,15 @@ void generate(t_program* program, const vector<string>& generator_strings, const
     for (iter = generator_strings.begin(); iter != generator_strings.end(); ++iter) {
       t_generator* generator = t_generator_registry::get_generator(program, *iter);
 
+      t_program* filtered = nullptr;
       if (!generator->support_streaming() && program->is_streaming()) {
-        failure("Generator \"%s\" does not support streaming", iter->c_str());
+        // The generator does not support streaming. Rather than failing, build a
+        // filtered view of the program that omits streaming functions (and any
+        // services that become empty after filtering), then recreate the generator
+        // against that view.
+        delete generator;
+        filtered = program->without_streaming();
+        generator = t_generator_registry::get_generator(filtered, *iter);
       }
 
       if (generator == NULL) {
@@ -1101,6 +1108,8 @@ void generate(t_program* program, const vector<string>& generator_strings, const
 
         delete generator;
       }
+
+      delete filtered;
     }
   } catch (string s) {
     failure("Error: %s\n", s.c_str());
