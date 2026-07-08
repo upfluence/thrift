@@ -75,10 +75,12 @@ private:
                                : ::types::type_definition::ScalarType::String;
           break;
         case t_base_type::TYPE_BOOL:   st = ::types::type_definition::ScalarType::Bool;   break;
+        case t_base_type::TYPE_I8:     st = ::types::type_definition::ScalarType::I8;     break;
         case t_base_type::TYPE_I16:    st = ::types::type_definition::ScalarType::I16;    break;
         case t_base_type::TYPE_I32:    st = ::types::type_definition::ScalarType::I32;    break;
         case t_base_type::TYPE_I64:    st = ::types::type_definition::ScalarType::I64;    break;
         case t_base_type::TYPE_DOUBLE: st = ::types::type_definition::ScalarType::Double; break;
+        case t_base_type::TYPE_VOID: st = ::types::type_definition::ScalarType::Void;     break;
         default: break;
       }
       t.__set_scalar_type(st);
@@ -148,6 +150,15 @@ private:
       fd.__set_annotation(build_annotation(f));
       fd.__set_return_type(build_type(f->get_returntype()));
       fd.__set_oneway_(f->is_oneway());
+
+      if (f->get_return()->get_sink() != NULL) {
+        fd.__set_sink_type(build_type(f->get_return()->get_sink()));
+      }
+
+      if (f->get_return()->get_stream() != NULL) {
+        fd.__set_stream_type(build_type(f->get_return()->get_stream()));
+      }
+
       std::vector<::types::struct_definition::FieldDefinition> args;
       for (const t_field* a : f->get_arglist()->get_members()) {
         ::types::struct_definition::FieldDefinition field;
