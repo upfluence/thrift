@@ -87,6 +87,8 @@ public:
   void generate_service(t_service* tservice) override;
   void generate_struct(t_struct* tstruct) override;
 
+  bool support_streaming() const override { return true; }
+
 private:
   bool should_merge_includes_;
 
@@ -640,6 +642,34 @@ void t_json_generator::generate_function(t_function* tfunc) {
 
   write_key_and_string("returnTypeId", get_type_name(tfunc->get_returntype()));
   write_type_spec_object("returnType", tfunc->get_returntype());
+
+  if (tfunc->get_return()->get_sink() != NULL) {
+    write_key_and_string("sinkTypeId", get_type_name(tfunc->get_return()->get_sink()));
+    write_type_spec_object("sinkType", tfunc->get_return()->get_sink());
+  }
+
+  if (tfunc->get_return()->get_stream() != NULL) {
+    write_key_and_string("streamTypeId", get_type_name(tfunc->get_return()->get_stream()));
+    write_type_spec_object("streamType", tfunc->get_return()->get_stream());
+  }
+
+  switch (tfunc->get_rpc_type()) {
+  case t_function::T_STREAM_CLIENT:
+    write_key_and_string("rpcType", "stream_client");
+    break;
+  case t_function::T_STREAM_SERVER:
+    write_key_and_string("rpcType", "stream_server");
+    break;
+  case t_function::T_STREAM_BIDI:
+    write_key_and_string("rpcType", "stream_bidi");
+    break;
+  case t_function::T_ONEWAY:
+    write_key_and_string("rpcType", "oneway");
+    break;
+  default:
+    write_key_and_string("rpcType", "request_response");
+    break;
+  }
 
   write_key_and_bool("oneway", tfunc->is_oneway());
 
