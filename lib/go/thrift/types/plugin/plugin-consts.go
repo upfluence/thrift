@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/program_definition"
+	"io"
 	"reflect"
 )
 
@@ -18,6 +19,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = program_definition.GoUnusedProtection__
 

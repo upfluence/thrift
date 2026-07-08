@@ -14,6 +14,7 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift/types/struct_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/value"
+	"io"
 	"reflect"
 )
 
@@ -23,6 +24,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = constant_definition.GoUnusedProtection__
 var _ = enum_definition.GoUnusedProtection__

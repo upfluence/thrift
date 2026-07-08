@@ -12,6 +12,7 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift/types/core"
 	"github.com/upfluence/thrift/lib/go/thrift/types/struct_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
+	"io"
 	"reflect"
 )
 
@@ -21,6 +22,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = core.GoUnusedProtection__
 var _ = annotation_definition.GoUnusedProtection__
@@ -33,12 +35,16 @@ var _ = struct_definition.GoUnusedProtection__
 //   - ReturnType
 //   - Exceptions
 //   - Oneway_
+//   - SinkType
+//   - StreamType
 type FunctionDefinition struct {
 	Annotation *annotation_definition.AnnotationDefinition `thrift:"annotation,1,required" db:"annotation" json:"annotation"`
 	Arguments  []*struct_definition.FieldDefinition        `thrift:"arguments,2,required" db:"arguments" json:"arguments"`
 	ReturnType *type_definition.TypeDefinition             `thrift:"return_type,3,required" db:"return_type" json:"return_type"`
 	Exceptions []*core.Reference                           `thrift:"exceptions,4,required" db:"exceptions" json:"exceptions"`
 	Oneway_    bool                                        `thrift:"oneway_,5,required" db:"oneway_" json:"oneway_"`
+	SinkType   *type_definition.TypeDefinition             `thrift:"sink_type,6" db:"sink_type" json:"sink_type,omitempty"`
+	StreamType *type_definition.TypeDefinition             `thrift:"stream_type,7" db:"stream_type" json:"stream_type,omitempty"`
 }
 
 func NewFunctionDefinition() *FunctionDefinition {
@@ -88,6 +94,22 @@ var functionDefinitionStructDefinition = thrift.StructDefinition{
 		{
 			AnnotatedDefinition: thrift.AnnotatedDefinition{
 				Name:                  "oneway_",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "sink_type",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "stream_type",
 				LegacyAnnotations:     map[string]string{},
 				StructuredAnnotations: []thrift.RegistrableStruct{},
 			},
@@ -148,12 +170,46 @@ func (p *FunctionDefinition) GetOneway_() bool {
 func (p *FunctionDefinition) SetOneway_(v bool) {
 	p.Oneway_ = v
 }
+
+var FunctionDefinition_SinkType_DEFAULT *type_definition.TypeDefinition
+
+func (p *FunctionDefinition) GetSinkType() *type_definition.TypeDefinition {
+	if !p.IsSetSinkType() {
+		return FunctionDefinition_SinkType_DEFAULT
+	}
+	return p.SinkType
+}
+
+func (p *FunctionDefinition) SetSinkType(v *type_definition.TypeDefinition) {
+	p.SinkType = v
+}
+
+var FunctionDefinition_StreamType_DEFAULT *type_definition.TypeDefinition
+
+func (p *FunctionDefinition) GetStreamType() *type_definition.TypeDefinition {
+	if !p.IsSetStreamType() {
+		return FunctionDefinition_StreamType_DEFAULT
+	}
+	return p.StreamType
+}
+
+func (p *FunctionDefinition) SetStreamType(v *type_definition.TypeDefinition) {
+	p.StreamType = v
+}
 func (p *FunctionDefinition) IsSetAnnotation() bool {
 	return p.Annotation != nil
 }
 
 func (p *FunctionDefinition) IsSetReturnType() bool {
 	return p.ReturnType != nil
+}
+
+func (p *FunctionDefinition) IsSetSinkType() bool {
+	return p.SinkType != nil
+}
+
+func (p *FunctionDefinition) IsSetStreamType() bool {
+	return p.StreamType != nil
 }
 
 func (p *FunctionDefinition) Read(iprot thrift.TProtocol) error {
@@ -226,6 +282,26 @@ func (p *FunctionDefinition) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 				issetOneway_ = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 6:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField6(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 7:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField7(iprot); err != nil {
+					return err
+				}
 			} else {
 				if err := iprot.Skip(fieldTypeId); err != nil {
 					return err
@@ -326,6 +402,22 @@ func (p *FunctionDefinition) ReadField5(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *FunctionDefinition) ReadField6(iprot thrift.TProtocol) error {
+	p.SinkType = type_definition.NewTypeDefinition()
+	if err := p.SinkType.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.SinkType), err)
+	}
+	return nil
+}
+
+func (p *FunctionDefinition) ReadField7(iprot thrift.TProtocol) error {
+	p.StreamType = type_definition.NewTypeDefinition()
+	if err := p.StreamType.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.StreamType), err)
+	}
+	return nil
+}
+
 func (p *FunctionDefinition) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("FunctionDefinition"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -344,6 +436,12 @@ func (p *FunctionDefinition) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField5(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField6(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField7(oprot); err != nil {
 			return err
 		}
 	}
@@ -437,17 +535,49 @@ func (p *FunctionDefinition) writeField5(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *FunctionDefinition) writeField6(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSinkType() {
+		if err := oprot.WriteFieldBegin("sink_type", thrift.STRUCT, 6); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:sink_type: ", p), err)
+		}
+		if err := p.SinkType.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.SinkType), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 6:sink_type: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *FunctionDefinition) writeField7(oprot thrift.TProtocol) (err error) {
+	if p.IsSetStreamType() {
+		if err := oprot.WriteFieldBegin("stream_type", thrift.STRUCT, 7); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:stream_type: ", p), err)
+		}
+		if err := p.StreamType.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.StreamType), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 7:stream_type: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *FunctionDefinition) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"FunctionDefinition({annotation: %v, arguments: %v, return_type: %v, exceptions: %v, oneway_: %v})",
+		"FunctionDefinition({annotation: %v, arguments: %v, return_type: %v, exceptions: %v, oneway_: %v, sink_type: %v, stream_type: %v})",
 		p.GetAnnotation(),
 		p.GetArguments(),
 		p.GetReturnType(),
 		p.GetExceptions(),
 		p.GetOneway_(),
+		p.GetSinkType(),
+		p.GetStreamType(),
 	)
 }
 

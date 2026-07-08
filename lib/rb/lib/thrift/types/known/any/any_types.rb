@@ -42,7 +42,7 @@ module Thrift
           FIELDS = {
             THRIFT_FIELD_INDEX_TYPE => {type: ::Thrift::Types::STRING, name: 'type', legacy_annotations: THRIFT_FIELD_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPE_STRUCTURED_ANNOTATIONS},
             THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRING, name: 'value', binary: true, legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 

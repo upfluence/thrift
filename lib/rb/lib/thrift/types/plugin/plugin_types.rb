@@ -53,7 +53,7 @@ module Thrift
           THRIFT_FIELD_INDEX_PROGRAM => {type: ::Thrift::Types::STRUCT, name: 'program', class: ::Thrift::Types::Program_definition::ProgramDefinition, legacy_annotations: THRIFT_FIELD_PROGRAM_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_PROGRAM_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_LANGUAGE => {type: ::Thrift::Types::STRING, name: 'language', legacy_annotations: THRIFT_FIELD_LANGUAGE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LANGUAGE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_OPTIONS => {type: ::Thrift::Types::MAP, name: 'options', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRING}, legacy_annotations: THRIFT_FIELD_OPTIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_OPTIONS_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -89,7 +89,7 @@ module Thrift
 
         FIELDS = {
           THRIFT_FIELD_INDEX_FILES => {type: ::Thrift::Types::MAP, name: 'files', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRING, binary: true}, legacy_annotations: THRIFT_FIELD_FILES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FILES_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 

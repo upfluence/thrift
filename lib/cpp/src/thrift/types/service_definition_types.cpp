@@ -37,6 +37,16 @@ void FunctionDefinition::__set_exceptions(const std::vector< ::types::core::Refe
 void FunctionDefinition::__set_oneway_(const bool val) {
   this->oneway_ = val;
 }
+
+void FunctionDefinition::__set_sink_type(const  ::types::type_definition::TypeDefinition& val) {
+  this->sink_type = val;
+__isset.sink_type = true;
+}
+
+void FunctionDefinition::__set_stream_type(const  ::types::type_definition::TypeDefinition& val) {
+  this->stream_type = val;
+__isset.stream_type = true;
+}
 std::ostream& operator<<(std::ostream& out, const FunctionDefinition& obj)
 {
   obj.printTo(out);
@@ -134,6 +144,22 @@ uint32_t FunctionDefinition::read(::apache::thrift::protocol::TProtocol* iprot) 
           xfer += iprot->skip(ftype);
         }
         break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->sink_type.read(iprot);
+          this->__isset.sink_type = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 7:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->stream_type.read(iprot);
+          this->__isset.stream_type = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -197,6 +223,16 @@ uint32_t FunctionDefinition::write(::apache::thrift::protocol::TProtocol* oprot)
   xfer += oprot->writeBool(this->oneway_);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.sink_type) {
+    xfer += oprot->writeFieldBegin("sink_type", ::apache::thrift::protocol::T_STRUCT, 6);
+    xfer += this->sink_type.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.stream_type) {
+    xfer += oprot->writeFieldBegin("stream_type", ::apache::thrift::protocol::T_STRUCT, 7);
+    xfer += this->stream_type.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -209,6 +245,9 @@ void swap(FunctionDefinition &a, FunctionDefinition &b) {
   swap(a.return_type, b.return_type);
   swap(a.exceptions, b.exceptions);
   swap(a.oneway_, b.oneway_);
+  swap(a.sink_type, b.sink_type);
+  swap(a.stream_type, b.stream_type);
+  swap(a.__isset, b.__isset);
 }
 
 FunctionDefinition::FunctionDefinition(const FunctionDefinition& other12) {
@@ -217,6 +256,9 @@ FunctionDefinition::FunctionDefinition(const FunctionDefinition& other12) {
   return_type = other12.return_type;
   exceptions = other12.exceptions;
   oneway_ = other12.oneway_;
+  sink_type = other12.sink_type;
+  stream_type = other12.stream_type;
+  __isset = other12.__isset;
 }
 FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& other13) {
   annotation = other13.annotation;
@@ -224,6 +266,9 @@ FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& othe
   return_type = other13.return_type;
   exceptions = other13.exceptions;
   oneway_ = other13.oneway_;
+  sink_type = other13.sink_type;
+  stream_type = other13.stream_type;
+  __isset = other13.__isset;
   return *this;
 }
 void FunctionDefinition::printTo(std::ostream& out) const {
@@ -234,6 +279,8 @@ void FunctionDefinition::printTo(std::ostream& out) const {
   out << ", " << "return_type=" << to_string(return_type);
   out << ", " << "exceptions=" << to_string(exceptions);
   out << ", " << "oneway_=" << to_string(oneway_);
+  out << ", " << "sink_type="; (__isset.sink_type ? (out << to_string(sink_type)) : (out << "<null>"));
+  out << ", " << "stream_type="; (__isset.stream_type ? (out << to_string(stream_type)) : (out << "<null>"));
   out << ")";
 }
 

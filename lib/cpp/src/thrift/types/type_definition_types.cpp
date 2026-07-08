@@ -21,7 +21,9 @@ int _kScalarTypeValues[] = {
   ScalarType::I16,
   ScalarType::I32,
   ScalarType::I64,
-  ScalarType::Double
+  ScalarType::Double,
+  ScalarType::I8,
+  ScalarType::Void
 };
 const char* _kScalarTypeNames[] = {
   "Unknown",
@@ -31,9 +33,11 @@ const char* _kScalarTypeNames[] = {
   "I16",
   "I32",
   "I64",
-  "Double"
+  "Double",
+  "I8",
+  "Void"
 };
-const std::map<int, const char*> _ScalarType_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(8, _kScalarTypeValues, _kScalarTypeNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+const std::map<int, const char*> _ScalarType_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(10, _kScalarTypeValues, _kScalarTypeNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
 
 std::ostream& operator<<(std::ostream& out, const ScalarType::type& val) {
   std::map<int, const char*>::const_iterator it = _ScalarType_VALUES_TO_NAMES.find(val);

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/program_definition"
+	"io"
 	"reflect"
 )
 
@@ -18,6 +19,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = program_definition.GoUnusedProtection__
 
@@ -501,6 +503,14 @@ var pluginServiceDefinition = thrift.ServiceDefinition{
 	},
 }
 
+type PluginClientIface interface {
+	Plugin
+}
+
+type PluginHandler interface {
+	Plugin
+}
+
 type PluginClient struct {
 	thrift.TClient
 }
@@ -525,7 +535,7 @@ func (p *PluginClient) GenerateCode(ctx thrift.Context, req *GenerateCodeRequest
 		Req: req,
 	}
 	result := PluginGenerateCodeResult{}
-	if err := p.CallBinary(ctx, "generate_code", &args, &result); err != nil {
+	if err = p.CallBinary(ctx, "generate_code", &args, &result); err != nil {
 		return res, err
 	}
 
@@ -536,7 +546,7 @@ func (p *PluginClient) GenerateCode(ctx thrift.Context, req *GenerateCodeRequest
 	return result.GetSuccess(), nil
 }
 
-func NewPluginProcessorProvider(handler Plugin, provider thrift.TProcessorProvider) (thrift.TProcessor, error) {
+func NewPluginProcessorProvider(handler PluginHandler, provider thrift.TProcessorProvider) (thrift.TProcessor, error) {
 	p, err := provider.Build("types.plugin", "Plugin")
 	if err != nil {
 		return nil, err
@@ -545,12 +555,12 @@ func NewPluginProcessorProvider(handler Plugin, provider thrift.TProcessorProvid
 	return NewPluginProcessorFactory(handler, p), nil
 }
 
-func NewPluginProcessor(handler Plugin, middlewares []thrift.TMiddleware) thrift.TProcessor {
+func NewPluginProcessor(handler PluginHandler, middlewares []thrift.TMiddleware) thrift.TProcessor {
 	p := thrift.NewTStandardProcessor(middlewares)
 	return NewPluginProcessorFactory(handler, p)
 }
 
-func NewPluginProcessorFactory(handler Plugin, p thrift.TProcessor) thrift.TProcessor {
+func NewPluginProcessorFactory(handler PluginHandler, p thrift.TProcessor) thrift.TProcessor {
 	p.AddProcessor(
 		"generate_code",
 		thrift.NewTBinaryProcessorFunction(p, "generate_code", func() thrift.TRequest { return &PluginGenerateCodeArgs{} }, &pluginProcessorGenerateCode{handler: handler}),
@@ -559,7 +569,7 @@ func NewPluginProcessorFactory(handler Plugin, p thrift.TProcessor) thrift.TProc
 }
 
 type pluginProcessorGenerateCode struct {
-	handler Plugin
+	handler PluginHandler
 }
 
 func (p *pluginProcessorGenerateCode) Handle(ctx thrift.Context, req thrift.TRequest) (thrift.TResponse, error) {

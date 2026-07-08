@@ -42,7 +42,7 @@ module Thrift
           FIELDS = {
             THRIFT_FIELD_INDEX_SECONDS => {type: ::Thrift::Types::I64, name: 'seconds', legacy_annotations: THRIFT_FIELD_SECONDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SECONDS_STRUCTURED_ANNOTATIONS},
             THRIFT_FIELD_INDEX_NANOS => {type: ::Thrift::Types::I32, name: 'nanos', legacy_annotations: THRIFT_FIELD_NANOS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NANOS_STRUCTURED_ANNOTATIONS}
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 

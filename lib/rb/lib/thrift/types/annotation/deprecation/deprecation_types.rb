@@ -27,7 +27,7 @@ module Thrift
 
           FIELDS = {
 
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 

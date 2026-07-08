@@ -79,7 +79,7 @@ module Thrift
           THRIFT_FIELD_INDEX_ID => {type: ::Thrift::Types::I32, name: 'id', legacy_annotations: THRIFT_FIELD_ID_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ID_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_TYPE => {type: ::Thrift::Types::STRUCT, name: 'type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_REQUIREDNESS => {type: ::Thrift::Types::I32, name: 'requiredness', enum_class: ::Thrift::Types::Struct_definition::Requiredness, legacy_annotations: THRIFT_FIELD_REQUIREDNESS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REQUIREDNESS_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -135,7 +135,7 @@ module Thrift
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_KIND => {type: ::Thrift::Types::I32, name: 'kind', enum_class: ::Thrift::Types::Struct_definition::StructKind, legacy_annotations: THRIFT_FIELD_KIND_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_KIND_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_FIELDS => {type: ::Thrift::Types::LIST, name: 'fields', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Struct_definition::FieldDefinition}, legacy_annotations: THRIFT_FIELD_FIELDS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FIELDS_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 

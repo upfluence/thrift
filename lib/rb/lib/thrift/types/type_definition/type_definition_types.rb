@@ -21,8 +21,10 @@ module Thrift
         I32 = 5
         I64 = 6
         Double = 7
-        VALUE_MAP = {0 => "Unknown", 1 => "String", 2 => "Binary", 3 => "Bool", 4 => "I16", 5 => "I32", 6 => "I64", 7 => "Double"}
-        VALID_VALUES = Set.new([Unknown, String, Binary, Bool, I16, I32, I64, Double]).freeze
+        I8 = 8
+        Void = 9
+        VALUE_MAP = {0 => "Unknown", 1 => "String", 2 => "Binary", 3 => "Bool", 4 => "I16", 5 => "I32", 6 => "I64", 7 => "Double", 8 => "I8", 9 => "Void"}
+        VALID_VALUES = Set.new([Unknown, String, Binary, Bool, I16, I32, I64, Double, I8, Void]).freeze
       end
 
       class ListTypeDefinition; end
@@ -55,7 +57,7 @@ module Thrift
 
         FIELDS = {
           THRIFT_FIELD_INDEX_ELEMENT_TYPE => {type: ::Thrift::Types::STRUCT, name: 'element_type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_ELEMENT_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ELEMENT_TYPE_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -97,7 +99,7 @@ module Thrift
         FIELDS = {
           THRIFT_FIELD_INDEX_KEY_TYPE => {type: ::Thrift::Types::STRUCT, name: 'key_type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_KEY_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_KEY_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_VALUE_TYPE => {type: ::Thrift::Types::STRUCT, name: 'value_type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_VALUE_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_TYPE_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -132,7 +134,7 @@ module Thrift
 
         FIELDS = {
           THRIFT_FIELD_INDEX_ELEMENT_TYPE => {type: ::Thrift::Types::STRUCT, name: 'element_type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_ELEMENT_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ELEMENT_TYPE_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -220,7 +222,7 @@ module Thrift
           THRIFT_FIELD_INDEX_MAP_TYPE => {type: ::Thrift::Types::STRUCT, name: 'map_type', class: ::Thrift::Types::Type_definition::MapTypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_MAP_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_MAP_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_SET_TYPE => {type: ::Thrift::Types::STRUCT, name: 'set_type', class: ::Thrift::Types::Type_definition::SetTypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_SET_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SET_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_REFERENCE_TYPE => {type: ::Thrift::Types::STRUCT, name: 'reference_type', class: ::Thrift::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_TYPE_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 

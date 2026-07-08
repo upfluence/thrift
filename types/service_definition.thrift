@@ -12,6 +12,9 @@ struct FunctionDefinition {
   3: required type_definition.TypeDefinition          return_type;
   4: required list<core.Reference>                    exceptions;
   5: required bool                                    oneway_;
+  6: optional type_definition.TypeDefinition          sink_type;
+  7: optional type_definition.TypeDefinition          stream_type;
+
 }
 
 struct ServiceDefinition {

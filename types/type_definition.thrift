@@ -12,6 +12,8 @@ enum ScalarType {
   I32 = 5,
   I64 = 6,
   Double = 7,
+  I8 = 8,
+  Void = 9,
 }
 
 struct ListTypeDefinition {

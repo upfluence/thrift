@@ -29,6 +29,11 @@ class FunctionDefinition;
 
 class ServiceDefinition;
 
+typedef struct _FunctionDefinition__isset {
+  _FunctionDefinition__isset() : sink_type(false), stream_type(false) {}
+  bool sink_type :1;
+  bool stream_type :1;
+} _FunctionDefinition__isset;
 
 class FunctionDefinition : public virtual ::apache::thrift::TBase {
  public:
@@ -44,6 +49,10 @@ class FunctionDefinition : public virtual ::apache::thrift::TBase {
    ::types::type_definition::TypeDefinition return_type;
   std::vector< ::types::core::Reference>  exceptions;
   bool oneway_;
+   ::types::type_definition::TypeDefinition sink_type;
+   ::types::type_definition::TypeDefinition stream_type;
+
+  _FunctionDefinition__isset __isset;
 
   void __set_annotation(const  ::types::annotation_definition::AnnotationDefinition& val);
 
@@ -54,6 +63,10 @@ class FunctionDefinition : public virtual ::apache::thrift::TBase {
   void __set_exceptions(const std::vector< ::types::core::Reference> & val);
 
   void __set_oneway_(const bool val);
+
+  void __set_sink_type(const  ::types::type_definition::TypeDefinition& val);
+
+  void __set_stream_type(const  ::types::type_definition::TypeDefinition& val);
 
   bool operator == (const FunctionDefinition & rhs) const
   {
@@ -66,6 +79,14 @@ class FunctionDefinition : public virtual ::apache::thrift::TBase {
     if (!(exceptions == rhs.exceptions))
       return false;
     if (!(oneway_ == rhs.oneway_))
+      return false;
+    if (__isset.sink_type != rhs.__isset.sink_type)
+      return false;
+    else if (__isset.sink_type && !(sink_type == rhs.sink_type))
+      return false;
+    if (__isset.stream_type != rhs.__isset.stream_type)
+      return false;
+    else if (__isset.stream_type && !(stream_type == rhs.stream_type))
       return false;
     return true;
   }

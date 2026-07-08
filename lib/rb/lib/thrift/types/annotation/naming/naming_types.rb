@@ -42,7 +42,7 @@ module Thrift
           FIELDS = {
             THRIFT_FIELD_INDEX_NAMESPACE_ => {type: ::Thrift::Types::STRING, name: 'namespace_', optional: true, legacy_annotations: THRIFT_FIELD_NAMESPACE__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAMESPACE__STRUCTURED_ANNOTATIONS},
             THRIFT_FIELD_INDEX_NAME => {type: ::Thrift::Types::STRING, name: 'name', optional: true, legacy_annotations: THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAME_STRUCTURED_ANNOTATIONS}
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 

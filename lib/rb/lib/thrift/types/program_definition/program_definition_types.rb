@@ -112,7 +112,7 @@ module Thrift
           THRIFT_FIELD_INDEX_CONSTANTS => {type: ::Thrift::Types::MAP, name: 'constants', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Constant_definition::ConstantDefinition}, legacy_annotations: THRIFT_FIELD_CONSTANTS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_CONSTANTS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_TYPEDEFS => {type: ::Thrift::Types::MAP, name: 'typedefs', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Type_definition::TypeDefinition}, legacy_annotations: THRIFT_FIELD_TYPEDEFS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPEDEFS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ENUMS => {type: ::Thrift::Types::MAP, name: 'enums', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Enum_definition::EnumDefinition}, legacy_annotations: THRIFT_FIELD_ENUMS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ENUMS_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 

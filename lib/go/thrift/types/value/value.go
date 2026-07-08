@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
+	"io"
 	"reflect"
 )
 
@@ -17,6 +18,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 type NullValue struct {
 }

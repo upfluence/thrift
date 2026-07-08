@@ -12,6 +12,7 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/annotation_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/core"
+	"io"
 	"reflect"
 )
 
@@ -21,6 +22,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = core.GoUnusedProtection__
 var _ = annotation_definition.GoUnusedProtection__
@@ -36,6 +38,8 @@ const (
 	ScalarType_I32     ScalarType = 5
 	ScalarType_I64     ScalarType = 6
 	ScalarType_Double  ScalarType = 7
+	ScalarType_I8      ScalarType = 8
+	ScalarType_Void    ScalarType = 9
 )
 
 func (p ScalarType) String() string {
@@ -56,6 +60,10 @@ func (p ScalarType) String() string {
 		return "I64"
 	case ScalarType_Double:
 		return "Double"
+	case ScalarType_I8:
+		return "I8"
+	case ScalarType_Void:
+		return "Void"
 	}
 	return "<UNSET>"
 }
@@ -78,6 +86,10 @@ func ScalarTypeFromString(s string) (ScalarType, error) {
 		return ScalarType_I64, nil
 	case "ScalarType_Double", "Double":
 		return ScalarType_Double, nil
+	case "ScalarType_I8", "I8":
+		return ScalarType_I8, nil
+	case "ScalarType_Void", "Void":
+		return ScalarType_Void, nil
 	}
 	return ScalarType(0), fmt.Errorf("not a valid ScalarType string")
 }

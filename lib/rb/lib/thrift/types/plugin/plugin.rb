@@ -44,7 +44,7 @@ module Thrift
 
           FIELDS = {
             THRIFT_FIELD_INDEX_REQ => {type: ::Thrift::Types::STRUCT, name: 'req', class: ::Thrift::Types::Plugin::GenerateCodeRequest, legacy_annotations: THRIFT_FIELD_REQ_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REQ_STRUCTURED_ANNOTATIONS}
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 
@@ -77,7 +77,7 @@ module Thrift
 
           FIELDS = {
             THRIFT_FIELD_INDEX_SUCCESS => {type: ::Thrift::Types::STRUCT, name: 'success', class: ::Thrift::Types::Plugin::GenerateCodeResponse, legacy_annotations: THRIFT_FIELD_SUCCESS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SUCCESS_STRUCTURED_ANNOTATIONS}
-          }
+          }.freeze
 
           def struct_fields; FIELDS; end
 
@@ -101,12 +101,12 @@ module Thrift
             result = @client.call_binary(
               'generate_code',
               Generate_code_args.new(req: req),
-              Generate_code_result
+              Generate_code_result,
             )
 
             return result.success unless result.success.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'generate_code failed: unknown result')
-            result
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'generate_code failed: unknown result') if result.success.nil?
+            result.success
           end
 
         end
@@ -125,25 +125,8 @@ module Thrift
           ].freeze
 
           METHODS = {
-            'generate_code' => { args_klass: Generate_code_args, result_klass: Generate_code_result, oneway: false, legacy_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS, structured_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS},
+            'generate_code' => { args_klass: Generate_code_args, result_klass: Generate_code_result, args: [:req], exceptions: {}, oneway: false, legacy_annotations: THRIFT_METHOD_GENERATE_CODE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_METHOD_GENERATE_CODE_STRUCTURED_ANNOTATIONS},
           }.freeze
-
-          def execute_generate_code(args)
-            result = Generate_code_result.new()
-
-            result.success = @handler.generate_code(args.req)
-            
-            result
-          end
-
-          def process_generate_code(seqid, iprot, oprot)
-            args = read_args(iprot, Generate_code_args)
-            result = @middleware.handle_binary('generate_code', args) do |args|
-              execute_generate_code(args)
-            end
-
-            write_result(result, oprot, 'generate_code', seqid)
-          end
 
         end
 

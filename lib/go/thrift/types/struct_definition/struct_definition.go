@@ -12,6 +12,7 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/annotation_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
+	"io"
 	"reflect"
 )
 
@@ -21,6 +22,7 @@ var _ = fmt.Printf
 var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
+var _ = io.EOF
 
 var _ = annotation_definition.GoUnusedProtection__
 var _ = type_definition.GoUnusedProtection__

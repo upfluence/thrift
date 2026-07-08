@@ -45,7 +45,7 @@ module Thrift
         FIELDS = {
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ID => {type: ::Thrift::Types::I32, name: 'id', legacy_annotations: THRIFT_FIELD_ID_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ID_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
@@ -88,7 +88,7 @@ module Thrift
         FIELDS = {
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_VALUES => {type: ::Thrift::Types::LIST, name: 'values', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Enum_definition::EnumValueDefinition}, legacy_annotations: THRIFT_FIELD_VALUES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUES_STRUCTURED_ANNOTATIONS}
-        }
+        }.freeze
 
         def struct_fields; FIELDS; end
 
