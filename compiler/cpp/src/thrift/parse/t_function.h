@@ -38,7 +38,8 @@ public:
              std::string name,
              t_struct* arglist)
     : t_annotated(name),
-      arglist_(arglist) {
+      arglist_(arglist),
+      xceptions_(new t_struct(arglist->get_program())) {
     return_ = new t_return(returntype_, false);
   }
 
