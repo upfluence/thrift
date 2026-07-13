@@ -83,6 +83,7 @@ public:
     package_flag = "";
     read_write_private_ = false;
     ignore_initialisms_ = false;
+    out_dir_base_ = "gen-go";
     for( iter = parsed_options.begin(); iter != parsed_options.end(); ++iter) {
       if( iter->first.compare("package_prefix") == 0) {
         gen_package_prefix_ = (iter->second);
@@ -97,27 +98,6 @@ public:
       } else {
         throw "unknown option go:" + iter->first;
       }
-    }
-
-    out_dir_base_ = "gen-go";
-    gen_thrift_import_ = default_thrift_import;
-
-    iter = parsed_options.find("package_prefix");
-
-    if (iter != parsed_options.end()) {
-      gen_package_prefix_ = (iter->second);
-    }
-
-    iter = parsed_options.find("thrift_import");
-
-    if (iter != parsed_options.end()) {
-      gen_thrift_import_ = (iter->second);
-    }
-
-    iter = parsed_options.find("package");
-
-    if (iter != parsed_options.end()) {
-      package_flag = (iter->second);
     }
   }
 
@@ -873,7 +853,17 @@ string t_go_generator::render_program_import(const t_program* program, string& u
 
   s.pop_back();
 
-  result += "\"" + gen_package_prefix_ + go_path + "\"\n";
+  string import_path = gen_package_prefix_ + go_path;
+
+  if (program->is_std_path()) {
+    if (go_path[0] == '/') {
+      go_path = go_path.substr(1);
+    }
+
+    import_path = gen_thrift_import_ + "/" + go_path;
+  }
+
+  result += "\"" + import_path + "\"\n";
   unused_protection += "var _ = " + package_identifier + ".GoUnusedProtection__\n";
   return result;
 }
