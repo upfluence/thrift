@@ -40,6 +40,7 @@ module Thrift
         THRIFT_FIELD_INDEX_CONSTANTS = 8
         THRIFT_FIELD_INDEX_TYPEDEFS = 9
         THRIFT_FIELD_INDEX_ENUMS = 10
+        THRIFT_FIELD_INDEX_STDLIB = 11
 
         THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS = {
         }.freeze
@@ -101,6 +102,12 @@ module Thrift
         THRIFT_FIELD_ENUMS_STRUCTURED_ANNOTATIONS = [
         ].freeze
 
+        THRIFT_FIELD_STDLIB_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_STDLIB_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
           THRIFT_FIELD_INDEX_NAME => {type: ::Thrift::Types::STRING, name: 'name', legacy_annotations: THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAME_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_PATH => {type: ::Thrift::Types::STRING, name: 'path', legacy_annotations: THRIFT_FIELD_PATH_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_PATH_STRUCTURED_ANNOTATIONS},
@@ -111,7 +118,8 @@ module Thrift
           THRIFT_FIELD_INDEX_SERVICES => {type: ::Thrift::Types::MAP, name: 'services', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Service_definition::ServiceDefinition}, legacy_annotations: THRIFT_FIELD_SERVICES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SERVICES_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_CONSTANTS => {type: ::Thrift::Types::MAP, name: 'constants', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Constant_definition::ConstantDefinition}, legacy_annotations: THRIFT_FIELD_CONSTANTS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_CONSTANTS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_TYPEDEFS => {type: ::Thrift::Types::MAP, name: 'typedefs', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Type_definition::TypeDefinition}, legacy_annotations: THRIFT_FIELD_TYPEDEFS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPEDEFS_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_ENUMS => {type: ::Thrift::Types::MAP, name: 'enums', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Enum_definition::EnumDefinition}, legacy_annotations: THRIFT_FIELD_ENUMS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ENUMS_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_ENUMS => {type: ::Thrift::Types::MAP, name: 'enums', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Enum_definition::EnumDefinition}, legacy_annotations: THRIFT_FIELD_ENUMS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ENUMS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_STDLIB => {type: ::Thrift::Types::BOOL, name: 'stdlib', legacy_annotations: THRIFT_FIELD_STDLIB_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STDLIB_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end
@@ -126,6 +134,7 @@ module Thrift
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field constants is unset!') unless @constants
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field typedefs is unset!') unless @typedefs
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field enums is unset!') unless @enums
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field stdlib is unset!') if @stdlib.nil?
         end
 
         ::Thrift::Struct.generate_accessors self

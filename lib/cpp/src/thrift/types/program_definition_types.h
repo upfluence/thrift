@@ -39,7 +39,7 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
 
   ProgramDefinition(const ProgramDefinition&);
   ProgramDefinition& operator=(const ProgramDefinition&);
-  ProgramDefinition() : name(), path(), doc() {
+  ProgramDefinition() : name(), path(), doc(), stdlib(0) {
   }
 
   virtual ~ProgramDefinition() noexcept;
@@ -53,6 +53,7 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
   std::map<std::string,  ::types::constant_definition::ConstantDefinition>  constants;
   std::map<std::string,  ::types::type_definition::TypeDefinition>  typedefs;
   std::map<std::string,  ::types::enum_definition::EnumDefinition>  enums;
+  bool stdlib;
 
   _ProgramDefinition__isset __isset;
 
@@ -75,6 +76,8 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
   void __set_typedefs(const std::map<std::string,  ::types::type_definition::TypeDefinition> & val);
 
   void __set_enums(const std::map<std::string,  ::types::enum_definition::EnumDefinition> & val);
+
+  void __set_stdlib(const bool val);
 
   bool operator == (const ProgramDefinition & rhs) const
   {
@@ -99,6 +102,8 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
     if (!(typedefs == rhs.typedefs))
       return false;
     if (!(enums == rhs.enums))
+      return false;
+    if (!(stdlib == rhs.stdlib))
       return false;
     return true;
   }

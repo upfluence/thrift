@@ -58,6 +58,10 @@ void ProgramDefinition::__set_typedefs(const std::map<std::string,  ::types::typ
 void ProgramDefinition::__set_enums(const std::map<std::string,  ::types::enum_definition::EnumDefinition> & val) {
   this->enums = val;
 }
+
+void ProgramDefinition::__set_stdlib(const bool val) {
+  this->stdlib = val;
+}
 std::ostream& operator<<(std::ostream& out, const ProgramDefinition& obj)
 {
   obj.printTo(out);
@@ -86,6 +90,7 @@ uint32_t ProgramDefinition::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_constants = false;
   bool isset_typedefs = false;
   bool isset_enums = false;
+  bool isset_stdlib = false;
 
   while (true)
   {
@@ -277,6 +282,14 @@ uint32_t ProgramDefinition::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 11:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->stdlib);
+          isset_stdlib = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -303,6 +316,8 @@ uint32_t ProgramDefinition::read(::apache::thrift::protocol::TProtocol* iprot) {
   if (!isset_typedefs)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_enums)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_stdlib)
     throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
@@ -415,6 +430,10 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   }
   xfer += oprot->writeFieldEnd();
 
+  xfer += oprot->writeFieldBegin("stdlib", ::apache::thrift::protocol::T_BOOL, 11);
+  xfer += oprot->writeBool(this->stdlib);
+  xfer += oprot->writeFieldEnd();
+
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -432,6 +451,7 @@ void swap(ProgramDefinition &a, ProgramDefinition &b) {
   swap(a.constants, b.constants);
   swap(a.typedefs, b.typedefs);
   swap(a.enums, b.enums);
+  swap(a.stdlib, b.stdlib);
   swap(a.__isset, b.__isset);
 }
 
@@ -446,6 +466,7 @@ ProgramDefinition::ProgramDefinition(const ProgramDefinition& other54) {
   constants = other54.constants;
   typedefs = other54.typedefs;
   enums = other54.enums;
+  stdlib = other54.stdlib;
   __isset = other54.__isset;
 }
 ProgramDefinition& ProgramDefinition::operator=(const ProgramDefinition& other55) {
@@ -459,6 +480,7 @@ ProgramDefinition& ProgramDefinition::operator=(const ProgramDefinition& other55
   constants = other55.constants;
   typedefs = other55.typedefs;
   enums = other55.enums;
+  stdlib = other55.stdlib;
   __isset = other55.__isset;
   return *this;
 }
@@ -475,6 +497,7 @@ void ProgramDefinition::printTo(std::ostream& out) const {
   out << ", " << "constants=" << to_string(constants);
   out << ", " << "typedefs=" << to_string(typedefs);
   out << ", " << "enums=" << to_string(enums);
+  out << ", " << "stdlib=" << to_string(stdlib);
   out << ")";
 }
 

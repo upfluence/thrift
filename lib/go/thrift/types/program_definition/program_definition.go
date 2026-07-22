@@ -44,6 +44,7 @@ var _ = value.GoUnusedProtection__
 //   - Constants
 //   - Typedefs
 //   - Enums
+//   - Stdlib
 type ProgramDefinition struct {
 	Name       string                                             `thrift:"name,1,required" db:"name" json:"name"`
 	Path       string                                             `thrift:"path,2,required" db:"path" json:"path"`
@@ -55,6 +56,7 @@ type ProgramDefinition struct {
 	Constants  map[string]*constant_definition.ConstantDefinition `thrift:"constants,8,required" db:"constants" json:"constants"`
 	Typedefs   map[string]*type_definition.TypeDefinition         `thrift:"typedefs,9,required" db:"typedefs" json:"typedefs"`
 	Enums      map[string]*enum_definition.EnumDefinition         `thrift:"enums,10,required" db:"enums" json:"enums"`
+	Stdlib     bool                                               `thrift:"stdlib,11,required" db:"stdlib" json:"stdlib"`
 }
 
 func NewProgramDefinition() *ProgramDefinition {
@@ -144,6 +146,14 @@ var programDefinitionStructDefinition = thrift.StructDefinition{
 		{
 			AnnotatedDefinition: thrift.AnnotatedDefinition{
 				Name:                  "enums",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "stdlib",
 				LegacyAnnotations:     map[string]string{},
 				StructuredAnnotations: []thrift.RegistrableStruct{},
 			},
@@ -239,6 +249,14 @@ func (p *ProgramDefinition) GetEnums() map[string]*enum_definition.EnumDefinitio
 func (p *ProgramDefinition) SetEnums(v map[string]*enum_definition.EnumDefinition) {
 	p.Enums = v
 }
+
+func (p *ProgramDefinition) GetStdlib() bool {
+	return p.Stdlib
+}
+
+func (p *ProgramDefinition) SetStdlib(v bool) {
+	p.Stdlib = v
+}
 func (p *ProgramDefinition) IsSetDoc() bool {
 	return p.Doc != nil
 }
@@ -257,6 +275,7 @@ func (p *ProgramDefinition) Read(iprot thrift.TProtocol) error {
 	var issetConstants bool = false
 	var issetTypedefs bool = false
 	var issetEnums bool = false
+	var issetStdlib bool = false
 
 	for {
 		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
@@ -376,6 +395,17 @@ func (p *ProgramDefinition) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 			}
+		case 11:
+			if fieldTypeId == thrift.BOOL {
+				if err := p.ReadField11(iprot); err != nil {
+					return err
+				}
+				issetStdlib = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -414,6 +444,9 @@ func (p *ProgramDefinition) Read(iprot thrift.TProtocol) error {
 	}
 	if !issetEnums {
 		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Enums is not set"))
+	}
+	if !issetStdlib {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Stdlib is not set"))
 	}
 	return nil
 }
@@ -623,6 +656,15 @@ func (p *ProgramDefinition) ReadField10(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *ProgramDefinition) ReadField11(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBool(); err != nil {
+		return thrift.PrependError("error reading field 11: ", err)
+	} else {
+		p.Stdlib = v
+	}
+	return nil
+}
+
 func (p *ProgramDefinition) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("ProgramDefinition"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -656,6 +698,9 @@ func (p *ProgramDefinition) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField10(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField11(oprot); err != nil {
 			return err
 		}
 	}
@@ -874,12 +919,25 @@ func (p *ProgramDefinition) writeField10(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *ProgramDefinition) writeField11(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("stdlib", thrift.BOOL, 11); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 11:stdlib: ", p), err)
+	}
+	if err := oprot.WriteBool(bool(p.Stdlib)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.stdlib (11) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 11:stdlib: ", p), err)
+	}
+	return err
+}
+
 func (p *ProgramDefinition) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"ProgramDefinition({name: %v, path: %v, doc: %v, namespaces: %v, includes: %v, structs: %v, services: %v, constants: %v, typedefs: %v, enums: %v})",
+		"ProgramDefinition({name: %v, path: %v, doc: %v, namespaces: %v, includes: %v, structs: %v, services: %v, constants: %v, typedefs: %v, enums: %v, stdlib: %v})",
 		p.GetName(),
 		p.GetPath(),
 		p.GetDoc(),
@@ -890,5 +948,6 @@ func (p *ProgramDefinition) String() string {
 		p.GetConstants(),
 		p.GetTypedefs(),
 		p.GetEnums(),
+		p.GetStdlib(),
 	)
 }

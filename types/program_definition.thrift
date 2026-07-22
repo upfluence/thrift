@@ -20,4 +20,6 @@ struct ProgramDefinition {
   8: required map<string, constant_definition.ConstantDefinition> constants;
   9: required map<string, type_definition.TypeDefinition> typedefs;
   10: required map<string, enum_definition.EnumDefinition> enums;
+
+  11: required bool stdlib;
 }
