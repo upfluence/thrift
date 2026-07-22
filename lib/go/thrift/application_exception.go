@@ -32,6 +32,7 @@ const (
 	INVALID_TRANSFORM              = 11
 	INVALID_PROTOCOL               = 9
 	UNSUPPORTED_CLIENT_TYPE        = 10
+	METHOD_NOT_IMPLEMENTED         = 12
 )
 
 var defaultApplicationExceptionMessage = map[int32]string{
@@ -46,6 +47,7 @@ var defaultApplicationExceptionMessage = map[int32]string{
 	INVALID_TRANSFORM:              "Invalid transform",
 	INVALID_PROTOCOL:               "Invalid protocol",
 	UNSUPPORTED_CLIENT_TYPE:        "Unsupported client type",
+	METHOD_NOT_IMPLEMENTED:         "method not implemented",
 }
 
 // Application level Thrift exception
@@ -68,6 +70,13 @@ func NewTApplicationException(type_ int32, message string) TApplicationException
 
 func NewTApplicationExceptionFromError(type_ int32, err error) TApplicationException {
 	return &tApplicationException{message: err.Error(), type_: type_, err: err}
+}
+
+func NewMethodNotImplementedTApplicationException(method string) TApplicationException {
+	return &tApplicationException{
+		message: method + ": method not implemented",
+		type_:   METHOD_NOT_IMPLEMENTED,
+	}
 }
 
 func (ae tApplicationException) Unwrap() error {
