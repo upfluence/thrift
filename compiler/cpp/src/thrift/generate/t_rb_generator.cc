@@ -81,6 +81,7 @@ public:
                  const std::string& option_string)
     : t_oop_generator(program) {
     (void)option_string;
+    set_parsed_options(parsed_options);
     require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
     namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
 

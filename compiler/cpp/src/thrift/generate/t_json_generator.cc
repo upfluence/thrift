@@ -55,6 +55,7 @@ public:
                    const std::string& option_string)
     : t_generator(program) {
     (void)option_string;
+    set_parsed_options(parsed_options);
     std::map<std::string, std::string>::const_iterator iter;
 
     should_merge_includes_ = false;

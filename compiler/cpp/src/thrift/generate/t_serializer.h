@@ -326,6 +326,7 @@ static ::types::program_definition::ProgramDefinition build_program_definition(c
   }
 
   pd.__set_enums(enums);
+  pd.__set_stdlib(p->is_std_path());
   return pd;
 }
 

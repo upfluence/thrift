@@ -73,7 +73,7 @@ public:
   t_go_generator(t_program* program,
                  const std::map<std::string, std::string>& parsed_options,
                  const std::string& option_string)
-    : t_generator(program) {
+    : t_generator(program, "go", parsed_options) {
     (void)option_string;
     std::map<std::string, std::string>::const_iterator iter;
 
