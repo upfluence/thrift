@@ -35,10 +35,25 @@ public:
     MKDIR(get_out_dir().c_str());
 
     for (files_iter = resp->files.begin(); files_iter != resp->files.end(); files_iter++) {
-      pverbose("Adding file %s\n", (get_out_dir() + "/" + files_iter->first).c_str());
+      std::string filepath = get_out_dir() + "/" + files_iter->first;
+
+      // Create parent directories for the file if needed.
+      std::string dir = filepath.substr(0, filepath.rfind('/'));
+      if (!dir.empty()) {
+        std::string partial;
+        for (size_t i = 0; i < dir.size(); i++) {
+          if (dir[i] == '/') {
+            if (!partial.empty()) { MKDIR(partial.c_str()); }
+          }
+          partial += dir[i];
+        }
+        if (!partial.empty()) { MKDIR(partial.c_str()); }
+      }
+
+      pverbose("Adding file %s\n", filepath.c_str());
       ofstream_with_content_based_conditional_update file;
 
-      file.open(get_out_dir() + "/" + files_iter->first);
+      file.open(filepath);
       file << files_iter->second;
 
       file.close();
