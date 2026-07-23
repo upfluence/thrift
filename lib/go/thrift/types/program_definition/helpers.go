@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/upfluence/thrift/lib/go/thrift/types/core"
-	"github.com/upfluence/thrift/lib/go/thrift/types/goscope"
+	"github.com/upfluence/thrift/lib/go/thrift/types/gocodegen"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 )
 
@@ -47,7 +47,7 @@ func goParseValue(p *ProgramDefinition, fn func(key string) string) string {
 
 // GoImportPath returns the fully-qualified Go import path for a program,
 // using gs to determine the correct prefix.
-func GoImportPath(p *ProgramDefinition, gs goscope.GoScope) string {
+func GoImportPath(p *ProgramDefinition, gs gocodegen.Scope) string {
 	if p.Stdlib {
 		return gs.ThriftPkg + "/" + GoPackagePath(p)
 	}
@@ -94,22 +94,22 @@ func GoZeroValue(t *type_definition.TypeDefinition, required bool) string {
 	return "nil"
 }
 
-
-// references using the provided program scope and GoScope. If required is false,
+// GoType returns the Go type expression for a TypeDefinition, resolving package
+// references using the provided program scope and Scope. If required is false,
 // reference types are prefixed with "*" (optional pointer semantics).
-func GoType(t *type_definition.TypeDefinition, gs goscope.GoScope, required bool) string {
+func GoType(t *type_definition.TypeDefinition, gs gocodegen.Scope, required bool) string {
 	if t == nil {
 		return "interface{}"
 	}
 
 	switch td := t.Interface().(type) {
 	case *core.Reference:
-		name := goCamelize(td.Name)
+		name := gocodegen.Publicize(td.Name)
 
 		if gs.LocalPkg == "" || (td.IsSetNamespace_() && td.GetNamespace_() != gs.LocalPkg) {
 			for _, inc := range gs.Includes {
 				if inc.Namespace == td.GetNamespace_() {
-					return "*" + inc.PkgPath() + inc.PkgName + "." + name
+					return "*" + inc.PkgName + "." + name
 				}
 			}
 		}
@@ -151,28 +151,4 @@ func GoType(t *type_definition.TypeDefinition, gs goscope.GoScope, required bool
 	}
 
 	return "interface{}"
-}
-
-// goCamelize converts a snake_case or kebab-case identifier to CamelCase.
-func goCamelize(s string) string {
-	var result []byte
-	upper := true
-
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-
-		if c == '_' || c == '-' {
-			upper = true
-			continue
-		}
-
-		if upper && c >= 'a' && c <= 'z' {
-			c -= 'a' - 'A'
-		}
-
-		result = append(result, c)
-		upper = false
-	}
-
-	return string(result)
 }
