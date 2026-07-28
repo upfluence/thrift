@@ -1178,7 +1178,13 @@ int main(int argc, char** argv) {
   std::string types_path = THRIFT_TYPES_PATH;
 
   if (const char* env_path = std::getenv("THRIFT_TYPES_PATH")) {
-    types_path = std::string(env_path);
+    char rp[THRIFT_PATH_MAX];
+
+    if (saferealpath(env_path, rp) != NULL) {
+      types_path = std::string(rp);
+    } else {
+      types_path = std::string(env_path);
+    }
   }
 
   g_incl_searchpath.push_back(types_path);
