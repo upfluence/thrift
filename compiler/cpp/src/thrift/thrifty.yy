@@ -345,9 +345,9 @@ Include:
       pdebug("Include -> tok_include tok_literal");
       declare_valid_program_doctext();
       if (g_parse_mode == INCLUDES) {
-        std::string path = include_file(std::string($2));
-        if (!path.empty()) {
-          g_program->add_include(path, std::string($2));
+        IncludeResult inc = include_file(std::string($2));
+        if (!inc.path.empty()) {
+          g_program->add_include(inc.path, std::string($2), inc.is_std);
         }
       }
     }

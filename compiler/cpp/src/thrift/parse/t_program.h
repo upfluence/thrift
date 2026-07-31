@@ -59,9 +59,9 @@
 class t_program : public t_doc {
 public:
   t_program(std::string path, std::string name)
-    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), scope_(new t_scope), owns_scope_(true), recursive_(false) {}
+    : path_(path), name_(name), out_path_("./"), out_path_is_absolute_(false), is_std_(false), scope_(new t_scope), owns_scope_(true), recursive_(false) {}
 
-  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false), std_path_(THRIFT_TYPES_PATH), owns_scope_(true), recursive_(false)  {
+  t_program(std::string path) : path_(path), out_path_("./"), out_path_is_absolute_(false), is_std_(false), owns_scope_(true), recursive_(false)  {
     name_ = program_name(path);
     scope_ = new t_scope();
   }
@@ -85,7 +85,7 @@ public:
       namespace_(other.namespace_),
       includes_(other.includes_),
       include_prefix_(other.include_prefix_),
-      std_path_(other.std_path_),
+      is_std_(other.is_std_),
       scope_(other.scope_),
       owns_scope_(false),
       typedefs_(other.typedefs_),
@@ -102,7 +102,7 @@ public:
       recursive_(other.recursive_) {}
 
   bool is_std_path() const {
-    return path_.rfind(std_path_ + "/types", 0) == 0;
+    return is_std_;
   }
 
   // Path accessor
@@ -154,7 +154,7 @@ public:
 
   const std::vector<t_program*>& get_includes() const { return includes_; }
 
-  void set_std_path(std::string std_path) { std_path_ = std_path; }
+  void set_is_std(bool is_std) { is_std_ = is_std; }
 
   void set_out_path(std::string out_path, bool out_path_is_absolute) {
     out_path_ = out_path;
@@ -324,10 +324,10 @@ public:
     includes_.push_back(program);
   }
 
-  void add_include(std::string path, std::string include_site) {
+  void add_include(std::string path, std::string include_site, bool is_std = false) {
     t_program* program = new t_program(path);
 
-    program->set_std_path(std_path_);
+    program->set_is_std(is_std);
     program->set_include_site(include_site);
 
     // include prefix for this program is the site at which it was included
@@ -459,7 +459,7 @@ private:
   // Include prefix for this program, if any
   std::string include_prefix_;
 
-  std::string std_path_;
+  bool is_std_;
 
   // Identifier lookup scope
   t_scope* scope_;

@@ -333,7 +333,7 @@ string directory_name(string filename) {
 /**
  * Finds the appropriate file path for the given filename
  */
-string include_file(string filename) {
+IncludeResult include_file(string filename) {
   // Absolute path? Just try that
   if (filename[0] == '/') {
     // Realpath!
@@ -341,13 +341,13 @@ string include_file(string filename) {
     // cppcheck-suppress uninitvar
     if (saferealpath(filename.c_str(), rp) == NULL) {
       pwarning(0, "Cannot open include file %s\n", filename.c_str());
-      return std::string();
+      return {};
     }
 
     // Stat this file
     struct stat finfo;
     if (stat(rp, &finfo) == 0) {
-      return rp;
+      return {rp, false};
     }
   } else { // relative path, start searching
     // new search path with current dir global
@@ -355,9 +355,8 @@ string include_file(string filename) {
     sp.insert(sp.begin(), g_curdir);
 
     // iterate through paths
-    vector<string>::iterator it;
-    for (it = sp.begin(); it != sp.end(); it++) {
-      string sfilename = *(it) + "/" + filename;
+    for (size_t i = 0; i < sp.size(); i++) {
+      string sfilename = sp[i] + "/" + filename;
 
       // Realpath!
       char rp[THRIFT_PATH_MAX];
@@ -366,17 +365,19 @@ string include_file(string filename) {
         continue;
       }
 
-      // Stat this files
+      // Stat this file
       struct stat finfo;
       if (stat(rp, &finfo) == 0) {
-        return rp;
+        // g_incl_searchpath[0] (shifted by 1 due to g_curdir prepend) is the
+        // types path; any hit there is a std include.
+        return {rp, i > 0 && sp[i] == g_incl_searchpath[0]};
       }
     }
   }
 
   // Uh oh
   pwarning(0, "Could not find include file %s\n", filename.c_str());
-  return std::string();
+  return {};
 }
 
 /**
@@ -1177,16 +1178,6 @@ int main(int argc, char** argv) {
 
   std::string types_path = THRIFT_TYPES_PATH;
 
-  if (const char* env_path = std::getenv("THRIFT_TYPES_PATH")) {
-    char rp[THRIFT_PATH_MAX];
-
-    if (saferealpath(env_path, rp) != NULL) {
-      types_path = std::string(rp);
-    } else {
-      types_path = std::string(env_path);
-    }
-  }
-
   g_incl_searchpath.push_back(types_path);
 
   // Hacky parameter handling... I didn't feel like using a library sorry!
@@ -1308,6 +1299,20 @@ int main(int argc, char** argv) {
     }
   }
 
+  if (const char* env_path = std::getenv("THRIFT_TYPES_PATH")) {
+    char rp[THRIFT_PATH_MAX];
+
+    if (saferealpath(env_path, rp) != NULL) {
+      types_path = std::string(rp);
+    } else {
+      types_path = std::string(env_path);
+    }
+  }
+
+  pverbose("Using THRIFT_TYPES_PATH: %s\n", types_path.c_str());
+
+  g_incl_searchpath[0] = types_path;
+
   // display help
   if ((strcmp(argv[argc - 1], "-help") == 0) || (strcmp(argv[argc - 1], "--help") == 0)) {
     help();
@@ -1384,7 +1389,6 @@ int main(int argc, char** argv) {
     }
 
     program->set_include_prefix(include_prefix);
-    program->set_std_path(types_path);
 
     // Parse it!
     parse(program, NULL);

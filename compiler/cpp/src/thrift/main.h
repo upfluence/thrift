@@ -71,10 +71,15 @@ std::string program_name(std::string filename);
  */
 std::string directory_name(std::string filename);
 
+struct IncludeResult {
+  std::string path;
+  bool is_std;
+};
+
 /**
  * Get the absolute path for an include file
  */
-std::string include_file(std::string filename);
+IncludeResult include_file(std::string filename);
 
 /**
  * Clears any previously stored doctext string.
