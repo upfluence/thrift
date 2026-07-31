@@ -198,12 +198,15 @@ public:
   std::string function_signature(t_function* tfunction, std::string prefix = "");
   std::string argument_list(t_struct* tstruct);
   std::string type_to_enum(t_type* ttype);
-  std::string rb_namespace_to_path_prefix(std::string rb_namespace);
+  std::string program_to_path_prefix(const t_program* program);
 
   std::vector<std::string> ruby_modules(const t_program* p) {
     std::string ns;
 
-    if (namespace_wrapper_ != "") {
+
+    if (p->is_std_path()) {
+      ns = "thrift.";
+    } else if (namespace_wrapper_ != "") {
       ns = namespace_wrapper_ + ".";
     }
 
@@ -267,7 +270,7 @@ void t_rb_generator::init_generator() {
   MKDIR(subdir.c_str());
 
   if (namespaced_) {
-    require_prefix_ = rb_namespace_to_path_prefix(program_->get_namespace("rb"));
+    require_prefix_ = program_to_path_prefix(program_);
 
     string dir = require_prefix_;
     string::size_type loc;
@@ -317,12 +320,7 @@ string t_rb_generator::render_includes() {
   for (auto include : includes) {
     if (namespaced_) {
       t_program* included = include;
-      std::string included_require_prefix
-          = rb_namespace_to_path_prefix(included->get_namespace("rb"));
-
-      if (included->is_std_path()) {
-        included_require_prefix = "thrift/" + included_require_prefix;
-      }
+      std::string included_require_prefix = program_to_path_prefix(included);
 
       std::string included_name = included->get_name();
       result += "require '" + included_require_prefix + underscore(included_name) + "_types'\n";
@@ -844,8 +842,8 @@ void t_rb_generator::generate_service(t_service* tservice) {
 
   if (tservice->get_extends() != NULL) {
     if (namespaced_) {
-      f_service_ << "require '" << rb_namespace_to_path_prefix(
-                                       tservice->get_extends()->get_program()->get_namespace("rb"))
+      f_service_ << "require '" << program_to_path_prefix(
+                                       tservice->get_extends()->get_program())
                  << underscore(tservice->get_extends()->get_name()) << "'" << endl;
     } else {
       f_service_ << "require '" << require_prefix_
@@ -1271,10 +1269,6 @@ string t_rb_generator::type_name(const t_type* ttype) {
 string t_rb_generator::full_type_name(const t_type* ttype) {
   string prefix = "::";
 
-  if (ttype->get_program()->is_std_path()) {
-    prefix += "Thrift::";
-  }
-
   vector<std::string> modules = ruby_modules(ttype->get_program());
   for (auto & module : modules) {
     prefix += module + "::";
@@ -1323,14 +1317,17 @@ string t_rb_generator::type_to_enum(t_type* type) {
   throw "INVALID TYPE IN type_to_enum: " + type->get_name();
 }
 
-string t_rb_generator::rb_namespace_to_path_prefix(string rb_namespace) {
+string t_rb_generator::program_to_path_prefix(const t_program* program) {
   string namespaces_left;
 
-  if (namespace_wrapper_ != "") {
+
+  if (program->is_std_path()) {
+    namespaces_left = "thrift.";
+  } else if (namespace_wrapper_ != "") {
     namespaces_left = namespace_wrapper_ + ".";
   }
 
-  namespaces_left += rb_namespace;
+  namespaces_left += program->get_namespace("rb");
 
   string::size_type loc;
 
