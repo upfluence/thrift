@@ -82,13 +82,22 @@ public:
     : t_oop_generator(program) {
     (void)option_string;
     set_parsed_options(parsed_options);
-    require_rubygems_ = (parsed_options.find("rubygems") != parsed_options.end());
-    namespaced_ = (parsed_options.find("namespaced") != parsed_options.end());
 
-    std::map<std::string, std::string>::const_iterator iter = parsed_options.find("namespace_wrapper");
-
-    if (iter != parsed_options.end()) {
-      namespace_wrapper_ = iter->second;
+    for (const auto& kv : parsed_options) {
+      if (kv.first.compare("rubygems") == 0) {
+        require_rubygems_ = true;
+      } else if (kv.first.compare("namespaced") == 0) {
+        namespaced_ = true;
+      } else if (kv.first.compare("namespace_wrapper") == 0) {
+        namespace_wrapper_ = kv.second;
+      } else if (kv.first.rfind("namespace_wrapper:", 0) == 0) {
+        std::string raw = kv.first.substr(strlen("namespace_wrapper:"));
+        char rp[THRIFT_PATH_MAX];
+        std::string resolved = (realpath(raw.c_str(), rp) != NULL) ? rp : raw;
+        namespace_wrapper_rules_.push_back({resolved, kv.second});
+      } else {
+        throw "unknown option rb:" + kv.first;
+      }
     }
   }
 
@@ -206,8 +215,12 @@ public:
 
     if (p->is_std_path()) {
       ns = "thrift.";
-    } else if (namespace_wrapper_ != "") {
-      ns = namespace_wrapper_ + ".";
+    } else {
+      std::string wrapper = namespace_wrapper_for(p);
+
+      if (!wrapper.empty()) {
+        ns = wrapper + ".";
+      }
     }
 
     ns += p->get_namespace("rb");
@@ -255,6 +268,17 @@ private:
   bool namespaced_;
 
   std::string namespace_wrapper_;
+
+  std::vector<std::pair<std::string, std::string>> namespace_wrapper_rules_;
+
+  std::string namespace_wrapper_for(const t_program* p) const {
+    for (const auto& rule : namespace_wrapper_rules_) {
+      if (p->get_path().rfind(rule.first + "/", 0) == 0) {
+        return rule.second;
+      }
+    }
+    return namespace_wrapper_;
+  }
 };
 
 /**
@@ -1323,8 +1347,12 @@ string t_rb_generator::program_to_path_prefix(const t_program* program) {
 
   if (program->is_std_path()) {
     namespaces_left = "thrift.";
-  } else if (namespace_wrapper_ != "") {
-    namespaces_left = namespace_wrapper_ + ".";
+  } else {
+    std::string wrapper = namespace_wrapper_for(program);
+
+    if (!wrapper.empty()) {
+      namespaces_left = wrapper + ".";
+    }
   }
 
   namespaces_left += program->get_namespace("rb");
@@ -1424,6 +1452,7 @@ void t_rb_generator::generate_rb_union_validator(t_rb_ofstream& out, t_struct* t
 THRIFT_REGISTER_GENERATOR(
     rb,
     "Ruby",
-    "    rubygems:          Add a \"require 'rubygems'\" line to the top of each generated file.\n"
-    "    namespace_wrapper: Add a top-level namespace around namespace defined in the idl.\n"
-    "    namespaced:        Generate files in idiomatic namespaced directories.\n")
+    "    rubygems:                  Add a \"require 'rubygems'\" line to the top of each generated file.\n" \
+    "    namespaced:                Generate files in idiomatic namespaced directories.\n" \
+    "    namespace_wrapper=         Add a top-level namespace around namespace defined in the idl.\n" \
+    "    namespace_wrapper:<path>=  Namespace wrapper override for includes resolved under <path>.\n")
