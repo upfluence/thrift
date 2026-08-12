@@ -1,5 +1,6 @@
 %code requires {
 #include "thrift/parse/t_program.h"
+#include "thrift/parse/t_node.h"
 }
 %{
 /*
@@ -104,7 +105,35 @@ const int struct_is_union = 1;
 
   t_legacy_annotation*     tlannot;
   t_structured_annotation* tsannot;
+  std::vector<t_comment>*  tcomments;
 }
+
+%locations
+
+/**
+ * Comment tokens — emitted by the lexer instead of being discarded.
+ */
+%token<id> tok_comment_slash
+%token<id> tok_comment_hash
+%token<id> tok_block_comment
+%token<id> tok_doc_comment
+
+/**
+ * Helper type for accumulated comment lists.
+ */
+%code requires {
+#include <vector>
+}
+
+%{
+static std::vector<t_comment>* new_comment_list() {
+  return new std::vector<t_comment>();
+}
+%}
+
+%type<id> TrailingComment
+%type<id> CommaOrSemicolonOptional
+%type<tcomments> CommentList
 
 /**
  * Strings identifier
@@ -353,20 +382,56 @@ Include:
     }
 
 DefinitionList:
-  DefinitionList CaptureDocText StructuredAnnotations Definition
+  DefinitionList CommentList CaptureDocText StructuredAnnotations Definition
     {
       pdebug("DefinitionList -> DefinitionList Definition");
-      if ($2 != NULL && $4 != NULL) {
-        $4->set_doc($2);
+      if ($3 != NULL && $5 != NULL) {
+        $5->set_doc($3);
       }
 
-      if ($3 != NULL && $4 != NULL) {
-        $4->merge($3);
+      if ($4 != NULL && $5 != NULL) {
+        $5->merge($4);
       }
+
+      if ($2 != NULL && $5 != NULL) {
+        $5->set_leading_comments(std::move(*$2));
+      }
+
+      delete $2;
     }
 |
     {
       pdebug("DefinitionList -> ");
+    }
+
+CommentList:
+  CommentList tok_comment_slash
+    {
+      $$ = $1;
+      $$->emplace_back(COMMENT_LINE_SLASH, $2 ? std::string($2) : std::string());
+      free($2);
+    }
+| CommentList tok_comment_hash
+    {
+      $$ = $1;
+      $$->emplace_back(COMMENT_LINE_HASH, $2 ? std::string($2) : std::string());
+      free($2);
+    }
+| CommentList tok_block_comment
+    {
+      $$ = $1;
+      $$->emplace_back(COMMENT_BLOCK, $2 ? std::string($2) : std::string());
+      free($2);
+    }
+| CommentList tok_doc_comment
+    {
+      $$ = $1;
+      $$->emplace_back(COMMENT_DOC, $2 ? std::string($2) : std::string());
+      free($2);
+    }
+|
+    {
+      $$ = new_comment_list();
     }
 
 Definition:
@@ -448,12 +513,14 @@ TypeDefinition:
     }
 
 CommaOrSemicolonOptional:
-  ','
-    {}
-| ';'
-    {}
-|
-    {}
+  ',' TrailingComment  { $$ = $2; }
+| ';' TrailingComment  { $$ = $2; }
+|     TrailingComment  { $$ = $1; }
+
+TrailingComment:
+  tok_comment_slash  { $$ = $1; }
+| tok_comment_hash   { $$ = $1; }
+|                    { $$ = NULL; }
 
 Typedef:
   tok_typedef FieldType tok_identifier TypeAnnotations CommaOrSemicolonOptional
@@ -461,6 +528,11 @@ Typedef:
       pdebug("TypeDef -> tok_typedef FieldType tok_identifier");
       validate_simple_identifier( $3);
       t_typedef *td = new t_typedef(g_program, $2, $3);
+      td->set_loc(@1.first_line, @1.first_column, @4.last_line, @4.last_column);
+      if ($5 != NULL) {
+        td->set_trailing_comment(COMMENT_LINE_SLASH, $5);
+        free($5);
+      }
       $$ = td;
       if ($4 != NULL) {
         $$->merge($4);
@@ -475,6 +547,7 @@ Enum:
       $$ = $4;
       validate_simple_identifier( $2);
       $$->set_name($2);
+      $$->set_loc(@1.first_line, @1.first_column, @5.last_line, @5.last_column);
       if ($6 != NULL) {
         $$->merge($6);
         delete $6;
@@ -511,16 +584,24 @@ EnumDefList:
     }
 
 EnumDef:
-  CaptureDocText EnumValue TypeAnnotations CommaOrSemicolonOptional
+  CommentList CaptureDocText EnumValue TypeAnnotations CommaOrSemicolonOptional
     {
       pdebug("EnumDef -> EnumValue");
-      $$ = $2;
-      if ($1 != NULL) {
-        $$->set_doc($1);
+      $$ = $3;
+      if ($2 != NULL) {
+        $$->set_doc($2);
       }
-      if ($3 != NULL) {
-        $$->merge($3);
-        delete $3;
+      if ($4 != NULL) {
+        $$->merge($4);
+        delete $4;
+      }
+      if ($1 != NULL) {
+        $$->set_leading_comments(std::move(*$1));
+        delete $1;
+      }
+      if ($5 != NULL) {
+        $$->set_trailing_comment(COMMENT_LINE_SLASH, $5);
+        free($5);
       }
     }
 
@@ -529,15 +610,11 @@ EnumValue:
     {
       pdebug("EnumValue -> tok_identifier = tok_int_constant");
       if ($3 < INT32_MIN || $3 > INT32_MAX) {
-        // Note: this used to be just a warning.  However, since thrift always
-        // treats enums as i32 values, I'm changing it to a fatal error.
-        // I doubt this will affect many people, but users who run into this
-        // will have to update their thrift files to manually specify the
-        // truncated i32 value that thrift has always been using anyway.
         failure("64-bit value supplied for enum %s will be truncated.", $1);
       }
       y_enum_val = static_cast<int32_t>($3);
       $$ = new t_enum_value($1, y_enum_val);
+      $$->set_loc(@1.first_line, @1.first_column, @3.last_line, @3.last_column);
     }
  |
   tok_identifier
@@ -549,6 +626,7 @@ EnumValue:
       }
       ++y_enum_val;
       $$ = new t_enum_value($1, y_enum_val);
+      $$->set_loc(@1.first_line, @1.first_column, @1.last_line, @1.last_column);
     }
 
 Senum:
@@ -592,6 +670,11 @@ Const:
         validate_simple_identifier( $3);
         g_scope->resolve_const_value($5, $2);
         $$ = new t_const($2, $3, $5);
+        $$->set_loc(@1.first_line, @1.first_column, @5.last_line, @5.last_column);
+        if ($6 != NULL) {
+          $$->set_trailing_comment(COMMENT_LINE_SLASH, $6);
+          free($6);
+        }
         validate_const_type($$);
 
         g_scope->add_constant($3, $$);
@@ -702,6 +785,7 @@ Struct:
       $5->set_union($1 == struct_is_union);
       $$ = $5;
       $$->set_name($2);
+      $$->set_loc(@1.first_line, @1.first_column, @6.last_line, @6.last_column);
       if ($7 != NULL) {
         $$->merge($7);
         delete $7;
@@ -756,6 +840,7 @@ Xception:
       $4->set_name($2);
       $4->set_xception(true);
       $$ = $4;
+      $$->set_loc(@1.first_line, @1.first_column, @5.last_line, @5.last_column);
       if ($6 != NULL) {
         $$->merge($6);
         delete $6;
@@ -770,6 +855,7 @@ Service:
       $$ = $6;
       $$->set_name($2);
       $$->set_extends($3);
+      $$->set_loc(@1.first_line, @1.first_column, @8.last_line, @8.last_column);
       if ($9 != NULL) {
         $$->merge($9);
         delete $9;
@@ -857,22 +943,30 @@ FunctionReturn:
     }
 
 Function:
-  CaptureDocText StructuredAnnotations FunctionReturn tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
+  CommentList CaptureDocText StructuredAnnotations FunctionReturn tok_identifier '(' FieldList ')' Throws TypeAnnotations CommaOrSemicolonOptional
     {
-      validate_simple_identifier($4);
-      $6->set_name(std::string($4) + "_args");
-      $$ = new t_function($3, $4, $6, $8);
-      if ($1 != NULL) {
-        $$->set_doc($1);
-      }
-
-      if ($9!= NULL) {
-        $$->merge($9);
-        delete $9;
-      }
+      validate_simple_identifier($5);
+      $7->set_name(std::string($5) + "_args");
+      $$ = new t_function($4, $5, $7, $9);
+      $$->set_loc(@4.first_line, @4.first_column, @8.last_line, @8.last_column);
       if ($2 != NULL) {
-        $$->merge($2);
-        delete $2;
+        $$->set_doc($2);
+      }
+      if ($1 != NULL) {
+        $$->set_leading_comments(std::move(*$1));
+        delete $1;
+      }
+      if ($11 != NULL) {
+        $$->set_trailing_comment(COMMENT_LINE_SLASH, $11);
+        free($11);
+      }
+      if ($10 != NULL) {
+        $$->merge($10);
+        delete $10;
+      }
+      if ($3 != NULL) {
+        $$->merge($3);
+        delete $3;
       }
     }
 
@@ -919,40 +1013,49 @@ FieldList:
     }
 
 Field:
-  CaptureDocText StructuredAnnotations FieldIdentifier FieldRequiredness FieldType FieldReference tok_identifier FieldValue XsdOptional XsdNillable XsdAttributes TypeAnnotations CommaOrSemicolonOptional
+  CommentList CaptureDocText StructuredAnnotations FieldIdentifier FieldRequiredness FieldType FieldReference tok_identifier FieldValue XsdOptional XsdNillable XsdAttributes TypeAnnotations CommaOrSemicolonOptional
     {
       pdebug("tok_int_constant : Field -> FieldType tok_identifier");
-      if ($3.auto_assigned) {
-        pwarning(1, "No field key specified for %s, resulting protocol may have conflicts or not be backwards compatible!\n", $6);
+      if ($4.auto_assigned) {
+        pwarning(1, "No field key specified for %s, resulting protocol may have conflicts or not be backwards compatible!\n", $7);
         if (g_strict >= 192) {
           yyerror("Implicit field keys are deprecated and not allowed with -strict");
           exit(1);
         }
       }
-      validate_simple_identifier($7);
-      $$ = new t_field($5, $7, $3.value);
-      $$->set_reference($6);
-      $$->set_req($4);
-      if ($8 != NULL) {
-        g_scope->resolve_const_value($8, $5);
-        validate_field_value($$, $8);
-        $$->set_value($8);
+      validate_simple_identifier($8);
+      $$ = new t_field($6, $8, $4.value);
+      $$->set_loc(@6.first_line, @6.first_column, @8.last_line, @8.last_column);
+      $$->set_reference($7);
+      $$->set_req($5);
+      if ($9 != NULL) {
+        g_scope->resolve_const_value($9, $6);
+        validate_field_value($$, $9);
+        $$->set_value($9);
       }
-      $$->set_xsd_optional($9);
-      $$->set_xsd_nillable($10);
+      $$->set_xsd_optional($10);
+      $$->set_xsd_nillable($11);
+      if ($2 != NULL) {
+        $$->set_doc($2);
+      }
       if ($1 != NULL) {
-        $$->set_doc($1);
+        $$->set_leading_comments(std::move(*$1));
+        delete $1;
       }
-      if ($11 != NULL) {
-        $$->set_xsd_attrs($11);
+      if ($14 != NULL) {
+        $$->set_trailing_comment(COMMENT_LINE_SLASH, $14);
+        free($14);
       }
       if ($12 != NULL) {
-        $$->merge($12);
-        delete $12;
+        $$->set_xsd_attrs($12);
       }
-      if ($2 != NULL) {
-        $$->merge($2);
-        delete $2;
+      if ($13 != NULL) {
+        $$->merge($13);
+        delete $13;
+      }
+      if ($3 != NULL) {
+        $$->merge($3);
+        delete $3;
       }
     }
 

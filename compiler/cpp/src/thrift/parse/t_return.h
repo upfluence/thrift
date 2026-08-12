@@ -21,8 +21,9 @@
 #define T_RETURN_H
 
 #include "thrift/parse/t_type.h"
+#include "thrift/parse/t_node.h"
 
-class t_return {
+class t_return : public t_node {
 public:
   t_return(t_type* return_,
              bool oneway)

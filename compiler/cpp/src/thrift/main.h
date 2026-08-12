@@ -118,7 +118,7 @@ void error_unsupported_namespace_decl(const char* old_form, const char* new_form
  */
 
 extern int yylineno;
-extern char yytext[];
+extern char* yytext;
 extern std::FILE* yyin;
 
 #endif

@@ -21,6 +21,7 @@
 #define T_CONST_VALUE_H
 
 #include "thrift/parse/t_enum.h"
+#include "thrift/parse/t_node.h"
 #include <stdint.h>
 #include <map>
 #include <vector>
@@ -31,7 +32,7 @@
  * or whatever.
  *
  */
-class t_const_value {
+class t_const_value : public t_node {
 public:
   /**
    * Comparator to sort fields in ascending order by key.

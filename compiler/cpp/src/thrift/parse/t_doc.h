@@ -22,12 +22,13 @@
 
 #include "thrift/globals.h"
 #include "thrift/logging.h"
+#include "thrift/parse/t_node.h"
 
 /**
  * Documentation stubs
  *
  */
-class t_doc {
+class t_doc : public t_node {
 
 public:
   t_doc() : has_doc_(false) {}

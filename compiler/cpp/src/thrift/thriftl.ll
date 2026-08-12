@@ -86,12 +86,32 @@ void unexpected_token(char* text) {
   exit(1);
 }
 
+/**
+ * Column tracking. Reset to 1 at the start of each new line.
+ * Updated by YY_USER_ACTION before every rule fires.
+ */
+int yycolumn = 1;
+
+#define YY_USER_ACTION                              \
+  yylloc.first_line   = yylineno;                   \
+  yylloc.first_column = yycolumn;                   \
+  for (int _yy_i = 0; _yy_i < yyleng; ++_yy_i) {   \
+    if (yytext[_yy_i] == '\n') {                    \
+      yycolumn = 1;                                 \
+    } else {                                        \
+      ++yycolumn;                                   \
+    }                                               \
+  }                                                 \
+  yylloc.last_line   = yylineno;                    \
+  yylloc.last_column = yycolumn - 1;
+
 %}
 
 /**
- * Provides the yylineno global, useful for debugging output
+ * Provides the yylineno global via %option yylineno (replaces lex-compat).
+ * Compatible with %locations in the Bison parser.
  */
-%option lex-compat
+%option yylineno
 
 /**
  * Our inputs are all single files, so no need for yywrap
@@ -123,14 +143,29 @@ literal_begin (['\"])
 %%
 
 {whitespace}         { /* do nothing */                 }
-{sillycomm}          { /* do nothing */                 }
+
+{sillycomm} {
+  // "/**/" and similar empty block comments — emit as a block comment token
+  // with empty value so the formatter can reproduce them.
+  if (g_parse_mode == PROGRAM) {
+    // strip leading "/*" and trailing "*/"
+    std::string raw(yytext);
+    std::string inner = raw.substr(2, raw.size() - 4);
+    yylval.id = strdup(inner.c_str());
+    return tok_block_comment;
+  }
+}
 
 {doctext_begin} {
-  std::string parsed("/**");
-  int state = 0;  // 0 = normal, 1 = "*" seen, "*/" seen
-  while(state < 2)
-  {
+  std::string parsed;
+  int state = 0;  // 0 = normal, 1 = "*" seen, 2 = "*/" seen
+  while (state < 2) {
     int ch = yyinput();
+    if (ch == '\n') {
+      yycolumn = 1;
+    } else {
+      ++yycolumn;
+    }
     parsed.push_back(ch);
     switch (ch) {
       case EOF:
@@ -147,33 +182,39 @@ literal_begin (['\"])
         break;
     }
   }
-  pdebug("doctext = \"%s\"\n",parsed.c_str());
+  pdebug("doctext = \"%s\"\n", parsed.c_str());
 
- /* This does not show up in the parse tree. */
- /* Rather, the parser will grab it out of the global. */
   if (g_parse_mode == PROGRAM) {
+    // Keep the existing global doctext machinery for program-level doc.
     clear_doctext();
-    g_doctext = strdup(parsed.c_str() + 3);
-    assert(strlen(g_doctext) >= 2);
-    g_doctext[strlen(g_doctext) - 2] = ' ';
-    g_doctext[strlen(g_doctext) - 1] = '\0';
+    // parsed ends with "*/"; strip it to get the inner text.
+    std::string inner = parsed.substr(0, parsed.size() - 2);
+    g_doctext = strdup(inner.c_str());
     g_doctext = clean_up_doctext(g_doctext);
     g_doctext_lineno = yylineno;
-    if( (g_program_doctext_candidate == NULL) && (g_program_doctext_status == INVALID)){
+    if ((g_program_doctext_candidate == NULL) && (g_program_doctext_status == INVALID)) {
       g_program_doctext_candidate = strdup(g_doctext);
       g_program_doctext_lineno = g_doctext_lineno;
       g_program_doctext_status = STILL_CANDIDATE;
-      pdebug("%s","program doctext set to STILL_CANDIDATE");
+      pdebug("%s", "program doctext set to STILL_CANDIDATE");
     }
+
+    // Also emit a token so the parser can attach it to the next definition.
+    yylval.id = strdup(inner.c_str());
+    return tok_doc_comment;
   }
 }
 
-{multicm_begin}  { /* parsed, but thrown away */
-  std::string parsed("/*");
-  int state = 0;  // 0 = normal, 1 = "*" seen, "*/" seen
-  while(state < 2)
-  {
+{multicm_begin} {
+  std::string parsed;
+  int state = 0;  // 0 = normal, 1 = "*" seen, 2 = "*/" seen
+  while (state < 2) {
     int ch = yyinput();
+    if (ch == '\n') {
+      yycolumn = 1;
+    } else {
+      ++yycolumn;
+    }
     parsed.push_back(ch);
     switch (ch) {
       case EOF:
@@ -190,11 +231,31 @@ literal_begin (['\"])
         break;
     }
   }
-  pdebug("multi_comm = \"%s\"\n",parsed.c_str());
+  pdebug("multi_comm = \"%s\"\n", parsed.c_str());
+
+  if (g_parse_mode == PROGRAM) {
+    // strip trailing "*/" to get the inner text
+    std::string inner = parsed.substr(0, parsed.size() - 2);
+    yylval.id = strdup(inner.c_str());
+    return tok_block_comment;
+  }
 }
 
-{comment}            { /* do nothing */                 }
-{unixcomment}        { /* do nothing */                 }
+{comment} {
+  // // comment — emit the text after "//"
+  if (g_parse_mode == PROGRAM) {
+    yylval.id = strdup(yytext + 2);
+    return tok_comment_slash;
+  }
+}
+
+{unixcomment} {
+  // # comment — emit the text after "#"
+  if (g_parse_mode == PROGRAM) {
+    yylval.id = strdup(yytext + 1);
+    return tok_comment_hash;
+  }
+}
 
 {symbol}             { return yytext[0];                }
 "*"                  { return yytext[0];                }
