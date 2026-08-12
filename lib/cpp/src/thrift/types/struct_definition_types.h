@@ -19,6 +19,7 @@
 #include <memory>
 #include "annotation_definition_types.h"
 #include "type_definition_types.h"
+#include "constant_definition_types.h"
 
 
 namespace types { namespace struct_definition {
@@ -27,7 +28,8 @@ struct Requiredness {
   enum type {
     Unknown = 0,
     Optional = 1,
-    Required = 2
+    Required = 2,
+    Default = 3
   };
 };
 
@@ -56,13 +58,18 @@ class FieldDefinition;
 
 class StructDefinition;
 
+typedef struct _FieldDefinition__isset {
+  _FieldDefinition__isset() : default_value(false), reference(false) {}
+  bool default_value :1;
+  bool reference :1;
+} _FieldDefinition__isset;
 
 class FieldDefinition : public virtual ::apache::thrift::TBase {
  public:
 
   FieldDefinition(const FieldDefinition&);
   FieldDefinition& operator=(const FieldDefinition&);
-  FieldDefinition() : id(0), type(), requiredness((Requiredness::type)0) {
+  FieldDefinition() : id(0), type(), requiredness((Requiredness::type)0), reference(0) {
   }
 
   virtual ~FieldDefinition() noexcept;
@@ -70,6 +77,10 @@ class FieldDefinition : public virtual ::apache::thrift::TBase {
   int32_t id;
   ::std::shared_ptr< ::types::type_definition::TypeDefinition> type;
   Requiredness::type requiredness;
+   ::types::constant_definition::ConstantValueDefinition default_value;
+  bool reference;
+
+  _FieldDefinition__isset __isset;
 
   void __set_annotation(const  ::types::annotation_definition::AnnotationDefinition& val);
 
@@ -78,6 +89,10 @@ class FieldDefinition : public virtual ::apache::thrift::TBase {
   void __set_type(::std::shared_ptr< ::types::type_definition::TypeDefinition> val);
 
   void __set_requiredness(const Requiredness::type val);
+
+  void __set_default_value(const  ::types::constant_definition::ConstantValueDefinition& val);
+
+  void __set_reference(const bool val);
 
   bool operator == (const FieldDefinition & rhs) const
   {
@@ -88,6 +103,14 @@ class FieldDefinition : public virtual ::apache::thrift::TBase {
     if (!(type == rhs.type))
       return false;
     if (!(requiredness == rhs.requiredness))
+      return false;
+    if (__isset.default_value != rhs.__isset.default_value)
+      return false;
+    else if (__isset.default_value && !(default_value == rhs.default_value))
+      return false;
+    if (__isset.reference != rhs.__isset.reference)
+      return false;
+    else if (__isset.reference && !(reference == rhs.reference))
       return false;
     return true;
   }

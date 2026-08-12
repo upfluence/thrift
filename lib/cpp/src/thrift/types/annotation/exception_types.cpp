@@ -13,6 +13,72 @@
 
 namespace types { namespace annotation { namespace exception {
 
+int _kKindValues[] = {
+  Kind::Unknown,
+  Kind::Transient,
+  Kind::Permanent,
+  Kind::Stateful
+};
+const char* _kKindNames[] = {
+  "Unknown",
+  "Transient",
+  "Permanent",
+  "Stateful"
+};
+const std::map<int, const char*> _Kind_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(4, _kKindValues, _kKindNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+
+std::ostream& operator<<(std::ostream& out, const Kind::type& val) {
+  std::map<int, const char*>::const_iterator it = _Kind_VALUES_TO_NAMES.find(val);
+  if (it != _Kind_VALUES_TO_NAMES.end()) {
+    out << it->second;
+  } else {
+    out << static_cast<int>(val);
+  }
+  return out;
+}
+
+std::string to_string(const Kind::type& val) {
+  std::map<int, const char*>::const_iterator it = _Kind_VALUES_TO_NAMES.find(val);
+  if (it != _Kind_VALUES_TO_NAMES.end()) {
+    return std::string(it->second);
+  } else {
+    return std::to_string(static_cast<int>(val));
+  }
+}
+
+int _kBlameValues[] = {
+  Blame::Unknown,
+  Blame::Client,
+  Blame::Server,
+  Blame::ThirdParty
+};
+const char* _kBlameNames[] = {
+  "Unknown",
+  "Client",
+  "Server",
+  "ThirdParty"
+};
+const std::map<int, const char*> _Blame_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(4, _kBlameValues, _kBlameNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+
+std::ostream& operator<<(std::ostream& out, const Blame::type& val) {
+  std::map<int, const char*>::const_iterator it = _Blame_VALUES_TO_NAMES.find(val);
+  if (it != _Blame_VALUES_TO_NAMES.end()) {
+    out << it->second;
+  } else {
+    out << static_cast<int>(val);
+  }
+  return out;
+}
+
+std::string to_string(const Blame::type& val) {
+  std::map<int, const char*>::const_iterator it = _Blame_VALUES_TO_NAMES.find(val);
+  if (it != _Blame_VALUES_TO_NAMES.end()) {
+    return std::string(it->second);
+  } else {
+    return std::to_string(static_cast<int>(val));
+  }
+}
+
 
 Safe::~Safe() noexcept {
 }

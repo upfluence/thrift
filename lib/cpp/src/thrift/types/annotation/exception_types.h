@@ -21,6 +21,36 @@
 
 namespace types { namespace annotation { namespace exception {
 
+struct Kind {
+  enum type {
+    Unknown = 0,
+    Transient = 1,
+    Permanent = 2,
+    Stateful = 3
+  };
+};
+
+extern const std::map<int, const char*> _Kind_VALUES_TO_NAMES;
+
+std::ostream& operator<<(std::ostream& out, const Kind::type& val);
+
+std::string to_string(const Kind::type& val);
+
+struct Blame {
+  enum type {
+    Unknown = 0,
+    Client = 1,
+    Server = 2,
+    ThirdParty = 3
+  };
+};
+
+extern const std::map<int, const char*> _Blame_VALUES_TO_NAMES;
+
+std::ostream& operator<<(std::ostream& out, const Blame::type& val);
+
+std::string to_string(const Blame::type& val);
+
 class Safe;
 
 

@@ -5,7 +5,7 @@
 #
 
 require 'thrift'
-require 'thrift/thrift/types/core/core_types'
+require 'thrift/types/core/core_types'
 require 'thrift/types/annotation_definition/annotation_definition_types'
 
 
@@ -221,7 +221,7 @@ module Thrift
           THRIFT_FIELD_INDEX_LIST_TYPE => {type: ::Thrift::Types::STRUCT, name: 'list_type', class: ::Thrift::Types::Type_definition::ListTypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_LIST_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LIST_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_MAP_TYPE => {type: ::Thrift::Types::STRUCT, name: 'map_type', class: ::Thrift::Types::Type_definition::MapTypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_MAP_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_MAP_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_SET_TYPE => {type: ::Thrift::Types::STRUCT, name: 'set_type', class: ::Thrift::Types::Type_definition::SetTypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_SET_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SET_TYPE_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_REFERENCE_TYPE => {type: ::Thrift::Types::STRUCT, name: 'reference_type', class: ::Thrift::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_TYPE_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_REFERENCE_TYPE => {type: ::Thrift::Types::STRUCT, name: 'reference_type', class: ::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_TYPE_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end

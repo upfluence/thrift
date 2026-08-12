@@ -45,18 +45,22 @@ var _ = value.GoUnusedProtection__
 //   - Typedefs
 //   - Enums
 //   - Stdlib
+//   - NamespaceAnnotations
+//   - CppIncludes
 type ProgramDefinition struct {
-	Name       string                                             `thrift:"name,1,required" db:"name" json:"name"`
-	Path       string                                             `thrift:"path,2,required" db:"path" json:"path"`
-	Doc        *string                                            `thrift:"doc,3" db:"doc" json:"doc,omitempty"`
-	Namespaces map[string]string                                  `thrift:"namespaces,4,required" db:"namespaces" json:"namespaces"`
-	Includes   []*ProgramDefinition                               `thrift:"includes,5,required" db:"includes" json:"includes"`
-	Structs    map[string]*struct_definition.StructDefinition     `thrift:"structs,6,required" db:"structs" json:"structs"`
-	Services   map[string]*service_definition.ServiceDefinition   `thrift:"services,7,required" db:"services" json:"services"`
-	Constants  map[string]*constant_definition.ConstantDefinition `thrift:"constants,8,required" db:"constants" json:"constants"`
-	Typedefs   map[string]*type_definition.TypeDefinition         `thrift:"typedefs,9,required" db:"typedefs" json:"typedefs"`
-	Enums      map[string]*enum_definition.EnumDefinition         `thrift:"enums,10,required" db:"enums" json:"enums"`
-	Stdlib     bool                                               `thrift:"stdlib,11,required" db:"stdlib" json:"stdlib"`
+	Name                 string                                             `thrift:"name,1,required" db:"name" json:"name"`
+	Path                 string                                             `thrift:"path,2,required" db:"path" json:"path"`
+	Doc                  *string                                            `thrift:"doc,3" db:"doc" json:"doc,omitempty"`
+	Namespaces           map[string]string                                  `thrift:"namespaces,4,required" db:"namespaces" json:"namespaces"`
+	Includes             []*ProgramDefinition                               `thrift:"includes,5,required" db:"includes" json:"includes"`
+	Structs              map[string]*struct_definition.StructDefinition     `thrift:"structs,6,required" db:"structs" json:"structs"`
+	Services             map[string]*service_definition.ServiceDefinition   `thrift:"services,7,required" db:"services" json:"services"`
+	Constants            map[string]*constant_definition.ConstantDefinition `thrift:"constants,8,required" db:"constants" json:"constants"`
+	Typedefs             map[string]*type_definition.TypeDefinition         `thrift:"typedefs,9,required" db:"typedefs" json:"typedefs"`
+	Enums                map[string]*enum_definition.EnumDefinition         `thrift:"enums,10,required" db:"enums" json:"enums"`
+	Stdlib               bool                                               `thrift:"stdlib,11,required" db:"stdlib" json:"stdlib"`
+	NamespaceAnnotations map[string]map[string]string                       `thrift:"namespace_annotations,12" db:"namespace_annotations" json:"namespace_annotations,omitempty"`
+	CppIncludes          []string                                           `thrift:"cpp_includes,13" db:"cpp_includes" json:"cpp_includes,omitempty"`
 }
 
 func NewProgramDefinition() *ProgramDefinition {
@@ -154,6 +158,22 @@ var programDefinitionStructDefinition = thrift.StructDefinition{
 		{
 			AnnotatedDefinition: thrift.AnnotatedDefinition{
 				Name:                  "stdlib",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "namespace_annotations",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "cpp_includes",
 				LegacyAnnotations:     map[string]string{},
 				StructuredAnnotations: []thrift.RegistrableStruct{},
 			},
@@ -257,8 +277,36 @@ func (p *ProgramDefinition) GetStdlib() bool {
 func (p *ProgramDefinition) SetStdlib(v bool) {
 	p.Stdlib = v
 }
+
+var ProgramDefinition_NamespaceAnnotations_DEFAULT map[string]map[string]string
+
+func (p *ProgramDefinition) GetNamespaceAnnotations() map[string]map[string]string {
+	return p.NamespaceAnnotations
+}
+
+func (p *ProgramDefinition) SetNamespaceAnnotations(v map[string]map[string]string) {
+	p.NamespaceAnnotations = v
+}
+
+var ProgramDefinition_CppIncludes_DEFAULT []string
+
+func (p *ProgramDefinition) GetCppIncludes() []string {
+	return p.CppIncludes
+}
+
+func (p *ProgramDefinition) SetCppIncludes(v []string) {
+	p.CppIncludes = v
+}
 func (p *ProgramDefinition) IsSetDoc() bool {
 	return p.Doc != nil
+}
+
+func (p *ProgramDefinition) IsSetNamespaceAnnotations() bool {
+	return p.NamespaceAnnotations != nil
+}
+
+func (p *ProgramDefinition) IsSetCppIncludes() bool {
+	return p.CppIncludes != nil
 }
 
 func (p *ProgramDefinition) Read(iprot thrift.TProtocol) error {
@@ -401,6 +449,26 @@ func (p *ProgramDefinition) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 				issetStdlib = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 12:
+			if fieldTypeId == thrift.MAP {
+				if err := p.ReadField12(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 13:
+			if fieldTypeId == thrift.LIST {
+				if err := p.ReadField13(iprot); err != nil {
+					return err
+				}
 			} else {
 				if err := iprot.Skip(fieldTypeId); err != nil {
 					return err
@@ -665,6 +733,74 @@ func (p *ProgramDefinition) ReadField11(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *ProgramDefinition) ReadField12(iprot thrift.TProtocol) error {
+	_, _, size, err := iprot.ReadMapBegin()
+	if err != nil {
+		return thrift.PrependError("error reading map begin: ", err)
+	}
+	tMap := make(map[string]map[string]string, size)
+	p.NamespaceAnnotations = tMap
+	for i := 0; i < size; i++ {
+		var _key13 string
+		if v, err := iprot.ReadString(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_key13 = v
+		}
+		_, _, size, err := iprot.ReadMapBegin()
+		if err != nil {
+			return thrift.PrependError("error reading map begin: ", err)
+		}
+		tMap := make(map[string]string, size)
+		_val14 := tMap
+		for i := 0; i < size; i++ {
+			var _key15 string
+			if v, err := iprot.ReadString(); err != nil {
+				return thrift.PrependError("error reading field 0: ", err)
+			} else {
+				_key15 = v
+			}
+			var _val16 string
+			if v, err := iprot.ReadString(); err != nil {
+				return thrift.PrependError("error reading field 0: ", err)
+			} else {
+				_val16 = v
+			}
+			_val14[_key15] = _val16
+		}
+		if err := iprot.ReadMapEnd(); err != nil {
+			return thrift.PrependError("error reading map end: ", err)
+		}
+		p.NamespaceAnnotations[_key13] = _val14
+	}
+	if err := iprot.ReadMapEnd(); err != nil {
+		return thrift.PrependError("error reading map end: ", err)
+	}
+	return nil
+}
+
+func (p *ProgramDefinition) ReadField13(iprot thrift.TProtocol) error {
+	_, size, err := iprot.ReadListBegin()
+	if err != nil {
+		return thrift.PrependError("error reading list begin: ", err)
+	}
+	tSlice := make([]string, 0, size)
+	p.CppIncludes = tSlice
+	for i := 0; i < size; i++ {
+		var _elem17 string
+		if v, err := iprot.ReadString(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_elem17 = v
+		}
+		p.CppIncludes = append(p.CppIncludes, _elem17)
+	}
+	if err := iprot.ReadListEnd(); err != nil {
+		return thrift.PrependError("error reading list end: ", err)
+	}
+	return nil
+}
+
 func (p *ProgramDefinition) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("ProgramDefinition"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -701,6 +837,12 @@ func (p *ProgramDefinition) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField11(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField12(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField13(oprot); err != nil {
 			return err
 		}
 	}
@@ -932,12 +1074,72 @@ func (p *ProgramDefinition) writeField11(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *ProgramDefinition) writeField12(oprot thrift.TProtocol) (err error) {
+	if p.IsSetNamespaceAnnotations() {
+		if err := oprot.WriteFieldBegin("namespace_annotations", thrift.MAP, 12); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 12:namespace_annotations: ", p), err)
+		}
+		if err := oprot.WriteMapBegin(thrift.STRING, thrift.MAP, len(p.NamespaceAnnotations)); err != nil {
+			return thrift.PrependError("error writing map begin: ", err)
+		}
+		for k, v := range p.NamespaceAnnotations {
+			if err := oprot.WriteString(string(k)); err != nil {
+				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+			}
+			if err := oprot.WriteMapBegin(thrift.STRING, thrift.STRING, len(v)); err != nil {
+				return thrift.PrependError("error writing map begin: ", err)
+			}
+			for k, v := range v {
+				if err := oprot.WriteString(string(k)); err != nil {
+					return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+				}
+				if err := oprot.WriteString(string(v)); err != nil {
+					return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+				}
+			}
+			if err := oprot.WriteMapEnd(); err != nil {
+				return thrift.PrependError("error writing map end: ", err)
+			}
+		}
+		if err := oprot.WriteMapEnd(); err != nil {
+			return thrift.PrependError("error writing map end: ", err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 12:namespace_annotations: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *ProgramDefinition) writeField13(oprot thrift.TProtocol) (err error) {
+	if p.IsSetCppIncludes() {
+		if err := oprot.WriteFieldBegin("cpp_includes", thrift.LIST, 13); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 13:cpp_includes: ", p), err)
+		}
+		if err := oprot.WriteListBegin(thrift.STRING, len(p.CppIncludes)); err != nil {
+			return thrift.PrependError("error writing list begin: ", err)
+		}
+		for _, v := range p.CppIncludes {
+			if err := oprot.WriteString(string(v)); err != nil {
+				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+			}
+		}
+		if err := oprot.WriteListEnd(); err != nil {
+			return thrift.PrependError("error writing list end: ", err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 13:cpp_includes: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *ProgramDefinition) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"ProgramDefinition({name: %v, path: %v, doc: %v, namespaces: %v, includes: %v, structs: %v, services: %v, constants: %v, typedefs: %v, enums: %v, stdlib: %v})",
+		"ProgramDefinition({name: %v, path: %v, doc: %v, namespaces: %v, includes: %v, structs: %v, services: %v, constants: %v, typedefs: %v, enums: %v, stdlib: %v, namespace_annotations: %v, cpp_includes: %v})",
 		p.GetName(),
 		p.GetPath(),
 		p.GetDoc(),
@@ -949,5 +1151,7 @@ func (p *ProgramDefinition) String() string {
 		p.GetTypedefs(),
 		p.GetEnums(),
 		p.GetStdlib(),
+		p.GetNamespaceAnnotations(),
+		p.GetCppIncludes(),
 	)
 }

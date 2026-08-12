@@ -5,7 +5,7 @@
 #
 
 require 'thrift'
-require 'thrift/thrift/types/core/core_types'
+require 'thrift/types/core/core_types'
 require 'thrift/types/annotation_definition/annotation_definition_types'
 require 'thrift/types/type_definition/type_definition_types'
 require 'thrift/types/struct_definition/struct_definition_types'
@@ -84,7 +84,7 @@ module Thrift
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ARGUMENTS => {type: ::Thrift::Types::LIST, name: 'arguments', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Struct_definition::FieldDefinition}, legacy_annotations: THRIFT_FIELD_ARGUMENTS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ARGUMENTS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_RETURN_TYPE => {type: ::Thrift::Types::STRUCT, name: 'return_type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_RETURN_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_RETURN_TYPE_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_EXCEPTIONS => {type: ::Thrift::Types::LIST, name: 'exceptions', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Thrift::Types::Core::Reference}, legacy_annotations: THRIFT_FIELD_EXCEPTIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_EXCEPTIONS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_EXCEPTIONS => {type: ::Thrift::Types::LIST, name: 'exceptions', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Core::Reference}, legacy_annotations: THRIFT_FIELD_EXCEPTIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_EXCEPTIONS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ONEWAY_ => {type: ::Thrift::Types::BOOL, name: 'oneway_', legacy_annotations: THRIFT_FIELD_ONEWAY__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ONEWAY__STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_SINK_TYPE => {type: ::Thrift::Types::STRUCT, name: 'sink_type', class: ::Thrift::Types::Type_definition::TypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_SINK_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_SINK_TYPE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_STREAM_TYPE => {type: ::Thrift::Types::STRUCT, name: 'stream_type', class: ::Thrift::Types::Type_definition::TypeDefinition, optional: true, legacy_annotations: THRIFT_FIELD_STREAM_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STREAM_TYPE_STRUCTURED_ANNOTATIONS}
@@ -140,7 +140,7 @@ module Thrift
 
         FIELDS = {
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_EXTENDS_ => {type: ::Thrift::Types::STRUCT, name: 'extends_', class: ::Thrift::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_EXTENDS__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_EXTENDS__STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_EXTENDS_ => {type: ::Thrift::Types::STRUCT, name: 'extends_', class: ::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_EXTENDS__LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_EXTENDS__STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_FUNCTIONS => {type: ::Thrift::Types::LIST, name: 'functions', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Service_definition::FunctionDefinition}, legacy_annotations: THRIFT_FIELD_FUNCTIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FUNCTIONS_STRUCTURED_ANNOTATIONS}
         }.freeze
 

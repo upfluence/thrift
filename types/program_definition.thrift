@@ -8,18 +8,20 @@ include "types/service_definition.thrift"
 include "types/value.thrift"
 
 struct ProgramDefinition {
-  1: required string name;
-  2: required string path;
-  3: optional string doc;
+  1:  required string name;
+  2:  required string path;
+  3:  optional string doc;
 
-  4: required map<string, string> namespaces;
-  5: required list<ProgramDefinition> includes;
+  4:  required map<string, string>                                        namespaces;
+  5:  required list<ProgramDefinition>                                    includes;
 
-  6: required map<string, struct_definition.StructDefinition> structs;
-  7: required map<string, service_definition.ServiceDefinition> services;
-  8: required map<string, constant_definition.ConstantDefinition> constants;
-  9: required map<string, type_definition.TypeDefinition> typedefs;
-  10: required map<string, enum_definition.EnumDefinition> enums;
+  6:  required map<string, struct_definition.StructDefinition>            structs;
+  7:  required map<string, service_definition.ServiceDefinition>          services;
+  8:  required map<string, constant_definition.ConstantDefinition>        constants;
+  9:  required map<string, type_definition.TypeDefinition>                typedefs;
+  10: required map<string, enum_definition.EnumDefinition>                enums;
 
-  11: required bool stdlib;
+  11: required bool                                                        stdlib;
+  12: optional map<string, map<string, string>>                            namespace_annotations;
+  13: optional list<string>                                                cpp_includes;
 }

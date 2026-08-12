@@ -10,6 +10,24 @@ module Thrift
   module Types
     module Annotation
       module Exception
+        module Kind
+          Unknown = 0
+          Transient = 1
+          Permanent = 2
+          Stateful = 3
+          VALUE_MAP = {0 => "Unknown", 1 => "Transient", 2 => "Permanent", 3 => "Stateful"}
+          VALID_VALUES = Set.new([Unknown, Transient, Permanent, Stateful]).freeze
+        end
+
+        module Blame
+          Unknown = 0
+          Client = 1
+          Server = 2
+          ThirdParty = 3
+          VALUE_MAP = {0 => "Unknown", 1 => "Client", 2 => "Server", 3 => "ThirdParty"}
+          VALID_VALUES = Set.new([Unknown, Client, Server, ThirdParty]).freeze
+        end
+
         class Safe; end
 
         class Safe

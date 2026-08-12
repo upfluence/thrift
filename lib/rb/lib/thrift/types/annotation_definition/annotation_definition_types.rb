@@ -5,16 +5,118 @@
 #
 
 require 'thrift'
-require 'thrift/thrift/types/core/core_types'
-require 'thrift/thrift/types/value/value_types'
+require 'thrift/types/core/core_types'
+require 'thrift/types/value/value_types'
 
 
 module Thrift
   module Types
     module Annotation_definition
+      module CommentKind
+        LineSlash = 1
+        LineHash = 2
+        Block = 3
+        Doc = 4
+        VALUE_MAP = {1 => "LineSlash", 2 => "LineHash", 3 => "Block", 4 => "Doc"}
+        VALID_VALUES = Set.new([LineSlash, LineHash, Block, Doc]).freeze
+      end
+
+      class Comment; end
+
+      class NodeLocation; end
+
       class StructuredAnnotationDefinition; end
 
       class AnnotationDefinition; end
+
+      class Comment
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+
+        NAME = 'Comment'.freeze
+        NAMESPACE = 'types.annotation_definition'.freeze
+
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_INDEX_KIND = 1
+        THRIFT_FIELD_INDEX_VALUE = 2
+
+        THRIFT_FIELD_KIND_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_KIND_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        FIELDS = {
+          THRIFT_FIELD_INDEX_KIND => {type: ::Thrift::Types::I32, name: 'kind', enum_class: ::Thrift::Types::Annotation_definition::CommentKind, legacy_annotations: THRIFT_FIELD_KIND_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_KIND_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRING, name: 'value', legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
+        }.freeze
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field kind is unset!') unless @kind
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field value is unset!') unless @value
+          unless @kind.nil? || ::Thrift::Types::Annotation_definition::CommentKind::VALID_VALUES.include?(@kind)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field kind!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+        ::Thrift.register_struct_type self
+      end
+
+      class NodeLocation
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+
+        NAME = 'NodeLocation'.freeze
+        NAMESPACE = 'types.annotation_definition'.freeze
+
+        LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_INDEX_LINE = 1
+        THRIFT_FIELD_INDEX_COL = 2
+
+        THRIFT_FIELD_LINE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_LINE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_COL_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_COL_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        FIELDS = {
+          THRIFT_FIELD_INDEX_LINE => {type: ::Thrift::Types::I32, name: 'line', legacy_annotations: THRIFT_FIELD_LINE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LINE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_COL => {type: ::Thrift::Types::I32, name: 'col', legacy_annotations: THRIFT_FIELD_COL_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_COL_STRUCTURED_ANNOTATIONS}
+        }.freeze
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field line is unset!') unless @line
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field col is unset!') unless @col
+        end
+
+        ::Thrift::Struct.generate_accessors self
+        ::Thrift.register_struct_type self
+      end
 
       class StructuredAnnotationDefinition
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -44,8 +146,8 @@ module Thrift
         ].freeze
 
         FIELDS = {
-          THRIFT_FIELD_INDEX_TYPE => {type: ::Thrift::Types::STRUCT, name: 'type', class: ::Thrift::Thrift::Types::Core::Reference, legacy_annotations: THRIFT_FIELD_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPE_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRUCT, name: 'value', class: ::Thrift::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_TYPE => {type: ::Thrift::Types::STRUCT, name: 'type', class: ::Thrift::Types::Core::Reference, legacy_annotations: THRIFT_FIELD_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRUCT, name: 'value', class: ::Thrift::Types::Value::Value, legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end
@@ -74,6 +176,10 @@ module Thrift
         THRIFT_FIELD_INDEX_NAME = 1
         THRIFT_FIELD_INDEX_STRUCTURED_ANNOTATIONS = 2
         THRIFT_FIELD_INDEX_LEGACY_ANNOTATIONS = 3
+        THRIFT_FIELD_INDEX_FROM_LOC = 4
+        THRIFT_FIELD_INDEX_TO_LOC = 5
+        THRIFT_FIELD_INDEX_LEADING_COMMENTS = 6
+        THRIFT_FIELD_INDEX_TRAILING_COMMENT = 7
 
         THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS = {
         }.freeze
@@ -93,10 +199,38 @@ module Thrift
         THRIFT_FIELD_LEGACY_ANNOTATIONS_STRUCTURED_ANNOTATIONS = [
         ].freeze
 
+        THRIFT_FIELD_FROM_LOC_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_FROM_LOC_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_TO_LOC_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_TO_LOC_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_LEADING_COMMENTS_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_LEADING_COMMENTS_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_TRAILING_COMMENT_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_TRAILING_COMMENT_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
           THRIFT_FIELD_INDEX_NAME => {type: ::Thrift::Types::STRING, name: 'name', legacy_annotations: THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAME_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_STRUCTURED_ANNOTATIONS => {type: ::Thrift::Types::LIST, name: 'structured_annotations', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Annotation_definition::StructuredAnnotationDefinition}, legacy_annotations: THRIFT_FIELD_STRUCTURED_ANNOTATIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STRUCTURED_ANNOTATIONS_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_LEGACY_ANNOTATIONS => {type: ::Thrift::Types::MAP, name: 'legacy_annotations', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRING}, legacy_annotations: THRIFT_FIELD_LEGACY_ANNOTATIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LEGACY_ANNOTATIONS_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_LEGACY_ANNOTATIONS => {type: ::Thrift::Types::MAP, name: 'legacy_annotations', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRING}, legacy_annotations: THRIFT_FIELD_LEGACY_ANNOTATIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LEGACY_ANNOTATIONS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_FROM_LOC => {type: ::Thrift::Types::STRUCT, name: 'from_loc', class: ::Thrift::Types::Annotation_definition::NodeLocation, optional: true, legacy_annotations: THRIFT_FIELD_FROM_LOC_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FROM_LOC_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_TO_LOC => {type: ::Thrift::Types::STRUCT, name: 'to_loc', class: ::Thrift::Types::Annotation_definition::NodeLocation, optional: true, legacy_annotations: THRIFT_FIELD_TO_LOC_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TO_LOC_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_LEADING_COMMENTS => {type: ::Thrift::Types::LIST, name: 'leading_comments', element: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Annotation_definition::Comment}, optional: true, legacy_annotations: THRIFT_FIELD_LEADING_COMMENTS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_LEADING_COMMENTS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_TRAILING_COMMENT => {type: ::Thrift::Types::STRUCT, name: 'trailing_comment', class: ::Thrift::Types::Annotation_definition::Comment, optional: true, legacy_annotations: THRIFT_FIELD_TRAILING_COMMENT_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TRAILING_COMMENT_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/annotation_definition"
+	"github.com/upfluence/thrift/lib/go/thrift/types/constant_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 	"io"
 	"reflect"
@@ -24,6 +25,7 @@ var _ = io.EOF
 
 var _ = annotation_definition.GoUnusedProtection__
 var _ = type_definition.GoUnusedProtection__
+var _ = constant_definition.GoUnusedProtection__
 
 var GoUnusedProtection__ int
 

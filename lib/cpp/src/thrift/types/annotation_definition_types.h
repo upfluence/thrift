@@ -23,9 +23,110 @@
 
 namespace types { namespace annotation_definition {
 
+struct CommentKind {
+  enum type {
+    LineSlash = 1,
+    LineHash = 2,
+    Block = 3,
+    Doc = 4
+  };
+};
+
+extern const std::map<int, const char*> _CommentKind_VALUES_TO_NAMES;
+
+std::ostream& operator<<(std::ostream& out, const CommentKind::type& val);
+
+std::string to_string(const CommentKind::type& val);
+
+class Comment;
+
+class NodeLocation;
+
 class StructuredAnnotationDefinition;
 
 class AnnotationDefinition;
+
+
+class Comment : public virtual ::apache::thrift::TBase {
+ public:
+
+  Comment(const Comment&);
+  Comment& operator=(const Comment&);
+  Comment() : kind((CommentKind::type)0), value() {
+  }
+
+  virtual ~Comment() noexcept;
+  CommentKind::type kind;
+  std::string value;
+
+  void __set_kind(const CommentKind::type val);
+
+  void __set_value(const std::string& val);
+
+  bool operator == (const Comment & rhs) const
+  {
+    if (!(kind == rhs.kind))
+      return false;
+    if (!(value == rhs.value))
+      return false;
+    return true;
+  }
+  bool operator != (const Comment &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const Comment & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(Comment &a, Comment &b);
+
+std::ostream& operator<<(std::ostream& out, const Comment& obj);
+
+
+class NodeLocation : public virtual ::apache::thrift::TBase {
+ public:
+
+  NodeLocation(const NodeLocation&);
+  NodeLocation& operator=(const NodeLocation&);
+  NodeLocation() : line(0), col(0) {
+  }
+
+  virtual ~NodeLocation() noexcept;
+  int32_t line;
+  int32_t col;
+
+  void __set_line(const int32_t val);
+
+  void __set_col(const int32_t val);
+
+  bool operator == (const NodeLocation & rhs) const
+  {
+    if (!(line == rhs.line))
+      return false;
+    if (!(col == rhs.col))
+      return false;
+    return true;
+  }
+  bool operator != (const NodeLocation &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const NodeLocation & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(NodeLocation &a, NodeLocation &b);
+
+std::ostream& operator<<(std::ostream& out, const NodeLocation& obj);
 
 
 class StructuredAnnotationDefinition : public virtual ::apache::thrift::TBase {
@@ -68,6 +169,13 @@ void swap(StructuredAnnotationDefinition &a, StructuredAnnotationDefinition &b);
 
 std::ostream& operator<<(std::ostream& out, const StructuredAnnotationDefinition& obj);
 
+typedef struct _AnnotationDefinition__isset {
+  _AnnotationDefinition__isset() : from_loc(false), to_loc(false), leading_comments(false), trailing_comment(false) {}
+  bool from_loc :1;
+  bool to_loc :1;
+  bool leading_comments :1;
+  bool trailing_comment :1;
+} _AnnotationDefinition__isset;
 
 class AnnotationDefinition : public virtual ::apache::thrift::TBase {
  public:
@@ -81,12 +189,26 @@ class AnnotationDefinition : public virtual ::apache::thrift::TBase {
   std::string name;
   std::vector<StructuredAnnotationDefinition>  structured_annotations;
   std::map<std::string, std::string>  legacy_annotations;
+  NodeLocation from_loc;
+  NodeLocation to_loc;
+  std::vector<Comment>  leading_comments;
+  Comment trailing_comment;
+
+  _AnnotationDefinition__isset __isset;
 
   void __set_name(const std::string& val);
 
   void __set_structured_annotations(const std::vector<StructuredAnnotationDefinition> & val);
 
   void __set_legacy_annotations(const std::map<std::string, std::string> & val);
+
+  void __set_from_loc(const NodeLocation& val);
+
+  void __set_to_loc(const NodeLocation& val);
+
+  void __set_leading_comments(const std::vector<Comment> & val);
+
+  void __set_trailing_comment(const Comment& val);
 
   bool operator == (const AnnotationDefinition & rhs) const
   {
@@ -95,6 +217,22 @@ class AnnotationDefinition : public virtual ::apache::thrift::TBase {
     if (!(structured_annotations == rhs.structured_annotations))
       return false;
     if (!(legacy_annotations == rhs.legacy_annotations))
+      return false;
+    if (__isset.from_loc != rhs.__isset.from_loc)
+      return false;
+    else if (__isset.from_loc && !(from_loc == rhs.from_loc))
+      return false;
+    if (__isset.to_loc != rhs.__isset.to_loc)
+      return false;
+    else if (__isset.to_loc && !(to_loc == rhs.to_loc))
+      return false;
+    if (__isset.leading_comments != rhs.__isset.leading_comments)
+      return false;
+    else if (__isset.leading_comments && !(leading_comments == rhs.leading_comments))
+      return false;
+    if (__isset.trailing_comment != rhs.__isset.trailing_comment)
+      return false;
+    else if (__isset.trailing_comment && !(trailing_comment == rhs.trailing_comment))
       return false;
     return true;
   }

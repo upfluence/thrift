@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/annotation_definition"
+	"github.com/upfluence/thrift/lib/go/thrift/types/constant_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 	"io"
 	"reflect"
@@ -26,6 +27,7 @@ var _ = io.EOF
 
 var _ = annotation_definition.GoUnusedProtection__
 var _ = type_definition.GoUnusedProtection__
+var _ = constant_definition.GoUnusedProtection__
 
 type Requiredness int64
 
@@ -33,6 +35,7 @@ const (
 	Requiredness_Unknown  Requiredness = 0
 	Requiredness_Optional Requiredness = 1
 	Requiredness_Required Requiredness = 2
+	Requiredness_Default  Requiredness = 3
 )
 
 func (p Requiredness) String() string {
@@ -43,6 +46,8 @@ func (p Requiredness) String() string {
 		return "Optional"
 	case Requiredness_Required:
 		return "Required"
+	case Requiredness_Default:
+		return "Default"
 	}
 	return "<UNSET>"
 }
@@ -55,6 +60,8 @@ func RequirednessFromString(s string) (Requiredness, error) {
 		return Requiredness_Optional, nil
 	case "Requiredness_Required", "Required":
 		return Requiredness_Required, nil
+	case "Requiredness_Default", "Default":
+		return Requiredness_Default, nil
 	}
 	return Requiredness(0), fmt.Errorf("not a valid Requiredness string")
 }
@@ -171,11 +178,15 @@ func (p *StructKind) Value() (driver.Value, error) {
 //   - ID
 //   - Type
 //   - Requiredness
+//   - DefaultValue
+//   - Reference
 type FieldDefinition struct {
-	Annotation   *annotation_definition.AnnotationDefinition `thrift:"annotation,1,required" db:"annotation" json:"annotation"`
-	ID           int32                                       `thrift:"id,2,required" db:"id" json:"id"`
-	Type         *type_definition.TypeDefinition             `thrift:"type,3,required" db:"type" json:"type"`
-	Requiredness Requiredness                                `thrift:"requiredness,4,required" db:"requiredness" json:"requiredness"`
+	Annotation   *annotation_definition.AnnotationDefinition  `thrift:"annotation,1,required" db:"annotation" json:"annotation"`
+	ID           int32                                        `thrift:"id,2,required" db:"id" json:"id"`
+	Type         *type_definition.TypeDefinition              `thrift:"type,3,required" db:"type" json:"type"`
+	Requiredness Requiredness                                 `thrift:"requiredness,4,required" db:"requiredness" json:"requiredness"`
+	DefaultValue *constant_definition.ConstantValueDefinition `thrift:"default_value,5" db:"default_value" json:"default_value,omitempty"`
+	Reference    *bool                                        `thrift:"reference,6" db:"reference" json:"reference,omitempty"`
 }
 
 func NewFieldDefinition() *FieldDefinition {
@@ -217,6 +228,22 @@ var fieldDefinitionStructDefinition = thrift.StructDefinition{
 		{
 			AnnotatedDefinition: thrift.AnnotatedDefinition{
 				Name:                  "requiredness",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "default_value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "reference",
 				LegacyAnnotations:     map[string]string{},
 				StructuredAnnotations: []thrift.RegistrableStruct{},
 			},
@@ -269,12 +296,46 @@ func (p *FieldDefinition) GetRequiredness() Requiredness {
 func (p *FieldDefinition) SetRequiredness(v Requiredness) {
 	p.Requiredness = v
 }
+
+var FieldDefinition_DefaultValue_DEFAULT *constant_definition.ConstantValueDefinition
+
+func (p *FieldDefinition) GetDefaultValue() *constant_definition.ConstantValueDefinition {
+	if !p.IsSetDefaultValue() {
+		return FieldDefinition_DefaultValue_DEFAULT
+	}
+	return p.DefaultValue
+}
+
+func (p *FieldDefinition) SetDefaultValue(v *constant_definition.ConstantValueDefinition) {
+	p.DefaultValue = v
+}
+
+var FieldDefinition_Reference_DEFAULT bool
+
+func (p *FieldDefinition) GetReference() bool {
+	if !p.IsSetReference() {
+		return FieldDefinition_Reference_DEFAULT
+	}
+	return *p.Reference
+}
+
+func (p *FieldDefinition) SetReference(v bool) {
+	p.Reference = &v
+}
 func (p *FieldDefinition) IsSetAnnotation() bool {
 	return p.Annotation != nil
 }
 
 func (p *FieldDefinition) IsSetType() bool {
 	return p.Type != nil
+}
+
+func (p *FieldDefinition) IsSetDefaultValue() bool {
+	return p.DefaultValue != nil
+}
+
+func (p *FieldDefinition) IsSetReference() bool {
+	return p.Reference != nil
 }
 
 func (p *FieldDefinition) Read(iprot thrift.TProtocol) error {
@@ -335,6 +396,26 @@ func (p *FieldDefinition) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 				issetRequiredness = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 5:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField5(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 6:
+			if fieldTypeId == thrift.BOOL {
+				if err := p.ReadField6(iprot); err != nil {
+					return err
+				}
 			} else {
 				if err := iprot.Skip(fieldTypeId); err != nil {
 					return err
@@ -402,6 +483,23 @@ func (p *FieldDefinition) ReadField4(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *FieldDefinition) ReadField5(iprot thrift.TProtocol) error {
+	p.DefaultValue = constant_definition.NewConstantValueDefinition()
+	if err := p.DefaultValue.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.DefaultValue), err)
+	}
+	return nil
+}
+
+func (p *FieldDefinition) ReadField6(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadBool(); err != nil {
+		return thrift.PrependError("error reading field 6: ", err)
+	} else {
+		p.Reference = &v
+	}
+	return nil
+}
+
 func (p *FieldDefinition) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("FieldDefinition"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -417,6 +515,12 @@ func (p *FieldDefinition) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField4(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField5(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField6(oprot); err != nil {
 			return err
 		}
 	}
@@ -481,16 +585,48 @@ func (p *FieldDefinition) writeField4(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *FieldDefinition) writeField5(oprot thrift.TProtocol) (err error) {
+	if p.IsSetDefaultValue() {
+		if err := oprot.WriteFieldBegin("default_value", thrift.STRUCT, 5); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:default_value: ", p), err)
+		}
+		if err := p.DefaultValue.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.DefaultValue), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 5:default_value: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *FieldDefinition) writeField6(oprot thrift.TProtocol) (err error) {
+	if p.IsSetReference() {
+		if err := oprot.WriteFieldBegin("reference", thrift.BOOL, 6); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:reference: ", p), err)
+		}
+		if err := oprot.WriteBool(bool(*p.Reference)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T.reference (6) field write error: ", p), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 6:reference: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *FieldDefinition) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"FieldDefinition({annotation: %v, id: %v, type: %v, requiredness: %v})",
+		"FieldDefinition({annotation: %v, id: %v, type: %v, requiredness: %v, default_value: %v, reference: %v})",
 		p.GetAnnotation(),
 		p.GetID(),
 		p.GetType(),
 		p.GetRequiredness(),
+		p.GetDefaultValue(),
+		p.GetReference(),
 	)
 }
 

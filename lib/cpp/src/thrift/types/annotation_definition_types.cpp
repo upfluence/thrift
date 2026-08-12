@@ -13,6 +13,271 @@
 
 namespace types { namespace annotation_definition {
 
+int _kCommentKindValues[] = {
+  CommentKind::LineSlash,
+  CommentKind::LineHash,
+  CommentKind::Block,
+  CommentKind::Doc
+};
+const char* _kCommentKindNames[] = {
+  "LineSlash",
+  "LineHash",
+  "Block",
+  "Doc"
+};
+const std::map<int, const char*> _CommentKind_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(4, _kCommentKindValues, _kCommentKindNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+
+std::ostream& operator<<(std::ostream& out, const CommentKind::type& val) {
+  std::map<int, const char*>::const_iterator it = _CommentKind_VALUES_TO_NAMES.find(val);
+  if (it != _CommentKind_VALUES_TO_NAMES.end()) {
+    out << it->second;
+  } else {
+    out << static_cast<int>(val);
+  }
+  return out;
+}
+
+std::string to_string(const CommentKind::type& val) {
+  std::map<int, const char*>::const_iterator it = _CommentKind_VALUES_TO_NAMES.find(val);
+  if (it != _CommentKind_VALUES_TO_NAMES.end()) {
+    return std::string(it->second);
+  } else {
+    return std::to_string(static_cast<int>(val));
+  }
+}
+
+
+Comment::~Comment() noexcept {
+}
+
+
+void Comment::__set_kind(const CommentKind::type val) {
+  this->kind = val;
+}
+
+void Comment::__set_value(const std::string& val) {
+  this->value = val;
+}
+std::ostream& operator<<(std::ostream& out, const Comment& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t Comment::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_kind = false;
+  bool isset_value = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          int32_t ecast0;
+          xfer += iprot->readI32(ecast0);
+          this->kind = (CommentKind::type)ecast0;
+          isset_kind = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->value);
+          isset_value = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_kind)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_value)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t Comment::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("Comment");
+
+  xfer += oprot->writeFieldBegin("kind", ::apache::thrift::protocol::T_I32, 1);
+  xfer += oprot->writeI32((int32_t)this->kind);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("value", ::apache::thrift::protocol::T_STRING, 2);
+  xfer += oprot->writeString(this->value);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(Comment &a, Comment &b) {
+  using ::std::swap;
+  swap(a.kind, b.kind);
+  swap(a.value, b.value);
+}
+
+Comment::Comment(const Comment& other1) {
+  kind = other1.kind;
+  value = other1.value;
+}
+Comment& Comment::operator=(const Comment& other2) {
+  kind = other2.kind;
+  value = other2.value;
+  return *this;
+}
+void Comment::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "Comment(";
+  out << "kind=" << to_string(kind);
+  out << ", " << "value=" << to_string(value);
+  out << ")";
+}
+
+
+NodeLocation::~NodeLocation() noexcept {
+}
+
+
+void NodeLocation::__set_line(const int32_t val) {
+  this->line = val;
+}
+
+void NodeLocation::__set_col(const int32_t val) {
+  this->col = val;
+}
+std::ostream& operator<<(std::ostream& out, const NodeLocation& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t NodeLocation::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_line = false;
+  bool isset_col = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->line);
+          isset_line = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->col);
+          isset_col = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_line)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_col)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t NodeLocation::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("NodeLocation");
+
+  xfer += oprot->writeFieldBegin("line", ::apache::thrift::protocol::T_I32, 1);
+  xfer += oprot->writeI32(this->line);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("col", ::apache::thrift::protocol::T_I32, 2);
+  xfer += oprot->writeI32(this->col);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(NodeLocation &a, NodeLocation &b) {
+  using ::std::swap;
+  swap(a.line, b.line);
+  swap(a.col, b.col);
+}
+
+NodeLocation::NodeLocation(const NodeLocation& other3) {
+  line = other3.line;
+  col = other3.col;
+}
+NodeLocation& NodeLocation::operator=(const NodeLocation& other4) {
+  line = other4.line;
+  col = other4.col;
+  return *this;
+}
+void NodeLocation::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "NodeLocation(";
+  out << "line=" << to_string(line);
+  out << ", " << "col=" << to_string(col);
+  out << ")";
+}
+
 
 StructuredAnnotationDefinition::~StructuredAnnotationDefinition() noexcept {
 }
@@ -111,13 +376,13 @@ void swap(StructuredAnnotationDefinition &a, StructuredAnnotationDefinition &b) 
   swap(a.value, b.value);
 }
 
-StructuredAnnotationDefinition::StructuredAnnotationDefinition(const StructuredAnnotationDefinition& other0) {
-  type = other0.type;
-  value = other0.value;
+StructuredAnnotationDefinition::StructuredAnnotationDefinition(const StructuredAnnotationDefinition& other5) {
+  type = other5.type;
+  value = other5.value;
 }
-StructuredAnnotationDefinition& StructuredAnnotationDefinition::operator=(const StructuredAnnotationDefinition& other1) {
-  type = other1.type;
-  value = other1.value;
+StructuredAnnotationDefinition& StructuredAnnotationDefinition::operator=(const StructuredAnnotationDefinition& other6) {
+  type = other6.type;
+  value = other6.value;
   return *this;
 }
 void StructuredAnnotationDefinition::printTo(std::ostream& out) const {
@@ -143,6 +408,26 @@ void AnnotationDefinition::__set_structured_annotations(const std::vector<Struct
 
 void AnnotationDefinition::__set_legacy_annotations(const std::map<std::string, std::string> & val) {
   this->legacy_annotations = val;
+}
+
+void AnnotationDefinition::__set_from_loc(const NodeLocation& val) {
+  this->from_loc = val;
+__isset.from_loc = true;
+}
+
+void AnnotationDefinition::__set_to_loc(const NodeLocation& val) {
+  this->to_loc = val;
+__isset.to_loc = true;
+}
+
+void AnnotationDefinition::__set_leading_comments(const std::vector<Comment> & val) {
+  this->leading_comments = val;
+__isset.leading_comments = true;
+}
+
+void AnnotationDefinition::__set_trailing_comment(const Comment& val) {
+  this->trailing_comment = val;
+__isset.trailing_comment = true;
 }
 std::ostream& operator<<(std::ostream& out, const AnnotationDefinition& obj)
 {
@@ -187,14 +472,14 @@ uint32_t AnnotationDefinition::read(::apache::thrift::protocol::TProtocol* iprot
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->structured_annotations.clear();
-            uint32_t _size2;
-            ::apache::thrift::protocol::TType _etype5;
-            xfer += iprot->readListBegin(_etype5, _size2);
-            this->structured_annotations.resize(_size2);
-            uint32_t _i6;
-            for (_i6 = 0; _i6 < _size2; ++_i6)
+            uint32_t _size7;
+            ::apache::thrift::protocol::TType _etype10;
+            xfer += iprot->readListBegin(_etype10, _size7);
+            this->structured_annotations.resize(_size7);
+            uint32_t _i11;
+            for (_i11 = 0; _i11 < _size7; ++_i11)
             {
-              xfer += this->structured_annotations[_i6].read(iprot);
+              xfer += this->structured_annotations[_i11].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -207,21 +492,65 @@ uint32_t AnnotationDefinition::read(::apache::thrift::protocol::TProtocol* iprot
         if (ftype == ::apache::thrift::protocol::T_MAP) {
           {
             this->legacy_annotations.clear();
-            uint32_t _size7;
-            ::apache::thrift::protocol::TType _ktype8;
-            ::apache::thrift::protocol::TType _vtype9;
-            xfer += iprot->readMapBegin(_ktype8, _vtype9, _size7);
-            uint32_t _i11;
-            for (_i11 = 0; _i11 < _size7; ++_i11)
+            uint32_t _size12;
+            ::apache::thrift::protocol::TType _ktype13;
+            ::apache::thrift::protocol::TType _vtype14;
+            xfer += iprot->readMapBegin(_ktype13, _vtype14, _size12);
+            uint32_t _i16;
+            for (_i16 = 0; _i16 < _size12; ++_i16)
             {
-              std::string _key12;
-              xfer += iprot->readString(_key12);
-              std::string& _val13 = this->legacy_annotations[_key12];
-              xfer += iprot->readString(_val13);
+              std::string _key17;
+              xfer += iprot->readString(_key17);
+              std::string& _val18 = this->legacy_annotations[_key17];
+              xfer += iprot->readString(_val18);
             }
             xfer += iprot->readMapEnd();
           }
           isset_legacy_annotations = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 4:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->from_loc.read(iprot);
+          this->__isset.from_loc = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->to_loc.read(iprot);
+          this->__isset.to_loc = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->leading_comments.clear();
+            uint32_t _size19;
+            ::apache::thrift::protocol::TType _etype22;
+            xfer += iprot->readListBegin(_etype22, _size19);
+            this->leading_comments.resize(_size19);
+            uint32_t _i23;
+            for (_i23 = 0; _i23 < _size19; ++_i23)
+            {
+              xfer += this->leading_comments[_i23].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.leading_comments = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 7:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->trailing_comment.read(iprot);
+          this->__isset.trailing_comment = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -256,10 +585,10 @@ uint32_t AnnotationDefinition::write(::apache::thrift::protocol::TProtocol* opro
   xfer += oprot->writeFieldBegin("structured_annotations", ::apache::thrift::protocol::T_LIST, 2);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->structured_annotations.size()));
-    std::vector<StructuredAnnotationDefinition> ::const_iterator _iter14;
-    for (_iter14 = this->structured_annotations.begin(); _iter14 != this->structured_annotations.end(); ++_iter14)
+    std::vector<StructuredAnnotationDefinition> ::const_iterator _iter24;
+    for (_iter24 = this->structured_annotations.begin(); _iter24 != this->structured_annotations.end(); ++_iter24)
     {
-      xfer += (*_iter14).write(oprot);
+      xfer += (*_iter24).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -268,16 +597,44 @@ uint32_t AnnotationDefinition::write(::apache::thrift::protocol::TProtocol* opro
   xfer += oprot->writeFieldBegin("legacy_annotations", ::apache::thrift::protocol::T_MAP, 3);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->legacy_annotations.size()));
-    std::map<std::string, std::string> ::const_iterator _iter15;
-    for (_iter15 = this->legacy_annotations.begin(); _iter15 != this->legacy_annotations.end(); ++_iter15)
+    std::map<std::string, std::string> ::const_iterator _iter25;
+    for (_iter25 = this->legacy_annotations.begin(); _iter25 != this->legacy_annotations.end(); ++_iter25)
     {
-      xfer += oprot->writeString(_iter15->first);
-      xfer += oprot->writeString(_iter15->second);
+      xfer += oprot->writeString(_iter25->first);
+      xfer += oprot->writeString(_iter25->second);
     }
     xfer += oprot->writeMapEnd();
   }
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.from_loc) {
+    xfer += oprot->writeFieldBegin("from_loc", ::apache::thrift::protocol::T_STRUCT, 4);
+    xfer += this->from_loc.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.to_loc) {
+    xfer += oprot->writeFieldBegin("to_loc", ::apache::thrift::protocol::T_STRUCT, 5);
+    xfer += this->to_loc.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.leading_comments) {
+    xfer += oprot->writeFieldBegin("leading_comments", ::apache::thrift::protocol::T_LIST, 6);
+    {
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->leading_comments.size()));
+      std::vector<Comment> ::const_iterator _iter26;
+      for (_iter26 = this->leading_comments.begin(); _iter26 != this->leading_comments.end(); ++_iter26)
+      {
+        xfer += (*_iter26).write(oprot);
+      }
+      xfer += oprot->writeListEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.trailing_comment) {
+    xfer += oprot->writeFieldBegin("trailing_comment", ::apache::thrift::protocol::T_STRUCT, 7);
+    xfer += this->trailing_comment.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -288,17 +645,32 @@ void swap(AnnotationDefinition &a, AnnotationDefinition &b) {
   swap(a.name, b.name);
   swap(a.structured_annotations, b.structured_annotations);
   swap(a.legacy_annotations, b.legacy_annotations);
+  swap(a.from_loc, b.from_loc);
+  swap(a.to_loc, b.to_loc);
+  swap(a.leading_comments, b.leading_comments);
+  swap(a.trailing_comment, b.trailing_comment);
+  swap(a.__isset, b.__isset);
 }
 
-AnnotationDefinition::AnnotationDefinition(const AnnotationDefinition& other16) {
-  name = other16.name;
-  structured_annotations = other16.structured_annotations;
-  legacy_annotations = other16.legacy_annotations;
+AnnotationDefinition::AnnotationDefinition(const AnnotationDefinition& other27) {
+  name = other27.name;
+  structured_annotations = other27.structured_annotations;
+  legacy_annotations = other27.legacy_annotations;
+  from_loc = other27.from_loc;
+  to_loc = other27.to_loc;
+  leading_comments = other27.leading_comments;
+  trailing_comment = other27.trailing_comment;
+  __isset = other27.__isset;
 }
-AnnotationDefinition& AnnotationDefinition::operator=(const AnnotationDefinition& other17) {
-  name = other17.name;
-  structured_annotations = other17.structured_annotations;
-  legacy_annotations = other17.legacy_annotations;
+AnnotationDefinition& AnnotationDefinition::operator=(const AnnotationDefinition& other28) {
+  name = other28.name;
+  structured_annotations = other28.structured_annotations;
+  legacy_annotations = other28.legacy_annotations;
+  from_loc = other28.from_loc;
+  to_loc = other28.to_loc;
+  leading_comments = other28.leading_comments;
+  trailing_comment = other28.trailing_comment;
+  __isset = other28.__isset;
   return *this;
 }
 void AnnotationDefinition::printTo(std::ostream& out) const {
@@ -307,6 +679,10 @@ void AnnotationDefinition::printTo(std::ostream& out) const {
   out << "name=" << to_string(name);
   out << ", " << "structured_annotations=" << to_string(structured_annotations);
   out << ", " << "legacy_annotations=" << to_string(legacy_annotations);
+  out << ", " << "from_loc="; (__isset.from_loc ? (out << to_string(from_loc)) : (out << "<null>"));
+  out << ", " << "to_loc="; (__isset.to_loc ? (out << to_string(to_loc)) : (out << "<null>"));
+  out << ", " << "leading_comments="; (__isset.leading_comments ? (out << to_string(leading_comments)) : (out << "<null>"));
+  out << ", " << "trailing_comment="; (__isset.trailing_comment ? (out << to_string(trailing_comment)) : (out << "<null>"));
   out << ")";
 }
 

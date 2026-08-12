@@ -62,6 +62,16 @@ void ProgramDefinition::__set_enums(const std::map<std::string,  ::types::enum_d
 void ProgramDefinition::__set_stdlib(const bool val) {
   this->stdlib = val;
 }
+
+void ProgramDefinition::__set_namespace_annotations(const std::map<std::string, std::map<std::string, std::string> > & val) {
+  this->namespace_annotations = val;
+__isset.namespace_annotations = true;
+}
+
+void ProgramDefinition::__set_cpp_includes(const std::vector<std::string> & val) {
+  this->cpp_includes = val;
+__isset.cpp_includes = true;
+}
 std::ostream& operator<<(std::ostream& out, const ProgramDefinition& obj)
 {
   obj.printTo(out);
@@ -290,6 +300,64 @@ uint32_t ProgramDefinition::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 12:
+        if (ftype == ::apache::thrift::protocol::T_MAP) {
+          {
+            this->namespace_annotations.clear();
+            uint32_t _size47;
+            ::apache::thrift::protocol::TType _ktype48;
+            ::apache::thrift::protocol::TType _vtype49;
+            xfer += iprot->readMapBegin(_ktype48, _vtype49, _size47);
+            uint32_t _i51;
+            for (_i51 = 0; _i51 < _size47; ++_i51)
+            {
+              std::string _key52;
+              xfer += iprot->readString(_key52);
+              std::map<std::string, std::string> & _val53 = this->namespace_annotations[_key52];
+              {
+                _val53.clear();
+                uint32_t _size54;
+                ::apache::thrift::protocol::TType _ktype55;
+                ::apache::thrift::protocol::TType _vtype56;
+                xfer += iprot->readMapBegin(_ktype55, _vtype56, _size54);
+                uint32_t _i58;
+                for (_i58 = 0; _i58 < _size54; ++_i58)
+                {
+                  std::string _key59;
+                  xfer += iprot->readString(_key59);
+                  std::string& _val60 = _val53[_key59];
+                  xfer += iprot->readString(_val60);
+                }
+                xfer += iprot->readMapEnd();
+              }
+            }
+            xfer += iprot->readMapEnd();
+          }
+          this->__isset.namespace_annotations = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 13:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->cpp_includes.clear();
+            uint32_t _size61;
+            ::apache::thrift::protocol::TType _etype64;
+            xfer += iprot->readListBegin(_etype64, _size61);
+            this->cpp_includes.resize(_size61);
+            uint32_t _i65;
+            for (_i65 = 0; _i65 < _size61; ++_i65)
+            {
+              xfer += iprot->readString(this->cpp_includes[_i65]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.cpp_includes = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -343,11 +411,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("namespaces", ::apache::thrift::protocol::T_MAP, 4);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->namespaces.size()));
-    std::map<std::string, std::string> ::const_iterator _iter47;
-    for (_iter47 = this->namespaces.begin(); _iter47 != this->namespaces.end(); ++_iter47)
+    std::map<std::string, std::string> ::const_iterator _iter66;
+    for (_iter66 = this->namespaces.begin(); _iter66 != this->namespaces.end(); ++_iter66)
     {
-      xfer += oprot->writeString(_iter47->first);
-      xfer += oprot->writeString(_iter47->second);
+      xfer += oprot->writeString(_iter66->first);
+      xfer += oprot->writeString(_iter66->second);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -356,10 +424,10 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("includes", ::apache::thrift::protocol::T_LIST, 5);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->includes.size()));
-    std::vector<ProgramDefinition> ::const_iterator _iter48;
-    for (_iter48 = this->includes.begin(); _iter48 != this->includes.end(); ++_iter48)
+    std::vector<ProgramDefinition> ::const_iterator _iter67;
+    for (_iter67 = this->includes.begin(); _iter67 != this->includes.end(); ++_iter67)
     {
-      xfer += (*_iter48).write(oprot);
+      xfer += (*_iter67).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -368,11 +436,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("structs", ::apache::thrift::protocol::T_MAP, 6);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->structs.size()));
-    std::map<std::string,  ::types::struct_definition::StructDefinition> ::const_iterator _iter49;
-    for (_iter49 = this->structs.begin(); _iter49 != this->structs.end(); ++_iter49)
+    std::map<std::string,  ::types::struct_definition::StructDefinition> ::const_iterator _iter68;
+    for (_iter68 = this->structs.begin(); _iter68 != this->structs.end(); ++_iter68)
     {
-      xfer += oprot->writeString(_iter49->first);
-      xfer += _iter49->second.write(oprot);
+      xfer += oprot->writeString(_iter68->first);
+      xfer += _iter68->second.write(oprot);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -381,11 +449,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("services", ::apache::thrift::protocol::T_MAP, 7);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->services.size()));
-    std::map<std::string,  ::types::service_definition::ServiceDefinition> ::const_iterator _iter50;
-    for (_iter50 = this->services.begin(); _iter50 != this->services.end(); ++_iter50)
+    std::map<std::string,  ::types::service_definition::ServiceDefinition> ::const_iterator _iter69;
+    for (_iter69 = this->services.begin(); _iter69 != this->services.end(); ++_iter69)
     {
-      xfer += oprot->writeString(_iter50->first);
-      xfer += _iter50->second.write(oprot);
+      xfer += oprot->writeString(_iter69->first);
+      xfer += _iter69->second.write(oprot);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -394,11 +462,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("constants", ::apache::thrift::protocol::T_MAP, 8);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->constants.size()));
-    std::map<std::string,  ::types::constant_definition::ConstantDefinition> ::const_iterator _iter51;
-    for (_iter51 = this->constants.begin(); _iter51 != this->constants.end(); ++_iter51)
+    std::map<std::string,  ::types::constant_definition::ConstantDefinition> ::const_iterator _iter70;
+    for (_iter70 = this->constants.begin(); _iter70 != this->constants.end(); ++_iter70)
     {
-      xfer += oprot->writeString(_iter51->first);
-      xfer += _iter51->second.write(oprot);
+      xfer += oprot->writeString(_iter70->first);
+      xfer += _iter70->second.write(oprot);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -407,11 +475,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("typedefs", ::apache::thrift::protocol::T_MAP, 9);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->typedefs.size()));
-    std::map<std::string,  ::types::type_definition::TypeDefinition> ::const_iterator _iter52;
-    for (_iter52 = this->typedefs.begin(); _iter52 != this->typedefs.end(); ++_iter52)
+    std::map<std::string,  ::types::type_definition::TypeDefinition> ::const_iterator _iter71;
+    for (_iter71 = this->typedefs.begin(); _iter71 != this->typedefs.end(); ++_iter71)
     {
-      xfer += oprot->writeString(_iter52->first);
-      xfer += _iter52->second.write(oprot);
+      xfer += oprot->writeString(_iter71->first);
+      xfer += _iter71->second.write(oprot);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -420,11 +488,11 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeFieldBegin("enums", ::apache::thrift::protocol::T_MAP, 10);
   {
     xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->enums.size()));
-    std::map<std::string,  ::types::enum_definition::EnumDefinition> ::const_iterator _iter53;
-    for (_iter53 = this->enums.begin(); _iter53 != this->enums.end(); ++_iter53)
+    std::map<std::string,  ::types::enum_definition::EnumDefinition> ::const_iterator _iter72;
+    for (_iter72 = this->enums.begin(); _iter72 != this->enums.end(); ++_iter72)
     {
-      xfer += oprot->writeString(_iter53->first);
-      xfer += _iter53->second.write(oprot);
+      xfer += oprot->writeString(_iter72->first);
+      xfer += _iter72->second.write(oprot);
     }
     xfer += oprot->writeMapEnd();
   }
@@ -434,6 +502,42 @@ uint32_t ProgramDefinition::write(::apache::thrift::protocol::TProtocol* oprot) 
   xfer += oprot->writeBool(this->stdlib);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.namespace_annotations) {
+    xfer += oprot->writeFieldBegin("namespace_annotations", ::apache::thrift::protocol::T_MAP, 12);
+    {
+      xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_MAP, static_cast<uint32_t>(this->namespace_annotations.size()));
+      std::map<std::string, std::map<std::string, std::string> > ::const_iterator _iter73;
+      for (_iter73 = this->namespace_annotations.begin(); _iter73 != this->namespace_annotations.end(); ++_iter73)
+      {
+        xfer += oprot->writeString(_iter73->first);
+        {
+          xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(_iter73->second.size()));
+          std::map<std::string, std::string> ::const_iterator _iter74;
+          for (_iter74 = _iter73->second.begin(); _iter74 != _iter73->second.end(); ++_iter74)
+          {
+            xfer += oprot->writeString(_iter74->first);
+            xfer += oprot->writeString(_iter74->second);
+          }
+          xfer += oprot->writeMapEnd();
+        }
+      }
+      xfer += oprot->writeMapEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.cpp_includes) {
+    xfer += oprot->writeFieldBegin("cpp_includes", ::apache::thrift::protocol::T_LIST, 13);
+    {
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->cpp_includes.size()));
+      std::vector<std::string> ::const_iterator _iter75;
+      for (_iter75 = this->cpp_includes.begin(); _iter75 != this->cpp_includes.end(); ++_iter75)
+      {
+        xfer += oprot->writeString((*_iter75));
+      }
+      xfer += oprot->writeListEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -452,36 +556,42 @@ void swap(ProgramDefinition &a, ProgramDefinition &b) {
   swap(a.typedefs, b.typedefs);
   swap(a.enums, b.enums);
   swap(a.stdlib, b.stdlib);
+  swap(a.namespace_annotations, b.namespace_annotations);
+  swap(a.cpp_includes, b.cpp_includes);
   swap(a.__isset, b.__isset);
 }
 
-ProgramDefinition::ProgramDefinition(const ProgramDefinition& other54) {
-  name = other54.name;
-  path = other54.path;
-  doc = other54.doc;
-  namespaces = other54.namespaces;
-  includes = other54.includes;
-  structs = other54.structs;
-  services = other54.services;
-  constants = other54.constants;
-  typedefs = other54.typedefs;
-  enums = other54.enums;
-  stdlib = other54.stdlib;
-  __isset = other54.__isset;
+ProgramDefinition::ProgramDefinition(const ProgramDefinition& other76) {
+  name = other76.name;
+  path = other76.path;
+  doc = other76.doc;
+  namespaces = other76.namespaces;
+  includes = other76.includes;
+  structs = other76.structs;
+  services = other76.services;
+  constants = other76.constants;
+  typedefs = other76.typedefs;
+  enums = other76.enums;
+  stdlib = other76.stdlib;
+  namespace_annotations = other76.namespace_annotations;
+  cpp_includes = other76.cpp_includes;
+  __isset = other76.__isset;
 }
-ProgramDefinition& ProgramDefinition::operator=(const ProgramDefinition& other55) {
-  name = other55.name;
-  path = other55.path;
-  doc = other55.doc;
-  namespaces = other55.namespaces;
-  includes = other55.includes;
-  structs = other55.structs;
-  services = other55.services;
-  constants = other55.constants;
-  typedefs = other55.typedefs;
-  enums = other55.enums;
-  stdlib = other55.stdlib;
-  __isset = other55.__isset;
+ProgramDefinition& ProgramDefinition::operator=(const ProgramDefinition& other77) {
+  name = other77.name;
+  path = other77.path;
+  doc = other77.doc;
+  namespaces = other77.namespaces;
+  includes = other77.includes;
+  structs = other77.structs;
+  services = other77.services;
+  constants = other77.constants;
+  typedefs = other77.typedefs;
+  enums = other77.enums;
+  stdlib = other77.stdlib;
+  namespace_annotations = other77.namespace_annotations;
+  cpp_includes = other77.cpp_includes;
+  __isset = other77.__isset;
   return *this;
 }
 void ProgramDefinition::printTo(std::ostream& out) const {
@@ -498,6 +608,8 @@ void ProgramDefinition::printTo(std::ostream& out) const {
   out << ", " << "typedefs=" << to_string(typedefs);
   out << ", " << "enums=" << to_string(enums);
   out << ", " << "stdlib=" << to_string(stdlib);
+  out << ", " << "namespace_annotations="; (__isset.namespace_annotations ? (out << to_string(namespace_annotations)) : (out << "<null>"));
+  out << ", " << "cpp_includes="; (__isset.cpp_includes ? (out << to_string(cpp_includes)) : (out << "<null>"));
   out << ")";
 }
 

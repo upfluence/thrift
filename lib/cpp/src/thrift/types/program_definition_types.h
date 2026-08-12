@@ -30,8 +30,10 @@ namespace types { namespace program_definition {
 class ProgramDefinition;
 
 typedef struct _ProgramDefinition__isset {
-  _ProgramDefinition__isset() : doc(false) {}
+  _ProgramDefinition__isset() : doc(false), namespace_annotations(false), cpp_includes(false) {}
   bool doc :1;
+  bool namespace_annotations :1;
+  bool cpp_includes :1;
 } _ProgramDefinition__isset;
 
 class ProgramDefinition : public virtual ::apache::thrift::TBase {
@@ -54,6 +56,8 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
   std::map<std::string,  ::types::type_definition::TypeDefinition>  typedefs;
   std::map<std::string,  ::types::enum_definition::EnumDefinition>  enums;
   bool stdlib;
+  std::map<std::string, std::map<std::string, std::string> >  namespace_annotations;
+  std::vector<std::string>  cpp_includes;
 
   _ProgramDefinition__isset __isset;
 
@@ -78,6 +82,10 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
   void __set_enums(const std::map<std::string,  ::types::enum_definition::EnumDefinition> & val);
 
   void __set_stdlib(const bool val);
+
+  void __set_namespace_annotations(const std::map<std::string, std::map<std::string, std::string> > & val);
+
+  void __set_cpp_includes(const std::vector<std::string> & val);
 
   bool operator == (const ProgramDefinition & rhs) const
   {
@@ -104,6 +112,14 @@ class ProgramDefinition : public virtual ::apache::thrift::TBase {
     if (!(enums == rhs.enums))
       return false;
     if (!(stdlib == rhs.stdlib))
+      return false;
+    if (__isset.namespace_annotations != rhs.__isset.namespace_annotations)
+      return false;
+    else if (__isset.namespace_annotations && !(namespace_annotations == rhs.namespace_annotations))
+      return false;
+    if (__isset.cpp_includes != rhs.__isset.cpp_includes)
+      return false;
+    else if (__isset.cpp_includes && !(cpp_includes == rhs.cpp_includes))
       return false;
     return true;
   }

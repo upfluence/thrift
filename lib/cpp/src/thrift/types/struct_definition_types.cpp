@@ -16,14 +16,16 @@ namespace types { namespace struct_definition {
 int _kRequirednessValues[] = {
   Requiredness::Unknown,
   Requiredness::Optional,
-  Requiredness::Required
+  Requiredness::Required,
+  Requiredness::Default
 };
 const char* _kRequirednessNames[] = {
   "Unknown",
   "Optional",
-  "Required"
+  "Required",
+  "Default"
 };
-const std::map<int, const char*> _Requiredness_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(3, _kRequirednessValues, _kRequirednessNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+const std::map<int, const char*> _Requiredness_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(4, _kRequirednessValues, _kRequirednessNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
 
 std::ostream& operator<<(std::ostream& out, const Requiredness::type& val) {
   std::map<int, const char*>::const_iterator it = _Requiredness_VALUES_TO_NAMES.find(val);
@@ -96,6 +98,16 @@ void FieldDefinition::__set_type(::std::shared_ptr< ::types::type_definition::Ty
 
 void FieldDefinition::__set_requiredness(const Requiredness::type val) {
   this->requiredness = val;
+}
+
+void FieldDefinition::__set_default_value(const  ::types::constant_definition::ConstantValueDefinition& val) {
+  this->default_value = val;
+__isset.default_value = true;
+}
+
+void FieldDefinition::__set_reference(const bool val) {
+  this->reference = val;
+__isset.reference = true;
 }
 std::ostream& operator<<(std::ostream& out, const FieldDefinition& obj)
 {
@@ -173,6 +185,22 @@ uint32_t FieldDefinition::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->default_value.read(iprot);
+          this->__isset.default_value = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->reference);
+          this->__isset.reference = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -219,6 +247,16 @@ uint32_t FieldDefinition::write(::apache::thrift::protocol::TProtocol* oprot) co
   xfer += oprot->writeI32((int32_t)this->requiredness);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.default_value) {
+    xfer += oprot->writeFieldBegin("default_value", ::apache::thrift::protocol::T_STRUCT, 5);
+    xfer += this->default_value.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.reference) {
+    xfer += oprot->writeFieldBegin("reference", ::apache::thrift::protocol::T_BOOL, 6);
+    xfer += oprot->writeBool(this->reference);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -230,6 +268,9 @@ void swap(FieldDefinition &a, FieldDefinition &b) {
   swap(a.id, b.id);
   swap(a.type, b.type);
   swap(a.requiredness, b.requiredness);
+  swap(a.default_value, b.default_value);
+  swap(a.reference, b.reference);
+  swap(a.__isset, b.__isset);
 }
 
 FieldDefinition::FieldDefinition(const FieldDefinition& other1) {
@@ -237,12 +278,18 @@ FieldDefinition::FieldDefinition(const FieldDefinition& other1) {
   id = other1.id;
   type = other1.type;
   requiredness = other1.requiredness;
+  default_value = other1.default_value;
+  reference = other1.reference;
+  __isset = other1.__isset;
 }
 FieldDefinition& FieldDefinition::operator=(const FieldDefinition& other2) {
   annotation = other2.annotation;
   id = other2.id;
   type = other2.type;
   requiredness = other2.requiredness;
+  default_value = other2.default_value;
+  reference = other2.reference;
+  __isset = other2.__isset;
   return *this;
 }
 void FieldDefinition::printTo(std::ostream& out) const {
@@ -252,6 +299,8 @@ void FieldDefinition::printTo(std::ostream& out) const {
   out << ", " << "id=" << to_string(id);
   out << ", " << "type=" << to_string(type);
   out << ", " << "requiredness=" << to_string(requiredness);
+  out << ", " << "default_value="; (__isset.default_value ? (out << to_string(default_value)) : (out << "<null>"));
+  out << ", " << "reference="; (__isset.reference ? (out << to_string(reference)) : (out << "<null>"));
   out << ")";
 }
 

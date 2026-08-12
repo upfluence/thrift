@@ -6,6 +6,8 @@ package annotation_definition
 import (
 	"bytes"
 	"context"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"github.com/upfluence/thrift/lib/go/thrift/types/core"
@@ -24,6 +26,465 @@ var _ = io.EOF
 
 var _ = core.GoUnusedProtection__
 var _ = value.GoUnusedProtection__
+
+type CommentKind int64
+
+const (
+	CommentKind_LineSlash CommentKind = 1
+	CommentKind_LineHash  CommentKind = 2
+	CommentKind_Block     CommentKind = 3
+	CommentKind_Doc       CommentKind = 4
+)
+
+func (p CommentKind) String() string {
+	switch p {
+	case CommentKind_LineSlash:
+		return "LineSlash"
+	case CommentKind_LineHash:
+		return "LineHash"
+	case CommentKind_Block:
+		return "Block"
+	case CommentKind_Doc:
+		return "Doc"
+	}
+	return "<UNSET>"
+}
+
+func CommentKindFromString(s string) (CommentKind, error) {
+	switch s {
+	case "CommentKind_LineSlash", "LineSlash":
+		return CommentKind_LineSlash, nil
+	case "CommentKind_LineHash", "LineHash":
+		return CommentKind_LineHash, nil
+	case "CommentKind_Block", "Block":
+		return CommentKind_Block, nil
+	case "CommentKind_Doc", "Doc":
+		return CommentKind_Doc, nil
+	}
+	return CommentKind(0), fmt.Errorf("not a valid CommentKind string")
+}
+
+func CommentKindPtr(v CommentKind) *CommentKind { return &v }
+
+func (p CommentKind) LegacyString() string {
+	return "CommentKind_" + p.String()
+}
+
+func (p CommentKind) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *CommentKind) UnmarshalText(text []byte) error {
+	q, err := CommentKindFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *CommentKind) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = CommentKind(v)
+	return nil
+}
+
+func (p *CommentKind) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
+// Attributes:
+//   - Kind
+//   - Value
+type Comment struct {
+	Kind  CommentKind `thrift:"kind,1,required" db:"kind" json:"kind"`
+	Value string      `thrift:"value,2,required" db:"value" json:"value"`
+}
+
+func NewComment() *Comment {
+	return &Comment{}
+}
+
+var commentStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "Comment",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "kind",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "value",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
+func (p *Comment) StructDefinition() thrift.StructDefinition {
+	return commentStructDefinition
+}
+
+func (p *Comment) GetKind() CommentKind {
+	return p.Kind
+}
+
+func (p *Comment) SetKind(v CommentKind) {
+	p.Kind = v
+}
+
+func (p *Comment) GetValue() string {
+	return p.Value
+}
+
+func (p *Comment) SetValue(v string) {
+	p.Value = v
+}
+func (p *Comment) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	var issetKind bool = false
+	var issetValue bool = false
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.I32 {
+				if err := p.ReadField1(iprot); err != nil {
+					return err
+				}
+				issetKind = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 2:
+			if fieldTypeId == thrift.STRING {
+				if err := p.ReadField2(iprot); err != nil {
+					return err
+				}
+				issetValue = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetKind {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Kind is not set"))
+	}
+	if !issetValue {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Value is not set"))
+	}
+	return nil
+}
+
+func (p *Comment) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		temp := CommentKind(v)
+		p.Kind = temp
+	}
+	return nil
+}
+
+func (p *Comment) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.Value = v
+	}
+	return nil
+}
+
+func (p *Comment) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("Comment"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if p != nil {
+		if err := p.writeField1(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField2(oprot); err != nil {
+			return err
+		}
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *Comment) writeField1(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("kind", thrift.I32, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:kind: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.Kind)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.kind (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:kind: ", p), err)
+	}
+	return err
+}
+
+func (p *Comment) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("value", thrift.STRING, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:value: ", p), err)
+	}
+	if err := oprot.WriteString(string(p.Value)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.value (2) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:value: ", p), err)
+	}
+	return err
+}
+
+func (p *Comment) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"Comment({kind: %v, value: %v})",
+		p.GetKind(),
+		p.GetValue(),
+	)
+}
+
+// Attributes:
+//   - Line
+//   - Col
+type NodeLocation struct {
+	Line int32 `thrift:"line,1,required" db:"line" json:"line"`
+	Col  int32 `thrift:"col,2,required" db:"col" json:"col"`
+}
+
+func NewNodeLocation() *NodeLocation {
+	return &NodeLocation{}
+}
+
+var nodeLocationStructDefinition = thrift.StructDefinition{
+	Namespace: Namespace,
+	AnnotatedDefinition: thrift.AnnotatedDefinition{
+		Name:                  "NodeLocation",
+		LegacyAnnotations:     map[string]string{},
+		StructuredAnnotations: []thrift.RegistrableStruct{},
+	},
+	Fields: []thrift.FieldDefinition{
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "line",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "col",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+	},
+}
+
+func (p *NodeLocation) StructDefinition() thrift.StructDefinition {
+	return nodeLocationStructDefinition
+}
+
+func (p *NodeLocation) GetLine() int32 {
+	return p.Line
+}
+
+func (p *NodeLocation) SetLine(v int32) {
+	p.Line = v
+}
+
+func (p *NodeLocation) GetCol() int32 {
+	return p.Col
+}
+
+func (p *NodeLocation) SetCol(v int32) {
+	p.Col = v
+}
+func (p *NodeLocation) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	var issetLine bool = false
+	var issetCol bool = false
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.I32 {
+				if err := p.ReadField1(iprot); err != nil {
+					return err
+				}
+				issetLine = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 2:
+			if fieldTypeId == thrift.I32 {
+				if err := p.ReadField2(iprot); err != nil {
+					return err
+				}
+				issetCol = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	if !issetLine {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Line is not set"))
+	}
+	if !issetCol {
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field Col is not set"))
+	}
+	return nil
+}
+
+func (p *NodeLocation) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 1: ", err)
+	} else {
+		p.Line = v
+	}
+	return nil
+}
+
+func (p *NodeLocation) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI32(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.Col = v
+	}
+	return nil
+}
+
+func (p *NodeLocation) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("NodeLocation"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if p != nil {
+		if err := p.writeField1(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField2(oprot); err != nil {
+			return err
+		}
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *NodeLocation) writeField1(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("line", thrift.I32, 1); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:line: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.Line)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.line (1) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:line: ", p), err)
+	}
+	return err
+}
+
+func (p *NodeLocation) writeField2(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("col", thrift.I32, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:col: ", p), err)
+	}
+	if err := oprot.WriteI32(int32(p.Col)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.col (2) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:col: ", p), err)
+	}
+	return err
+}
+
+func (p *NodeLocation) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"NodeLocation({line: %v, col: %v})",
+		p.GetLine(),
+		p.GetCol(),
+	)
+}
 
 // Attributes:
 //   - Type
@@ -238,10 +699,18 @@ func (p *StructuredAnnotationDefinition) String() string {
 //   - Name
 //   - StructuredAnnotations
 //   - LegacyAnnotations
+//   - FromLoc
+//   - ToLoc
+//   - LeadingComments
+//   - TrailingComment
 type AnnotationDefinition struct {
 	Name                  string                            `thrift:"name,1,required" db:"name" json:"name"`
 	StructuredAnnotations []*StructuredAnnotationDefinition `thrift:"structured_annotations,2,required" db:"structured_annotations" json:"structured_annotations"`
 	LegacyAnnotations     map[string]string                 `thrift:"legacy_annotations,3,required" db:"legacy_annotations" json:"legacy_annotations"`
+	FromLoc               *NodeLocation                     `thrift:"from_loc,4" db:"from_loc" json:"from_loc,omitempty"`
+	ToLoc                 *NodeLocation                     `thrift:"to_loc,5" db:"to_loc" json:"to_loc,omitempty"`
+	LeadingComments       []*Comment                        `thrift:"leading_comments,6" db:"leading_comments" json:"leading_comments,omitempty"`
+	TrailingComment       *Comment                          `thrift:"trailing_comment,7" db:"trailing_comment" json:"trailing_comment,omitempty"`
 }
 
 func NewAnnotationDefinition() *AnnotationDefinition {
@@ -279,6 +748,38 @@ var annotationDefinitionStructDefinition = thrift.StructDefinition{
 				StructuredAnnotations: []thrift.RegistrableStruct{},
 			},
 		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "from_loc",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "to_loc",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "leading_comments",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "trailing_comment",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+		},
 	},
 }
 
@@ -309,6 +810,71 @@ func (p *AnnotationDefinition) GetLegacyAnnotations() map[string]string {
 func (p *AnnotationDefinition) SetLegacyAnnotations(v map[string]string) {
 	p.LegacyAnnotations = v
 }
+
+var AnnotationDefinition_FromLoc_DEFAULT *NodeLocation
+
+func (p *AnnotationDefinition) GetFromLoc() *NodeLocation {
+	if !p.IsSetFromLoc() {
+		return AnnotationDefinition_FromLoc_DEFAULT
+	}
+	return p.FromLoc
+}
+
+func (p *AnnotationDefinition) SetFromLoc(v *NodeLocation) {
+	p.FromLoc = v
+}
+
+var AnnotationDefinition_ToLoc_DEFAULT *NodeLocation
+
+func (p *AnnotationDefinition) GetToLoc() *NodeLocation {
+	if !p.IsSetToLoc() {
+		return AnnotationDefinition_ToLoc_DEFAULT
+	}
+	return p.ToLoc
+}
+
+func (p *AnnotationDefinition) SetToLoc(v *NodeLocation) {
+	p.ToLoc = v
+}
+
+var AnnotationDefinition_LeadingComments_DEFAULT []*Comment
+
+func (p *AnnotationDefinition) GetLeadingComments() []*Comment {
+	return p.LeadingComments
+}
+
+func (p *AnnotationDefinition) SetLeadingComments(v []*Comment) {
+	p.LeadingComments = v
+}
+
+var AnnotationDefinition_TrailingComment_DEFAULT *Comment
+
+func (p *AnnotationDefinition) GetTrailingComment() *Comment {
+	if !p.IsSetTrailingComment() {
+		return AnnotationDefinition_TrailingComment_DEFAULT
+	}
+	return p.TrailingComment
+}
+
+func (p *AnnotationDefinition) SetTrailingComment(v *Comment) {
+	p.TrailingComment = v
+}
+func (p *AnnotationDefinition) IsSetFromLoc() bool {
+	return p.FromLoc != nil
+}
+
+func (p *AnnotationDefinition) IsSetToLoc() bool {
+	return p.ToLoc != nil
+}
+
+func (p *AnnotationDefinition) IsSetLeadingComments() bool {
+	return p.LeadingComments != nil
+}
+
+func (p *AnnotationDefinition) IsSetTrailingComment() bool {
+	return p.TrailingComment != nil
+}
+
 func (p *AnnotationDefinition) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -355,6 +921,46 @@ func (p *AnnotationDefinition) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 				issetLegacyAnnotations = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 4:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField4(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 5:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField5(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 6:
+			if fieldTypeId == thrift.LIST {
+				if err := p.ReadField6(iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 7:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField7(iprot); err != nil {
+					return err
+				}
 			} else {
 				if err := iprot.Skip(fieldTypeId); err != nil {
 					return err
@@ -441,6 +1047,50 @@ func (p *AnnotationDefinition) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *AnnotationDefinition) ReadField4(iprot thrift.TProtocol) error {
+	p.FromLoc = NewNodeLocation()
+	if err := p.FromLoc.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.FromLoc), err)
+	}
+	return nil
+}
+
+func (p *AnnotationDefinition) ReadField5(iprot thrift.TProtocol) error {
+	p.ToLoc = NewNodeLocation()
+	if err := p.ToLoc.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.ToLoc), err)
+	}
+	return nil
+}
+
+func (p *AnnotationDefinition) ReadField6(iprot thrift.TProtocol) error {
+	_, size, err := iprot.ReadListBegin()
+	if err != nil {
+		return thrift.PrependError("error reading list begin: ", err)
+	}
+	tSlice := make([]*Comment, 0, size)
+	p.LeadingComments = tSlice
+	for i := 0; i < size; i++ {
+		_elem3 := NewComment()
+		if err := _elem3.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem3), err)
+		}
+		p.LeadingComments = append(p.LeadingComments, _elem3)
+	}
+	if err := iprot.ReadListEnd(); err != nil {
+		return thrift.PrependError("error reading list end: ", err)
+	}
+	return nil
+}
+
+func (p *AnnotationDefinition) ReadField7(iprot thrift.TProtocol) error {
+	p.TrailingComment = NewComment()
+	if err := p.TrailingComment.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.TrailingComment), err)
+	}
+	return nil
+}
+
 func (p *AnnotationDefinition) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("AnnotationDefinition"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -453,6 +1103,18 @@ func (p *AnnotationDefinition) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField3(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField4(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField5(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField6(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField7(oprot); err != nil {
 			return err
 		}
 	}
@@ -523,14 +1185,86 @@ func (p *AnnotationDefinition) writeField3(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *AnnotationDefinition) writeField4(oprot thrift.TProtocol) (err error) {
+	if p.IsSetFromLoc() {
+		if err := oprot.WriteFieldBegin("from_loc", thrift.STRUCT, 4); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:from_loc: ", p), err)
+		}
+		if err := p.FromLoc.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.FromLoc), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 4:from_loc: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *AnnotationDefinition) writeField5(oprot thrift.TProtocol) (err error) {
+	if p.IsSetToLoc() {
+		if err := oprot.WriteFieldBegin("to_loc", thrift.STRUCT, 5); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:to_loc: ", p), err)
+		}
+		if err := p.ToLoc.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.ToLoc), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 5:to_loc: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *AnnotationDefinition) writeField6(oprot thrift.TProtocol) (err error) {
+	if p.IsSetLeadingComments() {
+		if err := oprot.WriteFieldBegin("leading_comments", thrift.LIST, 6); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 6:leading_comments: ", p), err)
+		}
+		if err := oprot.WriteListBegin(thrift.STRUCT, len(p.LeadingComments)); err != nil {
+			return thrift.PrependError("error writing list begin: ", err)
+		}
+		for _, v := range p.LeadingComments {
+			if err := v.Write(oprot); err != nil {
+				return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+			}
+		}
+		if err := oprot.WriteListEnd(); err != nil {
+			return thrift.PrependError("error writing list end: ", err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 6:leading_comments: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *AnnotationDefinition) writeField7(oprot thrift.TProtocol) (err error) {
+	if p.IsSetTrailingComment() {
+		if err := oprot.WriteFieldBegin("trailing_comment", thrift.STRUCT, 7); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 7:trailing_comment: ", p), err)
+		}
+		if err := p.TrailingComment.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.TrailingComment), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 7:trailing_comment: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *AnnotationDefinition) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"AnnotationDefinition({name: %v, structured_annotations: %v, legacy_annotations: %v})",
+		"AnnotationDefinition({name: %v, structured_annotations: %v, legacy_annotations: %v, from_loc: %v, to_loc: %v, leading_comments: %v, trailing_comment: %v})",
 		p.GetName(),
 		p.GetStructuredAnnotations(),
 		p.GetLegacyAnnotations(),
+		p.GetFromLoc(),
+		p.GetToLoc(),
+		p.GetLeadingComments(),
+		p.GetTrailingComment(),
 	)
 }

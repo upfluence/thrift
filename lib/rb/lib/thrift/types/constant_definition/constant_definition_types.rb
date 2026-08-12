@@ -5,7 +5,7 @@
 #
 
 require 'thrift'
-require 'thrift/thrift/types/core/core_types'
+require 'thrift/types/core/core_types'
 require 'thrift/types/annotation_definition/annotation_definition_types'
 
 
@@ -226,7 +226,7 @@ module Thrift
         ].freeze
 
         FIELDS = {
-          THRIFT_FIELD_INDEX_REFERENCE => {type: ::Thrift::Types::STRUCT, name: 'reference', class: ::Thrift::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_REFERENCE => {type: ::Thrift::Types::STRUCT, name: 'reference', class: ::Thrift::Types::Core::Reference, optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_INTEGER_VALUE => {type: ::Thrift::Types::I64, name: 'integer_value', optional: true, legacy_annotations: THRIFT_FIELD_INTEGER_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_INTEGER_VALUE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_DOUBLE_VALUE => {type: ::Thrift::Types::DOUBLE, name: 'double_value', optional: true, legacy_annotations: THRIFT_FIELD_DOUBLE_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_DOUBLE_VALUE_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_BOOL_VALUE => {type: ::Thrift::Types::BOOL, name: 'bool_value', optional: true, legacy_annotations: THRIFT_FIELD_BOOL_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_BOOL_VALUE_STRUCTURED_ANNOTATIONS},

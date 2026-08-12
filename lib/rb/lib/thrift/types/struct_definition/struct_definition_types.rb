@@ -7,6 +7,7 @@
 require 'thrift'
 require 'thrift/types/annotation_definition/annotation_definition_types'
 require 'thrift/types/type_definition/type_definition_types'
+require 'thrift/types/constant_definition/constant_definition_types'
 
 
 module Thrift
@@ -16,8 +17,9 @@ module Thrift
         Unknown = 0
         Optional = 1
         Required = 2
-        VALUE_MAP = {0 => "Unknown", 1 => "Optional", 2 => "Required"}
-        VALID_VALUES = Set.new([Unknown, Optional, Required]).freeze
+        Default = 3
+        VALUE_MAP = {0 => "Unknown", 1 => "Optional", 2 => "Required", 3 => "Default"}
+        VALID_VALUES = Set.new([Unknown, Optional, Required, Default]).freeze
       end
 
       module StructKind
@@ -49,6 +51,8 @@ module Thrift
         THRIFT_FIELD_INDEX_ID = 2
         THRIFT_FIELD_INDEX_TYPE = 3
         THRIFT_FIELD_INDEX_REQUIREDNESS = 4
+        THRIFT_FIELD_INDEX_DEFAULT_VALUE = 5
+        THRIFT_FIELD_INDEX_REFERENCE = 6
 
         THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS = {
         }.freeze
@@ -74,11 +78,25 @@ module Thrift
         THRIFT_FIELD_REQUIREDNESS_STRUCTURED_ANNOTATIONS = [
         ].freeze
 
+        THRIFT_FIELD_DEFAULT_VALUE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_DEFAULT_VALUE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_REFERENCE_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_REFERENCE_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
           THRIFT_FIELD_INDEX_ANNOTATION => {type: ::Thrift::Types::STRUCT, name: 'annotation', class: ::Thrift::Types::Annotation_definition::AnnotationDefinition, legacy_annotations: THRIFT_FIELD_ANNOTATION_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ANNOTATION_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ID => {type: ::Thrift::Types::I32, name: 'id', legacy_annotations: THRIFT_FIELD_ID_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ID_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_TYPE => {type: ::Thrift::Types::STRUCT, name: 'type', class: ::Thrift::Types::Type_definition::TypeDefinition, legacy_annotations: THRIFT_FIELD_TYPE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPE_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_REQUIREDNESS => {type: ::Thrift::Types::I32, name: 'requiredness', enum_class: ::Thrift::Types::Struct_definition::Requiredness, legacy_annotations: THRIFT_FIELD_REQUIREDNESS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REQUIREDNESS_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_REQUIREDNESS => {type: ::Thrift::Types::I32, name: 'requiredness', enum_class: ::Thrift::Types::Struct_definition::Requiredness, legacy_annotations: THRIFT_FIELD_REQUIREDNESS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REQUIREDNESS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_DEFAULT_VALUE => {type: ::Thrift::Types::STRUCT, name: 'default_value', class: ::Thrift::Types::Constant_definition::ConstantValueDefinition, optional: true, legacy_annotations: THRIFT_FIELD_DEFAULT_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_DEFAULT_VALUE_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_REFERENCE => {type: ::Thrift::Types::BOOL, name: 'reference', optional: true, legacy_annotations: THRIFT_FIELD_REFERENCE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_REFERENCE_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end

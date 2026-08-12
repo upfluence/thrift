@@ -6,6 +6,8 @@ package exception
 import (
 	"bytes"
 	"context"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"github.com/upfluence/thrift/lib/go/thrift"
 	"io"
@@ -19,6 +21,150 @@ var _ = context.Background
 var _ = reflect.DeepEqual
 var _ = bytes.Equal
 var _ = io.EOF
+
+type Kind int64
+
+const (
+	Kind_Unknown   Kind = 0
+	Kind_Transient Kind = 1
+	Kind_Permanent Kind = 2
+	Kind_Stateful  Kind = 3
+)
+
+func (p Kind) String() string {
+	switch p {
+	case Kind_Unknown:
+		return "Unknown"
+	case Kind_Transient:
+		return "Transient"
+	case Kind_Permanent:
+		return "Permanent"
+	case Kind_Stateful:
+		return "Stateful"
+	}
+	return "<UNSET>"
+}
+
+func KindFromString(s string) (Kind, error) {
+	switch s {
+	case "Kind_Unknown", "Unknown":
+		return Kind_Unknown, nil
+	case "Kind_Transient", "Transient":
+		return Kind_Transient, nil
+	case "Kind_Permanent", "Permanent":
+		return Kind_Permanent, nil
+	case "Kind_Stateful", "Stateful":
+		return Kind_Stateful, nil
+	}
+	return Kind(0), fmt.Errorf("not a valid Kind string")
+}
+
+func KindPtr(v Kind) *Kind { return &v }
+
+func (p Kind) LegacyString() string {
+	return "Kind_" + p.String()
+}
+
+func (p Kind) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *Kind) UnmarshalText(text []byte) error {
+	q, err := KindFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *Kind) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = Kind(v)
+	return nil
+}
+
+func (p *Kind) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
+type Blame int64
+
+const (
+	Blame_Unknown    Blame = 0
+	Blame_Client     Blame = 1
+	Blame_Server     Blame = 2
+	Blame_ThirdParty Blame = 3
+)
+
+func (p Blame) String() string {
+	switch p {
+	case Blame_Unknown:
+		return "Unknown"
+	case Blame_Client:
+		return "Client"
+	case Blame_Server:
+		return "Server"
+	case Blame_ThirdParty:
+		return "ThirdParty"
+	}
+	return "<UNSET>"
+}
+
+func BlameFromString(s string) (Blame, error) {
+	switch s {
+	case "Blame_Unknown", "Unknown":
+		return Blame_Unknown, nil
+	case "Blame_Client", "Client":
+		return Blame_Client, nil
+	case "Blame_Server", "Server":
+		return Blame_Server, nil
+	case "Blame_ThirdParty", "ThirdParty":
+		return Blame_ThirdParty, nil
+	}
+	return Blame(0), fmt.Errorf("not a valid Blame string")
+}
+
+func BlamePtr(v Blame) *Blame { return &v }
+
+func (p Blame) LegacyString() string {
+	return "Blame_" + p.String()
+}
+
+func (p Blame) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+func (p *Blame) UnmarshalText(text []byte) error {
+	q, err := BlameFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*p = q
+	return nil
+}
+
+func (p *Blame) Scan(value interface{}) error {
+	v, ok := value.(int64)
+	if !ok {
+		return errors.New("Scan value is not int64")
+	}
+	*p = Blame(v)
+	return nil
+}
+
+func (p *Blame) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
 
 type Safe struct {
 }

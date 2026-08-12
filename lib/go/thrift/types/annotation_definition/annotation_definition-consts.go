@@ -30,6 +30,8 @@ var GoUnusedProtection__ int
 const Namespace = "types.annotation_definition"
 
 func init() {
+	thrift.RegisterStruct((*Comment)(nil))
+	thrift.RegisterStruct((*NodeLocation)(nil))
 	thrift.RegisterStruct((*StructuredAnnotationDefinition)(nil))
 	thrift.RegisterStruct((*AnnotationDefinition)(nil))
 }

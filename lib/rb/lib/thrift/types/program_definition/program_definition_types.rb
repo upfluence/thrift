@@ -10,7 +10,7 @@ require 'thrift/types/enum_definition/enum_definition_types'
 require 'thrift/types/type_definition/type_definition_types'
 require 'thrift/types/struct_definition/struct_definition_types'
 require 'thrift/types/service_definition/service_definition_types'
-require 'thrift/thrift/types/value/value_types'
+require 'thrift/types/value/value_types'
 
 
 module Thrift
@@ -41,6 +41,8 @@ module Thrift
         THRIFT_FIELD_INDEX_TYPEDEFS = 9
         THRIFT_FIELD_INDEX_ENUMS = 10
         THRIFT_FIELD_INDEX_STDLIB = 11
+        THRIFT_FIELD_INDEX_NAMESPACE_ANNOTATIONS = 12
+        THRIFT_FIELD_INDEX_CPP_INCLUDES = 13
 
         THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS = {
         }.freeze
@@ -108,6 +110,18 @@ module Thrift
         THRIFT_FIELD_STDLIB_STRUCTURED_ANNOTATIONS = [
         ].freeze
 
+        THRIFT_FIELD_NAMESPACE_ANNOTATIONS_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_NAMESPACE_ANNOTATIONS_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
+        THRIFT_FIELD_CPP_INCLUDES_LEGACY_ANNOTATIONS = {
+        }.freeze
+
+        THRIFT_FIELD_CPP_INCLUDES_STRUCTURED_ANNOTATIONS = [
+        ].freeze
+
         FIELDS = {
           THRIFT_FIELD_INDEX_NAME => {type: ::Thrift::Types::STRING, name: 'name', legacy_annotations: THRIFT_FIELD_NAME_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAME_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_PATH => {type: ::Thrift::Types::STRING, name: 'path', legacy_annotations: THRIFT_FIELD_PATH_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_PATH_STRUCTURED_ANNOTATIONS},
@@ -119,7 +133,9 @@ module Thrift
           THRIFT_FIELD_INDEX_CONSTANTS => {type: ::Thrift::Types::MAP, name: 'constants', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Constant_definition::ConstantDefinition}, legacy_annotations: THRIFT_FIELD_CONSTANTS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_CONSTANTS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_TYPEDEFS => {type: ::Thrift::Types::MAP, name: 'typedefs', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Type_definition::TypeDefinition}, legacy_annotations: THRIFT_FIELD_TYPEDEFS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TYPEDEFS_STRUCTURED_ANNOTATIONS},
           THRIFT_FIELD_INDEX_ENUMS => {type: ::Thrift::Types::MAP, name: 'enums', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRUCT, class: ::Thrift::Types::Enum_definition::EnumDefinition}, legacy_annotations: THRIFT_FIELD_ENUMS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ENUMS_STRUCTURED_ANNOTATIONS},
-          THRIFT_FIELD_INDEX_STDLIB => {type: ::Thrift::Types::BOOL, name: 'stdlib', legacy_annotations: THRIFT_FIELD_STDLIB_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STDLIB_STRUCTURED_ANNOTATIONS}
+          THRIFT_FIELD_INDEX_STDLIB => {type: ::Thrift::Types::BOOL, name: 'stdlib', legacy_annotations: THRIFT_FIELD_STDLIB_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_STDLIB_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_NAMESPACE_ANNOTATIONS => {type: ::Thrift::Types::MAP, name: 'namespace_annotations', key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::MAP, key: {type: ::Thrift::Types::STRING}, value: {type: ::Thrift::Types::STRING}}, optional: true, legacy_annotations: THRIFT_FIELD_NAMESPACE_ANNOTATIONS_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_NAMESPACE_ANNOTATIONS_STRUCTURED_ANNOTATIONS},
+          THRIFT_FIELD_INDEX_CPP_INCLUDES => {type: ::Thrift::Types::LIST, name: 'cpp_includes', element: {type: ::Thrift::Types::STRING}, optional: true, legacy_annotations: THRIFT_FIELD_CPP_INCLUDES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_CPP_INCLUDES_STRUCTURED_ANNOTATIONS}
         }.freeze
 
         def struct_fields; FIELDS; end

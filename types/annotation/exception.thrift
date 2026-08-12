@@ -29,3 +29,17 @@ namespace * types.annotation.exception
 //   function is still safe to retry because the server guarantees it did not
 //   apply any mutation before throwing.
 struct Safe {}
+
+enum Kind {
+  Unknown = 0,
+  Transient = 1,
+  Permanent = 2,
+  Stateful = 3,
+}
+
+enum Blame {
+  Unknown = 0,
+  Client = 1,
+  Server = 2,
+  ThirdParty = 3,
+}
