@@ -105,6 +105,7 @@ THRIFT_ADD_COMPILER(st      "Enable compiler for Smalltalk" ON)
 THRIFT_ADD_COMPILER(swift   "Enable compiler for Cocoa Swift" ON)
 THRIFT_ADD_COMPILER(xml     "Enable compiler for XML" ON)
 THRIFT_ADD_COMPILER(xsd     "Enable compiler for XSD" ON)
+THRIFT_ADD_COMPILER(noop    "Enable noop generator (plugin-only driver)" ON)
 
 # Thrift is looking for include files in the src directory
 # we also add the current binary directory for generated files
