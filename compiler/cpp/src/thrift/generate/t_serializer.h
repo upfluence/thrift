@@ -9,6 +9,7 @@
 #include "thrift/parse/t_function.h"
 #include "thrift/parse/t_list.h"
 #include "thrift/parse/t_map.h"
+#include "thrift/parse/t_node.h"
 #include "thrift/parse/t_program.h"
 #include "thrift/parse/t_service.h"
 #include "thrift/parse/t_set.h"
@@ -78,12 +79,103 @@ static ::types::type_definition::TypeDefinition build_type(const t_type* type) {
   return t;
 }
 
+// Build a NodeLocation from a t_loc.
+static ::types::annotation_definition::NodeLocation build_node_location(const t_loc& loc) {
+  ::types::annotation_definition::NodeLocation nl;
+  nl.__set_line(loc.line);
+  nl.__set_col(loc.col);
+  return nl;
+}
+
+// Convert a t_comment_kind to the wire enum.
+static ::types::annotation_definition::CommentKind::type build_comment_kind(t_comment_kind k) {
+  switch (k) {
+    case COMMENT_LINE_SLASH: return ::types::annotation_definition::CommentKind::LineSlash;
+    case COMMENT_LINE_HASH:  return ::types::annotation_definition::CommentKind::LineHash;
+    case COMMENT_BLOCK:      return ::types::annotation_definition::CommentKind::Block;
+    case COMMENT_DOC:        return ::types::annotation_definition::CommentKind::Doc;
+  }
+  return ::types::annotation_definition::CommentKind::LineSlash;
+}
+
+// Build a Comment from a t_comment.
+static ::types::annotation_definition::Comment build_comment(const t_comment& c) {
+  ::types::annotation_definition::Comment out;
+  out.__set_kind(build_comment_kind(c.kind));
+  out.__set_value(c.value);
+  return out;
+}
+
 static ::types::annotation_definition::AnnotationDefinition build_annotation(const t_annotated* node) {
   ::types::annotation_definition::AnnotationDefinition ann;
   ann.__set_name(node->get_name());
   ann.__set_legacy_annotations(node->legacy_annotations());
-  ann.__set_structured_annotations({});
+
+  // Structured annotations
+  std::vector<::types::annotation_definition::StructuredAnnotationDefinition> sas;
+  for (const t_structured_annotation* sa : node->structured_annotations()) {
+    ::types::annotation_definition::StructuredAnnotationDefinition sad;
+    if (sa->type_ != NULL) {
+      sad.__set_type(build_reference(sa->type_));
+    }
+    sas.push_back(sad);
+  }
+  ann.__set_structured_annotations(sas);
+
+  // Source location
+  if (node->get_from().line != 0) {
+    ann.__set_from_loc(build_node_location(node->get_from()));
+    ann.__set_to_loc(build_node_location(node->get_to()));
+  }
+
+  // Doc comment — stored as a leading Doc-kind comment
+  std::vector<::types::annotation_definition::Comment> leading;
+  if (node->has_doc()) {
+    ::types::annotation_definition::Comment doc_comment;
+    doc_comment.__set_kind(::types::annotation_definition::CommentKind::Doc);
+    doc_comment.__set_value(node->get_doc());
+    leading.push_back(doc_comment);
+  }
+  for (const t_comment& c : node->get_leading_comments()) {
+    leading.push_back(build_comment(c));
+  }
+  if (!leading.empty()) {
+    ann.__set_leading_comments(leading);
+  }
+
+  // Trailing comment
+  if (node->has_trailing_comment()) {
+    ann.__set_trailing_comment(build_comment(node->get_trailing_comment()));
+  }
+
   return ann;
+}
+
+static ::types::constant_definition::ConstantValueDefinition build_constant_value(
+    const t_const_value* cv, const t_type* declared_type);
+
+static ::types::struct_definition::FieldDefinition build_field(const t_field* f) {
+  ::types::struct_definition::FieldDefinition field;
+  field.__set_id(f->get_key());
+  field.__set_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(f->get_type())));
+  field.__set_annotation(build_annotation(f));
+
+  ::types::struct_definition::Requiredness::type req = ::types::struct_definition::Requiredness::Default;
+
+  if (f->get_req() == t_field::T_REQUIRED)     req = ::types::struct_definition::Requiredness::Required;
+  else if (f->get_req() == t_field::T_OPTIONAL) req = ::types::struct_definition::Requiredness::Optional;
+
+  field.__set_requiredness(req);
+
+  if (f->get_value() != NULL) {
+    field.__set_default_value(build_constant_value(f->get_value(), f->get_type()));
+  }
+
+  if (f->get_reference()) {
+    field.__set_reference(true);
+  }
+
+  return field;
 }
 
 static ::types::struct_definition::StructDefinition build_struct(const t_struct* s) {
@@ -99,17 +191,7 @@ static ::types::struct_definition::StructDefinition build_struct(const t_struct*
   std::vector<::types::struct_definition::FieldDefinition> fields;
 
   for (const t_field* f : s->get_members()) {
-    ::types::struct_definition::FieldDefinition field;
-    field.__set_id(f->get_key());
-    field.__set_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(f->get_type())));
-    field.__set_annotation(build_annotation(f));
-    ::types::struct_definition::Requiredness::type req = ::types::struct_definition::Requiredness::Unknown;
-
-    if (f->get_req() == t_field::T_REQUIRED)      req = ::types::struct_definition::Requiredness::Required;
-    else if (f->get_req() == t_field::T_OPTIONAL)  req = ::types::struct_definition::Requiredness::Optional;
-
-    field.__set_requiredness(req);
-    fields.push_back(field);
+    fields.push_back(build_field(f));
   }
 
   sd.__set_fields(fields);
@@ -143,12 +225,7 @@ static ::types::service_definition::ServiceDefinition build_service(const t_serv
     std::vector<::types::struct_definition::FieldDefinition> args;
 
     for (const t_field* a : f->get_arglist()->get_members()) {
-      ::types::struct_definition::FieldDefinition field;
-      field.__set_id(a->get_key());
-      field.__set_type(std::make_shared<::types::type_definition::TypeDefinition>(build_type(a->get_type())));
-      field.__set_annotation(build_annotation(a));
-      field.__set_requiredness(::types::struct_definition::Requiredness::Required);
-      args.push_back(field);
+      args.push_back(build_field(a));
     }
 
     fd.__set_arguments(args);
@@ -276,8 +353,37 @@ static ::types::constant_definition::ConstantDefinition build_constant_definitio
 static ::types::program_definition::ProgramDefinition build_program_definition(const t_program* p) {
   ::types::program_definition::ProgramDefinition pd;
   pd.__set_name(p->get_name());
-  pd.__set_path(p->get_path());
+  // Use include_site (the original written path) when available so the
+  // formatter can reproduce verbatim include directives. Fall back to the
+  // absolute path for the root program (which has no include_site).
+  const std::string& site = p->get_include_site();
+  pd.__set_path(site.empty() ? p->get_path() : site);
   pd.__set_namespaces(p->get_all_namespaces());
+
+  if (p->has_doc()) {
+    pd.__set_doc(p->get_doc());
+  }
+
+  // namespace annotations
+  const auto& all_ns = p->get_all_namespaces();
+  std::map<std::string, std::map<std::string, std::string>> ns_annots;
+  bool has_ns_annots = false;
+  for (const auto& kv : all_ns) {
+    const auto& annots = p->get_namespace_annotations(kv.first);
+    if (!annots.empty()) {
+      ns_annots[kv.first] = annots;
+      has_ns_annots = true;
+    }
+  }
+  if (has_ns_annots) {
+    pd.__set_namespace_annotations(ns_annots);
+  }
+
+  // cpp_includes
+  const std::vector<std::string>& cpp_incs = p->get_cpp_includes();
+  if (!cpp_incs.empty()) {
+    pd.__set_cpp_includes(cpp_incs);
+  }
 
   std::vector<::types::program_definition::ProgramDefinition> includes;
 
