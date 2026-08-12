@@ -6,10 +6,12 @@ thrift.exe --audit <oldFile> <newFile>
 Example run
 ===========
 ```
-> thrift.exe --audit test.thrift break1.thrift
-[Thrift Audit Failure:break1.thrift] New Thrift File has missing function base_function3
-[Thrift Audit Warning:break1.thrift] Constant const3 has different value
+> thrift.exe --audit vim-format-old.thrift vim-format-new.thrift
+E:vim-format-new.thrift:4:15:Struct Field Requiredness Changed for Id = 3 in Delta
+W:vim-format-new.thrift:5:15:Struct field name changed for Id = 4 in Delta
 ```
+
+Diagnostics use Vim's `%t:%f:%l:%c:%m` error format.
 
 Problems that the audit tool can catch
 ======================================
@@ -37,4 +39,3 @@ Warnings
 * Removed constant
 * Type of constant changed
 * Value of constant changed
-    

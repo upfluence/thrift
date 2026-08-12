@@ -86,14 +86,45 @@ my $gVerbose = 0;
 #functions
 sub auditBreakingChanges;
 sub auditNonBreakingChanges;
+sub auditVimFormat;
+sub assertDiagnosticFormat;
 
 main();
 
 sub main
 {
     parseOptions();
+    auditVimFormat();
     auditBreakingChanges();
     auditNonBreakingChanges();
+}
+
+sub auditVimFormat
+{
+    my $oldThriftFile = $gThriftFileFolder."/vim-format-old.thrift";
+    my $newThriftFile = $gThriftFileFolder."/vim-format-new.thrift";
+    my $quotedNewThriftFile = quotemeta($newThriftFile);
+    my ($exitCode, $output) = callThriftAuditTool($oldThriftFile." ".$newThriftFile);
+
+    if ($exitCode != 2)
+    {
+        print $output;
+        die "\nTEST FAILURE: Vim format fixture did not report audit failures\n";
+    }
+
+    for my $diagnostic (
+        "E:.*$quotedNewThriftFile:4:15:Struct Field Requiredness Changed for Id = 3 in Delta",
+        "W:.*$quotedNewThriftFile:5:15:Struct field name changed for Id = 4 in Delta",
+        "E:.*$quotedNewThriftFile:6:15:Struct Field Type Changed for Id = 5 in Delta",
+        "E:.*$quotedNewThriftFile:3:1:Struct Field removed for Id = 6 in Delta",
+    )
+    {
+        if ($output !~ /^$diagnostic$/m)
+        {
+            print $output;
+            die "\nTEST FAILURE: Missing Vim diagnostic: $diagnostic\n";
+        }
+    }
 }
 
 sub parseOptions
@@ -139,6 +170,7 @@ sub auditBreakingChanges
         my $arguments =  $gPreviousThriftPath." ".$newThriftFile;
         my ($exitCode, $output) = callThriftAuditTool($arguments);
         print $output if $gVerbose eq 1;
+        assertDiagnosticFormat($output, $newThriftFile);
 
         if($exitCode == 1)
         {
@@ -176,6 +208,7 @@ sub auditNonBreakingChanges
     my $arguments =  $gPreviousThriftPath." ".$newThriftFile;
     my ($exitCode, $output) = callThriftAuditTool($arguments);
     print $output if $gVerbose eq 1;
+    assertDiagnosticFormat($output, $newThriftFile);
 
     if($exitCode == 1)
     {
@@ -195,6 +228,17 @@ sub auditNonBreakingChanges
     }
 
 
+}
+
+sub assertDiagnosticFormat
+{
+    my ($output, $fileName) = @_;
+
+    if ($output !~ /^[EW]:.*\Q$fileName\E:[1-9][0-9]*:[1-9][0-9]*:.+$/m)
+    {
+        print $output;
+        die "\nTEST FAILURE: Audit diagnostic does not use the Vim error format for $fileName\n";
+    }
 }
 
 # -----------------------------------------------------------------------------------------------------

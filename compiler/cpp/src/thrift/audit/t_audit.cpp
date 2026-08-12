@@ -27,26 +27,36 @@ extern int g_warn;
 extern std::string g_curpath;
 extern bool g_return_failure;
 
-void thrift_audit_warning(int level, const char* fmt, ...) {
+static t_loc audit_location(const t_node* node) {
+   if (node == nullptr || node->get_from().line <= 0 || node->get_from().col <= 0) {
+      return t_loc(1, 1);
+   }
+
+   return node->get_from();
+}
+
+void thrift_audit_warning(int level, const t_node* node, const char* fmt, ...) {
    if (g_warn < level) {
       return;
    }
+   const t_loc loc = audit_location(node);
    va_list args;
-   printf("[Thrift Audit Warning:%s] ", g_curpath.c_str());
+   printf("W:%s:%d:%d:", g_curpath.c_str(), loc.line, loc.col);
    va_start(args, fmt);
    vprintf(fmt, args);
    va_end(args);
    printf("\n");
 }
 
-void thrift_audit_failure(const char* fmt, ...) {
-  va_list args;
-  fprintf(stderr, "[Thrift Audit Failure:%s] ", g_curpath.c_str());
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-  g_return_failure = true;
+void thrift_audit_failure(const t_node* node, const char* fmt, ...) {
+   const t_loc loc = audit_location(node);
+   va_list args;
+   fprintf(stderr, "E:%s:%d:%d:", g_curpath.c_str(), loc.line, loc.col);
+   va_start(args, fmt);
+   vfprintf(stderr, fmt, args);
+   va_end(args);
+   fprintf(stderr, "\n");
+   g_return_failure = true;
 }
 
 void compare_namespace(t_program* newProgram, t_program* oldProgram)
@@ -59,11 +69,11 @@ void compare_namespace(t_program* newProgram, t_program* oldProgram)
       auto newNamespaceMapIt = newNamespaceMap.find(oldNamespaceMapIt.first);
       if(newNamespaceMapIt == newNamespaceMap.end())
       {
-         thrift_audit_warning(1, "Language %s not found in new thrift file\n", (oldNamespaceMapIt.first).c_str());
+         thrift_audit_warning(1, nullptr, "Language %s not found in new thrift file", (oldNamespaceMapIt.first).c_str());
       }
       else if((newNamespaceMapIt->second) != oldNamespaceMapIt.second)
       {
-         thrift_audit_warning(1, "Namespace %s changed in new thrift file\n", (oldNamespaceMapIt.second).c_str());
+         thrift_audit_warning(1, nullptr, "Namespace %s changed in new thrift file", (oldNamespaceMapIt.second).c_str());
       }
    }
 }
@@ -80,12 +90,12 @@ void compare_enum_values(t_enum* newEnum,t_enum* oldEnum)
          std::string enumName = oldEnumValue->get_name();
          if(enumName != newEnumValue->get_name())
          {
-            thrift_audit_warning(1, "Name of the value %d changed in enum %s\n", enumValue, oldEnum->get_name().c_str());
+             thrift_audit_warning(1, newEnumValue, "Name of the value %d changed in enum %s", enumValue, oldEnum->get_name().c_str());
          }
       }
       else
       {
-         thrift_audit_failure("Enum value %d missing in %s\n", enumValue, oldEnum->get_name().c_str());
+          thrift_audit_failure(newEnum, "Enum value %d missing in %s", enumValue, oldEnum->get_name().c_str());
       }
 
    }
@@ -107,7 +117,7 @@ void compare_enums(const std::vector<t_enum*>& newEnumList, const std::vector<t_
 
       if(newEnumMapIt == newEnumMap.end())
       {
-         thrift_audit_warning(1, "Enum %s not found in new thrift file\n",(*oldEnumIt)->get_name().c_str());
+         thrift_audit_warning(1, nullptr, "Enum %s not found in new thrift file",(*oldEnumIt)->get_name().c_str());
       }
       else
       {
@@ -219,7 +229,7 @@ void compare_struct_field(t_field* newField, t_field* oldField, std::string oldS
    t_type* oldFieldType = oldField->get_type();
    if(!compare_type(newFieldType, oldFieldType))
    {
-      thrift_audit_failure("Struct Field Type Changed for Id = %d in %s \n", newField->get_key(), oldStructName.c_str());
+       thrift_audit_failure(newField, "Struct Field Type Changed for Id = %d in %s", newField->get_key(), oldStructName.c_str());
    }
 
    // A Struct member can be optional if it is mentioned explicitly, or if it is assigned with default values.
@@ -228,26 +238,27 @@ void compare_struct_field(t_field* newField, t_field* oldField, std::string oldS
 
    if(newStructFieldOptional != oldStructFieldOptional)
    {
-      thrift_audit_failure("Struct Field Requiredness Changed for Id = %d in %s \n", newField->get_key(), oldStructName.c_str());
+       thrift_audit_failure(newField, "Struct Field Requiredness Changed for Id = %d in %s", newField->get_key(), oldStructName.c_str());
    }
    if(newStructFieldOptional || oldStructFieldOptional)
    {
       if(!compare_defaults(newField->get_value(), oldField->get_value()))
       {
-         thrift_audit_warning(1, "Default value changed for Id = %d in %s \n", newField->get_key(), oldStructName.c_str());
+          thrift_audit_warning(1, newField, "Default value changed for Id = %d in %s", newField->get_key(), oldStructName.c_str());
       }
    }
 
    std::string fieldName = newField->get_name();
    if(fieldName != oldField->get_name())
    {
-      thrift_audit_warning(1, "Struct field name changed for Id = %d in %s\n", newField->get_key(), oldStructName.c_str());
+       thrift_audit_warning(1, newField, "Struct field name changed for Id = %d in %s", newField->get_key(), oldStructName.c_str());
    }
 
 }
 
-void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::string& oldStructName = std::string())
+void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::string& oldStructName = std::string(), const t_node* parent = nullptr)
 {
+   const t_node* currentParent = parent == nullptr ? newStruct : parent;
    std::string structName = oldStructName.empty() ? oldStruct->get_name() : oldStructName;
    const std::vector<t_field*>& oldStructMembersInIdOrder = oldStruct->get_sorted_members();
    const std::vector<t_field*>& newStructMembersInIdOrder = newStruct->get_sorted_members();
@@ -261,7 +272,7 @@ void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::
       if(newStructMemberIt == newStructMembersInIdOrder.end() && oldStructMemberIt != oldStructMembersInIdOrder.end())
       {
          // A field ID has been removed from the end.
-         thrift_audit_failure("Struct Field removed for Id = %d in %s \n", (*oldStructMemberIt)->get_key(), structName.c_str());
+          thrift_audit_failure(currentParent, "Struct Field removed for Id = %d in %s", (*oldStructMemberIt)->get_key(), structName.c_str());
          oldStructMemberIt++;
       }
       else if(newStructMemberIt != newStructMembersInIdOrder.end() && oldStructMemberIt == oldStructMembersInIdOrder.end())
@@ -269,7 +280,7 @@ void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::
          //New field ID has been added to the end.
          if((*newStructMemberIt)->get_req() == t_field::T_REQUIRED)
          {
-            thrift_audit_failure("Required Struct Field Added for Id = %d in %s \n", (*newStructMemberIt)->get_key(), structName.c_str());
+             thrift_audit_failure(*newStructMemberIt, "Required Struct Field Added for Id = %d in %s", (*newStructMemberIt)->get_key(), structName.c_str());
          }
          newStructMemberIt++;
       }
@@ -285,13 +296,13 @@ void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::
       {
          //New Field Id is inserted in between
          //Adding fields to struct is fine, but adding them in the middle is suspicious. Error!!
-         thrift_audit_failure("Struct field is added in the middle with Id = %d in %s\n",  (*newStructMemberIt)->get_key(),  structName.c_str());
+          thrift_audit_failure(*newStructMemberIt, "Struct field is added in the middle with Id = %d in %s",  (*newStructMemberIt)->get_key(),  structName.c_str());
          newStructMemberIt++;
       }
       else if((*newStructMemberIt)->get_key() > (*oldStructMemberIt)->get_key())
       {
          //A field is deleted in newStruct.
-         thrift_audit_failure("Struct Field removed for Id = %d in %s \n",  (*oldStructMemberIt)->get_key(), structName.c_str());
+          thrift_audit_failure(currentParent, "Struct Field removed for Id = %d in %s",  (*oldStructMemberIt)->get_key(), structName.c_str());
          oldStructMemberIt++;
       }
 
@@ -314,7 +325,7 @@ void compare_structs(const std::vector<t_struct*>& newStructList, const std::vec
       newStructMapIt = newStructMap.find((*oldStructListIt)->get_name());
       if(newStructMapIt == newStructMap.end())
       {
-         thrift_audit_failure("Struct %s not found in new thrift file\n", (*oldStructListIt)->get_name().c_str());
+          thrift_audit_failure(nullptr, "Struct %s not found in new thrift file", (*oldStructListIt)->get_name().c_str());
       }
       else
       {
@@ -330,21 +341,21 @@ void compare_single_function(t_function* newFunction, t_function* oldFunction)
 
    if(newFunction->is_oneway() != oldFunction->is_oneway())
    {
-      thrift_audit_failure("Oneway attribute changed for function %s\n",oldFunction->get_name().c_str());
+       thrift_audit_failure(newFunction, "Oneway attribute changed for function %s",oldFunction->get_name().c_str());
    }
    if(!compare_type(newFunctionReturnType, oldFunction->get_returntype()))
    {
-      thrift_audit_failure("Return type changed for function %s\n",oldFunction->get_name().c_str());
+       thrift_audit_failure(newFunction, "Return type changed for function %s",oldFunction->get_name().c_str());
    }
 
    //Compare function arguments.
-   compare_single_struct(newFunction->get_arglist(), oldFunction->get_arglist());
+    compare_single_struct(newFunction->get_arglist(), oldFunction->get_arglist(), std::string(), newFunction);
    std::string exceptionName = oldFunction->get_name();
    exceptionName += "_exception";
-   compare_single_struct(newFunction->get_xceptions(), oldFunction->get_xceptions(), exceptionName);
+    compare_single_struct(newFunction->get_xceptions(), oldFunction->get_xceptions(), exceptionName, newFunction);
 }
 
-void compare_functions(const std::vector<t_function*>& newFunctionList, const std::vector<t_function*>& oldFunctionList)
+void compare_functions(const std::vector<t_function*>& newFunctionList, const std::vector<t_function*>& oldFunctionList, const t_service* newService)
 {
    std::map<std::string, t_function*> newFunctionMap;
    std::map<std::string, t_function*>::iterator newFunctionMapIt;
@@ -358,7 +369,7 @@ void compare_functions(const std::vector<t_function*>& newFunctionList, const st
       newFunctionMapIt = newFunctionMap.find(oldFunctionIt->get_name());
       if(newFunctionMapIt == newFunctionMap.end())
       {
-         thrift_audit_failure("New Thrift File has missing function %s\n",oldFunctionIt->get_name().c_str());
+          thrift_audit_failure(newService, "New Thrift File has missing function %s",oldFunctionIt->get_name().c_str());
          continue;
       }
       else
@@ -388,7 +399,7 @@ void compare_services(const std::vector<t_service*>& newServices, const std::vec
 
       if(newServiceMapIt == newServiceMap.end())
       {
-         thrift_audit_failure("New Thrift file is missing a service %s\n", oldServiceName.c_str());
+          thrift_audit_failure(nullptr, "New Thrift file is missing a service %s", oldServiceName.c_str());
       }
       else
       {
@@ -402,7 +413,7 @@ void compare_services(const std::vector<t_service*>& newServices, const std::vec
          }
          else if(oldServiceExtends != nullptr && newServiceExtends == nullptr)
          {
-            thrift_audit_failure("Change in Service inheritance for %s\n", oldServiceName.c_str());
+             thrift_audit_failure(newServiceMapIt->second, "Change in Service inheritance for %s", oldServiceName.c_str());
          }
          else
          {
@@ -411,11 +422,11 @@ void compare_services(const std::vector<t_service*>& newServices, const std::vec
 
             if( newExtendsName != oldExtendsName)
             {
-               thrift_audit_failure("Change in Service inheritance for %s\n", oldServiceName.c_str());
+                thrift_audit_failure(newServiceMapIt->second, "Change in Service inheritance for %s", oldServiceName.c_str());
             }
          }
 
-         compare_functions((newServiceMapIt->second)->get_functions(), (*oldServiceIt)->get_functions());
+          compare_functions((newServiceMapIt->second)->get_functions(), (*oldServiceIt)->get_functions(), newServiceMapIt->second);
       }
 
    }
@@ -440,15 +451,15 @@ void compare_consts(const std::vector<t_const*>& newConst, const std::vector<t_c
       newConstMapIt = newConstMap.find((*oldConstIt)->get_name());
       if(newConstMapIt == newConstMap.end())
       {
-         thrift_audit_warning(1, "Constants Missing %s \n", ((*oldConstIt)->get_name()).c_str());
+          thrift_audit_warning(1, nullptr, "Constants Missing %s", ((*oldConstIt)->get_name()).c_str());
       }
       else if(!compare_type((newConstMapIt->second)->get_type(), (*oldConstIt)->get_type()))
       {
-         thrift_audit_warning(1, "Constant %s is of different type \n", ((*oldConstIt)->get_name()).c_str());
+          thrift_audit_warning(1, newConstMapIt->second, "Constant %s is of different type", ((*oldConstIt)->get_name()).c_str());
       }
       else if(!compare_defaults((newConstMapIt->second)->get_value(), (*oldConstIt)->get_value()))
       {
-         thrift_audit_warning(1, "Constant %s has different value\n", ((*oldConstIt)->get_name()).c_str());
+          thrift_audit_warning(1, newConstMapIt->second, "Constant %s has different value", ((*oldConstIt)->get_name()).c_str());
       }
    }
 }
