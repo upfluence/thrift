@@ -82,6 +82,8 @@ public:
     : t_oop_generator(program) {
     (void)option_string;
     set_parsed_options(parsed_options);
+    require_rubygems_ = false;
+    namespaced_ = false;
 
     for (const auto& kv : parsed_options) {
       if (kv.first.compare("rubygems") == 0) {

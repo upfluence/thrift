@@ -77,13 +77,13 @@ public:
     (void)option_string;
     std::map<std::string, std::string>::const_iterator iter;
 
-
     gen_thrift_import_ = default_thrift_import;
     gen_package_prefix_ = "";
     package_flag = "";
     read_write_private_ = false;
     ignore_initialisms_ = false;
     out_dir_base_ = "gen-go";
+
     for( iter = parsed_options.begin(); iter != parsed_options.end(); ++iter) {
       if( iter->first.compare("package_prefix") == 0) {
         gen_package_prefix_ = (iter->second);
