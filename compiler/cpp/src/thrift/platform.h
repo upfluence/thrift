@@ -29,7 +29,9 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
+#include <windows.h>
 #else
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -43,8 +45,8 @@
 #define MKDIR(x) { int r = mkdir(x, S_IRWXU | S_IRWXG | S_IRWXO); if (r == -1 && errno != EEXIST) { throw (std::string(x) + ": ") + strerror(errno); } }
 #endif
 
-#ifdef PATH_MAX
-#define THRIFT_PATH_MAX PATH_MAX
-#else
+#ifdef _WIN32
 #define THRIFT_PATH_MAX MAX_PATH
+#else
+#define THRIFT_PATH_MAX PATH_MAX
 #endif
