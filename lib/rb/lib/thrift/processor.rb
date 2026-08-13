@@ -59,22 +59,7 @@ module Thrift
 
         write_result(result, oprot, seqid)
       rescue => e
-        write_exception(e, oprot, seqid)
-      end
-
-      def write_exception(exception, oprot, seqid)
-        oprot.write_message_begin(@fname, MessageTypes::EXCEPTION, seqid)
-
-        unless exception.is_a? ApplicationException
-          exception = ApplicationException.new(
-            ApplicationException::INTERNAL_ERROR,
-            "Internal error processing #{@fname}: #{exception.class}: #{exception}"
-          )
-        end
-
-        exception.write(oprot)
-        oprot.write_message_end
-        oprot.trans.flush
+        Processor.write_exception(e, oprot, @fname, seqid)
       end
 
       def write_result(result, oprot, seqid)
@@ -131,11 +116,18 @@ module Thrift
     end
 
     def process(iprot, oprot)
-      name, _type, seqid = iprot.read_message_begin
+      name, type, seqid = iprot.read_message_begin
 
       mth = "process_#{name}"
       if respond_to?(mth)
-        send(mth, seqid, iprot, oprot)
+        begin
+          send(mth, seqid, iprot, oprot)
+        rescue StandardError => e
+          raise e if type == MessageTypes::ONEWAY
+
+          Processor.write_internal_error(e, oprot, name, seqid)
+        end
+
         return true
       end
 
@@ -144,8 +136,35 @@ module Thrift
       ).process(seqid, iprot, oprot)
     end
 
+    def self.write_exception(exception, oprot, name, seqid)
+      oprot.write_message_begin(name, MessageTypes::EXCEPTION, seqid)
+
+      unless exception.is_a? ApplicationException
+        exception = ApplicationException.new(
+          ApplicationException::INTERNAL_ERROR,
+          "Internal error processing #{name}: #{exception.class}: #{exception}"
+        )
+      end
+
+      exception.write(oprot)
+      oprot.write_message_end
+      oprot.trans.flush
+    end
+
+    def self.write_internal_error(exception, oprot, name, seqid)
+      write_exception(
+        ApplicationException.new(
+          ApplicationException::INTERNAL_ERROR,
+          "Internal error processing #{name}: #{exception.class}: #{exception}"
+        ),
+        oprot,
+        name,
+        seqid
+      )
+    end
+
     def build_processor(name, info)
-      if info[:result_klass].nil?
+      if info[:result_klass].nil? && info[:oneway]
         UnaryProcessor
       elsif info[:stream_klass].nil? && info[:sink_klass].nil?
         BinaryProcessor
@@ -171,21 +190,6 @@ module Thrift
         args.read(iprot)
         iprot.read_message_end
         args
-      end
-
-      def write_exception(exception, oprot, name, seqid)
-        oprot.write_message_begin(name, MessageTypes::EXCEPTION, seqid)
-
-        unless exception.is_a? ApplicationException
-          exception = ApplicationException.new(
-            ApplicationException::INTERNAL_ERROR,
-            "Internal error processing #{name}: #{exception.class}: #{exception}"
-          )
-        end
-
-        exception.write(oprot)
-        oprot.write_message_end
-        oprot.trans.flush
       end
 
       def write_result(result, oprot, seqid)
@@ -236,18 +240,10 @@ module Thrift
 
         true
       rescue ApplicationException => e
-        write_exception(e, oprot, @name, seqid)
+        Processor.write_exception(e, oprot, @name, seqid)
         true
       rescue StandardError => e
-        write_exception(
-          ApplicationException.new(
-            ApplicationException::INTERNAL_ERROR,
-            "Internal error processing #{@name}: #{e.class}: #{e}"
-          ),
-          oprot,
-          @name,
-          seqid
-        )
+        Processor.write_internal_error(e, oprot, @name, seqid)
         true
       end
 
@@ -400,7 +396,7 @@ module Thrift
       def process(seqid, iprot, oprot)
         iprot.skip(Types::STRUCT)
         iprot.read_message_end
-        write_exception(
+        Processor.write_exception(
           ApplicationException.new(
             ApplicationException::UNKNOWN_METHOD,
             'Unknown function ' + @name,

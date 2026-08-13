@@ -19,73 +19,200 @@
 
 require 'spec_helper'
 
-describe 'Processor' do
-  class ProcessorSpec
-    include Thrift::Processor
+describe Thrift::Processor do
+  class EmptyArgs
+    include Thrift::Struct_Union
+    include Thrift::Struct
+
+    FIELDS = {}.freeze
+
+    def struct_fields
+      FIELDS
+    end
+
+    def validate; end
   end
 
-  describe Thrift::Processor do
-    before(:each) do
-      @processor = ProcessorSpec.new(double('MockHandler'))
-      @prot = double('MockProtocol')
+  class EmptyResult
+    include Thrift::Struct_Union
+    include Thrift::Struct
+
+    FIELDS = {}.freeze
+
+    def struct_fields
+      FIELDS
     end
 
-    def mock_trans(obj)
-      expect(obj).to receive(:trans).ordered do
-        double('trans').tap do |trans|
-          expect(trans).to receive(:flush).ordered
-        end
+    def validate; end
+  end
+
+  class LegacyProcessor
+    include Thrift::Processor
+
+    def process_ping(seqid, iprot, oprot)
+      args = read_args(iprot, EmptyArgs)
+      result = @middleware.handle_binary('ping', args) do
+        @handler.ping
+        EmptyResult.new
+      end
+
+      write_result(result, oprot, 'ping', seqid)
+    end
+
+    def process_notify(_seqid, iprot, _oprot)
+      args = read_args(iprot, EmptyArgs)
+
+      @middleware.handle_unary('notify', args) do
+        @handler.notify
       end
     end
+  end
 
-    it 'should call process_<message> when it receives that message' do
-      expect(@prot).to receive(:read_message_begin).ordered.and_return ['testMessage', Thrift::MessageTypes::CALL, 17]
-      expect(@processor).to receive(:process_testMessage).with(17, @prot, @prot).ordered
-      expect(@processor.process(@prot, @prot)).to eq(true)
-    end
+  class CurrentProcessor
+    include Thrift::Processor
 
-    it 'should raise an ApplicationException when the received message cannot be processed' do
-      expect(@prot).to receive(:read_message_begin).ordered.and_return ['testMessage', Thrift::MessageTypes::CALL, 4]
-      expect(@prot).to receive(:skip).with(Thrift::Types::STRUCT).ordered
-      expect(@prot).to receive(:read_message_end).ordered
-      expect(@prot).to receive(:write_message_begin).with('testMessage', Thrift::MessageTypes::EXCEPTION, 4).ordered
-      e = Thrift::ApplicationException.new(
-        Thrift::ApplicationException::UNKNOWN_METHOD,
-        'Unknown function testMessage'
+    METHODS = {
+      'ping' => {
+        args_klass:   EmptyArgs,
+        result_klass: EmptyResult,
+        args:         [],
+        exceptions:   {},
+        oneway:       false
+      }
+    }.freeze
+  end
+
+  def request_protocol(name, type = Thrift::MessageTypes::CALL, seqid = 17)
+    trans = Thrift::MemoryBufferTransport.new
+    protocol = Thrift::BinaryProtocol.new(trans)
+    protocol.write_message_begin(name, type, seqid)
+    EmptyArgs.new.write(protocol)
+    protocol.write_message_end
+
+    Thrift::BinaryProtocol.new(trans)
+  end
+
+  def output_protocol
+    trans = Thrift::MemoryBufferTransport.new
+
+    [Thrift::BinaryProtocol.new(trans), trans]
+  end
+
+  def read_exception(protocol)
+    name, type, seqid = protocol.read_message_begin
+    exception = Thrift::ApplicationException.new
+    exception.read(protocol)
+    protocol.read_message_end
+
+    {
+      name:           name,
+      type:           type,
+      seqid:          seqid,
+      exception_type: exception.type,
+      message:        exception.message
+    }
+  end
+
+  it 'processes requests with a legacy generated stub' do
+    handler = double('handler', ping: nil)
+    processor = LegacyProcessor.new(handler)
+    oprot, trans = output_protocol
+
+    expect(processor.process(request_protocol('ping'), oprot)).to eq(true)
+    expect(oprot.read_message_begin).to eq(
+      ['ping', Thrift::MessageTypes::REPLY, 17]
+    )
+
+    EmptyResult.new.read(oprot)
+    oprot.read_message_end
+
+    expect(trans.available).to eq(0)
+  end
+
+  it 'writes internal errors raised by a legacy generated stub' do
+    handler = double('handler')
+    allow(handler).to receive(:ping).and_raise(StandardError, 'boom')
+    processor = LegacyProcessor.new(handler)
+    oprot, = output_protocol
+
+    expect(processor.process(request_protocol('ping'), oprot)).to eq(true)
+    expect(read_exception(oprot)).to eq(
+      name:           'ping',
+      type:           Thrift::MessageTypes::EXCEPTION,
+      seqid:          17,
+      exception_type: Thrift::ApplicationException::INTERNAL_ERROR,
+      message:        'Internal error processing ping: StandardError: boom'
+    )
+  end
+
+  it 'raises errors from a legacy oneway method without writing a response' do
+    handler = double('handler')
+    allow(handler).to receive(:notify).and_raise(StandardError, 'boom')
+    processor = LegacyProcessor.new(handler)
+    oprot, trans = output_protocol
+
+    expect do
+      processor.process(
+        request_protocol('notify', Thrift::MessageTypes::ONEWAY),
+        oprot
       )
-      expect(Thrift::ApplicationException).to receive(:new).with(Thrift::ApplicationException::UNKNOWN_METHOD,
-                                                                 'Unknown function testMessage').and_return(e)
-      expect(@prot).to receive(:write_struct_begin).with('Thrift::ApplicationException').ordered
-      expect(@prot).to receive(:write_field_begin).with('message', Thrift::Types::STRING, 1).ordered
-      expect(@prot).to receive(:write_string).with('Unknown function testMessage').ordered
-      expect(@prot).to receive(:write_field_end).ordered
-      expect(@prot).to receive(:write_field_begin).with('type', Thrift::Types::I32, 2).ordered
-      expect(@prot).to receive(:write_i32).with(Thrift::ApplicationException::UNKNOWN_METHOD).ordered
-      expect(@prot).to receive(:write_field_end).ordered
-      expect(@prot).to receive(:write_field_stop).ordered
-      expect(@prot).to receive(:write_struct_end).ordered
-      expect(@prot).to receive(:write_message_end).ordered
-      mock_trans(@prot)
-      @processor.process(@prot, @prot)
-    end
+    end.to raise_error(StandardError, 'boom')
+    expect(trans.available).to eq(0)
+  end
 
-    it 'should pass args off to the args class' do
-      args_class = double('MockArgsClass')
-      args = double('#<MockArgsClass:mock>').tap do |args|
-        expect(args).to receive(:read).with(@prot).ordered
-      end
-      expect(args_class).to receive(:new).and_return args
-      expect(@prot).to receive(:read_message_end).ordered
-      expect(@processor.read_args(@prot, args_class)).to eql(args)
-    end
+  it 'writes an unknown method exception' do
+    processor = CurrentProcessor.new(double('handler'))
+    oprot, = output_protocol
 
-    it 'should write out a reply when asked' do
-      expect(@prot).to receive(:write_message_begin).with('testMessage', Thrift::MessageTypes::REPLY, 23).ordered
-      result = double('MockResult')
-      expect(result).to receive(:write).with(@prot).ordered
-      expect(@prot).to receive(:write_message_end).ordered
-      mock_trans(@prot)
-      @processor.write_result(result, @prot, 'testMessage', 23)
-    end
+    expect(
+      processor.process(
+        request_protocol('missing', Thrift::MessageTypes::CALL, 4),
+        oprot
+      )
+    ).to eq(false)
+    expect(read_exception(oprot)).to eq(
+      name:           'missing',
+      type:           Thrift::MessageTypes::EXCEPTION,
+      seqid:          4,
+      exception_type: Thrift::ApplicationException::UNKNOWN_METHOD,
+      message:        'Unknown function missing'
+    )
+  end
+
+  it 'writes internal errors raised by a current processor' do
+    handler = double('handler')
+    allow(handler).to receive(:ping).and_raise(StandardError, 'boom')
+    processor = CurrentProcessor.new(handler)
+    oprot, = output_protocol
+
+    expect(processor.process(request_protocol('ping'), oprot)).to eq(true)
+    expect(read_exception(oprot)).to eq(
+      name:           'ping',
+      type:           Thrift::MessageTypes::EXCEPTION,
+      seqid:          17,
+      exception_type: Thrift::ApplicationException::INTERNAL_ERROR,
+      message:        'Internal error processing ping: StandardError: boom'
+    )
+  end
+
+  it 'preserves application exceptions raised by a current processor' do
+    handler = double('handler')
+    allow(handler).to receive(:ping).and_raise(
+      Thrift::ApplicationException.new(
+        Thrift::ApplicationException::PROTOCOL_ERROR,
+        'invalid request'
+      )
+    )
+    processor = CurrentProcessor.new(handler)
+    oprot, = output_protocol
+
+    expect(processor.process(request_protocol('ping'), oprot)).to eq(true)
+    expect(read_exception(oprot)).to eq(
+      name:           'ping',
+      type:           Thrift::MessageTypes::EXCEPTION,
+      seqid:          17,
+      exception_type: Thrift::ApplicationException::PROTOCOL_ERROR,
+      message:        'invalid request'
+    )
   end
 end
