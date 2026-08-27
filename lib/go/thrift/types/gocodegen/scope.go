@@ -1,6 +1,9 @@
 package gocodegen
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 const DefaultThriftImport = "github.com/upfluence/thrift/lib/go/thrift"
 
@@ -12,6 +15,9 @@ type Include struct {
 	// PkgName is the Go package identifier, e.g. "page".
 	PkgName string
 
+	// GoPkgPath is the Go package path without the configured import prefix.
+	GoPkgPath string
+
 	// Stdlib indicates the include is from the thrift standard library.
 	Stdlib bool
 
@@ -21,10 +27,14 @@ type Include struct {
 
 // PkgPath returns the fully-qualified Go import path for this include.
 func (inc Include) PkgPath() string {
-	path := strings.ReplaceAll(inc.Namespace, ".", "/")
+	path := inc.GoPkgPath
+
+	if path == "" {
+		path = strings.ReplaceAll(inc.Namespace, ".", "/")
+	}
 
 	if inc.Stdlib {
-		return inc.scope.ThriftPkg + "/" + path
+		return inc.scope.ThriftImport() + "/" + path
 	}
 
 	return inc.scope.ImportPkgPrefix + path
@@ -33,9 +43,8 @@ func (inc Include) PkgPath() string {
 // Scope holds the Go-specific compilation context derived from a plugin
 // GenerateCodeRequest's options.
 type Scope struct {
-	// ThriftPkg is the local package identifier for the thrift runtime import,
-	// e.g. "thrift" for "github.com/upfluence/thrift/lib/go/thrift".
-	ThriftPkg string
+	// ThriftImportPath is the full import path of the thrift runtime package.
+	ThriftImportPath string
 
 	// ImportPkgPrefix is the module path prefix used to build fully-qualified
 	// import paths for generated packages, e.g. "github.com/upfluence/".
@@ -48,11 +57,22 @@ type Scope struct {
 	Includes []Include
 }
 
+// ThriftPkg returns the local package identifier for the thrift runtime import.
+func (gs Scope) ThriftPkg() string {
+	return filepath.Base(gs.ThriftImport())
+}
+
 // NewInclude constructs an Include with a back-pointer to gs.
 func (gs *Scope) NewInclude(namespace, pkgName string, stdlib bool) Include {
+	return gs.NewIncludeWithPath(namespace, pkgName, "", stdlib)
+}
+
+// NewIncludeWithPath constructs an Include with an explicit Go package path.
+func (gs *Scope) NewIncludeWithPath(namespace, pkgName, goPkgPath string, stdlib bool) Include {
 	return Include{
 		Namespace: namespace,
 		PkgName:   pkgName,
+		GoPkgPath: goPkgPath,
 		Stdlib:    stdlib,
 		scope:     gs,
 	}
@@ -62,6 +82,10 @@ func (gs *Scope) NewInclude(namespace, pkgName string, stdlib bool) Include {
 // the given scope. When no ImportPkgPrefix is set it falls back to
 // DefaultThriftImport.
 func (gs Scope) ThriftImport() string {
+	if gs.ThriftImportPath != "" {
+		return gs.ThriftImportPath
+	}
+
 	if gs.ImportPkgPrefix == "" {
 		return DefaultThriftImport
 	}

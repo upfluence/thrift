@@ -6,7 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/upfluence/thrift/lib/go/thrift/types/core"
+	"github.com/upfluence/thrift/lib/go/thrift/types/enum_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/gocodegen"
+	"github.com/upfluence/thrift/lib/go/thrift/types/struct_definition"
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 )
 
@@ -159,15 +161,15 @@ func mapTypeDef(key, val *type_definition.TypeDefinition) *type_definition.TypeD
 
 func buildGoScope(localPkg string, includes ...gocodegen.Include) gocodegen.Scope {
 	gs := gocodegen.Scope{
-		ThriftPkg:       "thrift",
-		ImportPkgPrefix: "github.com/upfluence/",
-		LocalPkg:        localPkg,
+		ThriftImportPath: "github.com/upfluence/thrift/lib/go/thrift",
+		ImportPkgPrefix:  "github.com/upfluence/",
+		LocalPkg:         localPkg,
 	}
 
 	incs := make([]gocodegen.Include, 0, len(includes))
 
 	for _, inc := range includes {
-		incs = append(incs, gs.NewInclude(inc.Namespace, inc.PkgName, inc.Stdlib))
+		incs = append(incs, gs.NewIncludeWithPath(inc.Namespace, inc.PkgName, inc.GoPkgPath, inc.Stdlib))
 	}
 
 	gs.Includes = incs
@@ -286,11 +288,120 @@ func TestGoType(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := GoType(tc.haveType, tc.haveGs, tc.haveReq)
+			got := GoType(nil, tc.haveType, tc.haveGs, tc.haveReq)
 
 			assert.Equal(t, tc.want, got)
 		})
 	}
+}
+
+func TestGoTypeReference(t *testing.T) {
+	program := &ProgramDefinition{
+		Namespaces: map[string]string{"*": "base.monitoring"},
+		Structs: map[string]*struct_definition.StructDefinition{
+			"Request": {},
+		},
+		Enums: map[string]*enum_definition.EnumDefinition{
+			"Status": {},
+		},
+		Typedefs: map[string]*type_definition.TypeDefinition{
+			"MetricID": scalarTypeDef(type_definition.ScalarType_String),
+			"Metrics": mapTypeDef(
+				refTypeDef("base.monitoring", "MetricID"),
+				scalarTypeDef(type_definition.ScalarType_Double),
+			),
+		},
+		Includes: []*ProgramDefinition{
+			{
+				Namespaces: map[string]string{"*": "base.limit"},
+				Enums: map[string]*enum_definition.EnumDefinition{
+					"LimitKey": {},
+				},
+			},
+		},
+	}
+	gs := buildGoScope(
+		"base.monitoring",
+		gocodegen.Include{Namespace: "base.limit", PkgName: "limit"},
+	)
+
+	for _, tt := range []struct {
+		name     string
+		haveType *type_definition.TypeDefinition
+		haveReq  bool
+		want     string
+	}{
+		{
+			name:     "local struct",
+			haveType: refTypeDef("base.monitoring", "Request"),
+			haveReq:  true,
+			want:     "*Request",
+		},
+		{
+			name:     "local enum",
+			haveType: refTypeDef("base.monitoring", "Status"),
+			haveReq:  true,
+			want:     "Status",
+		},
+		{
+			name:     "optional local enum",
+			haveType: refTypeDef("base.monitoring", "Status"),
+			want:     "*Status",
+		},
+		{
+			name:     "local scalar typedef",
+			haveType: refTypeDef("base.monitoring", "MetricID"),
+			haveReq:  true,
+			want:     "MetricID",
+		},
+		{
+			name:     "local container typedef",
+			haveType: refTypeDef("base.monitoring", "Metrics"),
+			haveReq:  true,
+			want:     "Metrics",
+		},
+		{
+			name:     "included enum",
+			haveType: refTypeDef("base.limit", "LimitKey"),
+			haveReq:  true,
+			want:     "limit.LimitKey",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GoType(program, tt.haveType, gs, tt.haveReq)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGoTypeReferenceUsesOwningProgramGoNamespace(t *testing.T) {
+	program := &ProgramDefinition{
+		Namespaces: map[string]string{"go": "email.receiver"},
+		Includes: []*ProgramDefinition{
+			{
+				Namespaces: map[string]string{"go": "email.attachment"},
+				Structs: map[string]*struct_definition.StructDefinition{
+					"Attachment": {},
+				},
+			},
+			{
+				Namespaces: map[string]string{"go": "email.incoming_email"},
+				Structs: map[string]*struct_definition.StructDefinition{
+					"IncomingEmail": {},
+				},
+			},
+		},
+	}
+	gs := buildGoScope(
+		"",
+		gocodegen.Include{PkgName: "attachment", GoPkgPath: "email/attachment"},
+		gocodegen.Include{PkgName: "incoming_email", GoPkgPath: "email/incoming_email"},
+	)
+
+	got := GoType(program, refTypeDef("", "IncomingEmail"), gs, true)
+
+	assert.Equal(t, "*incoming_email.IncomingEmail", got)
 }
 
 func TestGoZeroValue(t *testing.T) {
@@ -376,9 +487,71 @@ func TestGoZeroValue(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := GoZeroValue(tc.haveType, tc.haveReq)
+			got := GoZeroValue(nil, tc.haveType, tc.haveReq)
 
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestGoZeroValueReference(t *testing.T) {
+	program := &ProgramDefinition{
+		Namespaces: map[string]string{"*": "base.monitoring"},
+		Structs: map[string]*struct_definition.StructDefinition{
+			"Request": {},
+		},
+		Enums: map[string]*enum_definition.EnumDefinition{
+			"Status": {},
+		},
+		Typedefs: map[string]*type_definition.TypeDefinition{
+			"MetricID": scalarTypeDef(type_definition.ScalarType_String),
+			"Metrics": mapTypeDef(
+				refTypeDef("base.monitoring", "MetricID"),
+				scalarTypeDef(type_definition.ScalarType_Double),
+			),
+		},
+	}
+
+	for _, tt := range []struct {
+		name     string
+		haveType *type_definition.TypeDefinition
+		haveReq  bool
+		want     string
+	}{
+		{
+			name:     "struct",
+			haveType: refTypeDef("base.monitoring", "Request"),
+			haveReq:  true,
+			want:     "nil",
+		},
+		{
+			name:     "enum",
+			haveType: refTypeDef("base.monitoring", "Status"),
+			haveReq:  true,
+			want:     "0",
+		},
+		{
+			name:     "optional enum",
+			haveType: refTypeDef("base.monitoring", "Status"),
+			want:     "nil",
+		},
+		{
+			name:     "scalar typedef",
+			haveType: refTypeDef("base.monitoring", "MetricID"),
+			haveReq:  true,
+			want:     `""`,
+		},
+		{
+			name:     "container typedef",
+			haveType: refTypeDef("base.monitoring", "Metrics"),
+			haveReq:  true,
+			want:     "nil",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GoZeroValue(program, tt.haveType, tt.haveReq)
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

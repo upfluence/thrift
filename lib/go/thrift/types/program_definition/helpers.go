@@ -9,6 +9,11 @@ import (
 	"github.com/upfluence/thrift/lib/go/thrift/types/type_definition"
 )
 
+const (
+	goAny = "interface{}"
+	goNil = "nil"
+)
+
 func GoPackageName(p *ProgramDefinition) string {
 	return goParseValue(
 		p,
@@ -49,31 +54,49 @@ func goParseValue(p *ProgramDefinition, fn func(key string) string) string {
 // using gs to determine the correct prefix.
 func GoImportPath(p *ProgramDefinition, gs gocodegen.Scope) string {
 	if p.Stdlib {
-		return gs.ThriftPkg + "/" + GoPackagePath(p)
+		return gs.ThriftImport() + "/" + GoPackagePath(p)
 	}
 
 	return gs.ImportPkgPrefix + GoPackagePath(p)
 }
 
 // GoZeroValue returns the Go zero value expression for a TypeDefinition.
-func GoZeroValue(t *type_definition.TypeDefinition, required bool) string {
+func GoZeroValue(p *ProgramDefinition, t *type_definition.TypeDefinition, required bool) string {
 	if t == nil {
-		return "nil"
+		return goNil
 	}
 
 	switch td := t.Interface().(type) {
 	case *core.Reference:
-		return "nil"
+		definition := resolveReference(p, td)
+
+		if definition == nil {
+			return goNil
+		}
+
+		if definition.enum {
+			if required {
+				return "0"
+			}
+
+			return goNil
+		}
+
+		if definition.typedef != nil {
+			return GoZeroValue(definition.program, definition.typedef, required)
+		}
+
+		return goNil
 	case *type_definition.ScalarType:
 		if !required {
-			return "nil"
+			return goNil
 		}
 
 		switch *td {
 		case type_definition.ScalarType_String:
 			return `""`
 		case type_definition.ScalarType_Binary:
-			return "nil"
+			return goNil
 		case type_definition.ScalarType_Bool:
 			return "false"
 		case type_definition.ScalarType_I8,
@@ -88,67 +111,143 @@ func GoZeroValue(t *type_definition.TypeDefinition, required bool) string {
 	case *type_definition.ListTypeDefinition,
 		*type_definition.SetTypeDefinition,
 		*type_definition.MapTypeDefinition:
-		return "nil"
+		return goNil
 	}
 
-	return "nil"
+	return goNil
 }
 
-// GoType returns the Go type expression for a TypeDefinition, resolving package
-// references using the provided program scope and Scope. If required is false,
-// reference types are prefixed with "*" (optional pointer semantics).
-func GoType(t *type_definition.TypeDefinition, gs gocodegen.Scope, required bool) string {
+// GoType returns the Go type expression for a TypeDefinition, resolving named
+// types against the current program and its includes.
+func GoType(p *ProgramDefinition, t *type_definition.TypeDefinition, gs gocodegen.Scope, required bool) string {
 	if t == nil {
-		return "interface{}"
+		return goAny
 	}
 
 	switch td := t.Interface().(type) {
 	case *core.Reference:
-		name := gocodegen.Publicize(td.Name)
+		definition := resolveReference(p, td)
+		pointer := definition == nil || (!definition.enum && definition.typedef == nil) || !required
+		pkgPath := ""
 
-		if gs.LocalPkg == "" || (td.IsSetNamespace_() && td.GetNamespace_() != gs.LocalPkg) {
-			for _, inc := range gs.Includes {
-				if inc.Namespace == td.GetNamespace_() {
-					return "*" + inc.PkgName + "." + name
-				}
-			}
+		if definition != nil {
+			pkgPath = GoPackagePath(definition.program)
 		}
 
-		return "*" + name
+		return goReferenceType(td, pkgPath, gs, pointer)
 	case *type_definition.ScalarType:
-		ptr := ""
-
-		if !required {
-			ptr = "*"
-		}
-
-		switch *td {
-		case type_definition.ScalarType_String:
-			return ptr + "string"
-		case type_definition.ScalarType_Binary:
-			return "[]byte"
-		case type_definition.ScalarType_Bool:
-			return ptr + "bool"
-		case type_definition.ScalarType_I8:
-			return ptr + "int8"
-		case type_definition.ScalarType_I16:
-			return ptr + "int16"
-		case type_definition.ScalarType_I32:
-			return ptr + "int32"
-		case type_definition.ScalarType_I64:
-			return ptr + "int64"
-		case type_definition.ScalarType_Double:
-			return ptr + "float64"
-		case type_definition.ScalarType_Void:
-			return ""
-		}
+		return goScalarType(*td, required)
 	case *type_definition.ListTypeDefinition:
-		return "[]" + GoType(td.ElementType, gs, true)
+		return "[]" + GoType(p, td.ElementType, gs, true)
 	case *type_definition.SetTypeDefinition:
-		return "[]" + GoType(td.ElementType, gs, true)
+		return "[]" + GoType(p, td.ElementType, gs, true)
 	case *type_definition.MapTypeDefinition:
-		return "map[" + GoType(td.KeyType, gs, true) + "]" + GoType(td.ValueType, gs, true)
+		return "map[" + GoType(p, td.KeyType, gs, true) + "]" + GoType(p, td.ValueType, gs, true)
 	}
 
-	return "interface{}"
+	return goAny
+}
+
+func goScalarType(t type_definition.ScalarType, required bool) string {
+	pointer := ""
+
+	if !required {
+		pointer = "*"
+	}
+
+	switch t {
+	case type_definition.ScalarType_String:
+		return pointer + "string"
+	case type_definition.ScalarType_Binary:
+		return "[]byte"
+	case type_definition.ScalarType_Bool:
+		return pointer + "bool"
+	case type_definition.ScalarType_I8:
+		return pointer + "int8"
+	case type_definition.ScalarType_I16:
+		return pointer + "int16"
+	case type_definition.ScalarType_I32:
+		return pointer + "int32"
+	case type_definition.ScalarType_I64:
+		return pointer + "int64"
+	case type_definition.ScalarType_Double:
+		return pointer + "float64"
+	case type_definition.ScalarType_Void:
+		return ""
+	}
+
+	return goAny
+}
+
+type referenceDefinition struct {
+	program *ProgramDefinition
+	typedef *type_definition.TypeDefinition
+	enum    bool
+}
+
+func resolveReference(p *ProgramDefinition, ref *core.Reference) *referenceDefinition {
+	if p == nil {
+		return nil
+	}
+
+	namespace := ref.GetNamespace_()
+
+	if namespace == "" || hasNamespace(p, namespace) {
+		if _, ok := p.Structs[ref.Name]; ok {
+			return &referenceDefinition{program: p}
+		}
+
+		if _, ok := p.Enums[ref.Name]; ok {
+			return &referenceDefinition{program: p, enum: true}
+		}
+
+		if td, ok := p.Typedefs[ref.Name]; ok {
+			return &referenceDefinition{program: p, typedef: td}
+		}
+	}
+
+	for _, include := range p.Includes {
+		if definition := resolveReference(include, ref); definition != nil {
+			return definition
+		}
+	}
+
+	return nil
+}
+
+func hasNamespace(p *ProgramDefinition, namespace string) bool {
+	for _, candidate := range p.Namespaces {
+		if candidate == namespace {
+			return true
+		}
+	}
+
+	return false
+}
+
+func goReferenceType(ref *core.Reference, pkgPath string, gs gocodegen.Scope, pointer bool) string {
+	name := gocodegen.Publicize(ref.Name)
+
+	if gs.LocalPkg == "" || (ref.IsSetNamespace_() && ref.GetNamespace_() != gs.LocalPkg) {
+		for _, inc := range gs.Includes {
+			incPkgPath := inc.GoPkgPath
+
+			if incPkgPath == "" {
+				incPkgPath = strings.ReplaceAll(inc.Namespace, ".", "/")
+			}
+
+			if (pkgPath != "" && incPkgPath == pkgPath) ||
+				(pkgPath == "" && inc.Namespace == ref.GetNamespace_()) {
+				name = inc.PkgName + "." + name
+
+				break
+			}
+		}
+	}
+
+	if pointer {
+		return "*" + name
+	}
+
+	return name
 }

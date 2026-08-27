@@ -1,10 +1,8 @@
 package plugin
 
 import (
-	"path/filepath"
-	"strings"
-
 	"github.com/upfluence/thrift/lib/go/thrift/types/gocodegen"
+	"github.com/upfluence/thrift/lib/go/thrift/types/program_definition"
 )
 
 // BuildScope extracts the Go-specific scope from a GenerateCodeRequest.
@@ -16,17 +14,18 @@ func BuildGoScope(req *GenerateCodeRequest) gocodegen.Scope {
 	}
 
 	gs := gocodegen.Scope{
-		ThriftPkg:       filepath.Base(thriftImport),
-		ImportPkgPrefix: req.Options["package_prefix"],
-		LocalPkg:        req.Program.Namespaces["*"],
+		ThriftImportPath: thriftImport,
+		ImportPkgPrefix:  req.Options["package_prefix"],
+		LocalPkg:         req.Program.Namespaces["*"],
 	}
 
 	includes := make([]gocodegen.Include, 0, len(req.Program.Includes))
 
 	for _, inc := range req.Program.Includes {
-		includes = append(includes, gs.NewInclude(
+		includes = append(includes, gs.NewIncludeWithPath(
 			inc.Namespaces["*"],
-			filepath.Base(strings.ReplaceAll(inc.Namespaces["*"], ".", "/")),
+			program_definition.GoPackageName(inc),
+			program_definition.GoPackagePath(inc),
 			inc.Stdlib,
 		))
 	}

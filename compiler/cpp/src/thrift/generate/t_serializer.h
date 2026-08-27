@@ -34,6 +34,13 @@ static ::types::core::Reference build_reference(const t_type* type) {
 
 static ::types::type_definition::TypeDefinition build_type(const t_type* type) {
   ::types::type_definition::TypeDefinition t;
+
+  if (type->is_typedef() || type->is_enum() || type->is_struct()
+      || type->is_xception() || type->is_service()) {
+    t.__set_reference_type(build_reference(type));
+    return t;
+  }
+
   type = type->get_true_type();
 
   if (type->is_base_type()) {
