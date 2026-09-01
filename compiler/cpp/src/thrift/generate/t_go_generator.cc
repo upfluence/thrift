@@ -501,7 +501,7 @@ void t_go_generator::fix_common_initialism(std::string& value, int i) const {
     std::string word = value.substr(i, wordLen);
     std::transform(word.begin(), word.end(), word.begin(), ::toupper);
     if (commonInitialisms.find(word) != commonInitialisms.end()) {
-      value.replace(i, word.length(), word);
+      value.replace(i, word.length(), word == "IDS" ? "IDs" : word);
     }
   }
 }
@@ -716,7 +716,8 @@ void t_go_generator::init_generator() {
   string target = module;
   package_dir_ = get_out_dir();
 
-  // This set is taken from https://github.com/golang/lint/blob/master/lint.go#L692
+  // This set is mirrored from https://github.com/mgechev/revive/blob/master/internal/rule/name.go.
+  commonInitialisms.insert("ACL");
   commonInitialisms.insert("API");
   commonInitialisms.insert("ASCII");
   commonInitialisms.insert("CPU");
@@ -728,6 +729,7 @@ void t_go_generator::init_generator() {
   commonInitialisms.insert("HTTP");
   commonInitialisms.insert("HTTPS");
   commonInitialisms.insert("ID");
+  commonInitialisms.insert("IDS");
   commonInitialisms.insert("IP");
   commonInitialisms.insert("JSON");
   commonInitialisms.insert("LHS");
@@ -737,6 +739,7 @@ void t_go_generator::init_generator() {
   commonInitialisms.insert("RPC");
   commonInitialisms.insert("SLA");
   commonInitialisms.insert("SMTP");
+  commonInitialisms.insert("SQL");
   commonInitialisms.insert("SSH");
   commonInitialisms.insert("TCP");
   commonInitialisms.insert("TLS");
@@ -750,6 +753,7 @@ void t_go_generator::init_generator() {
   commonInitialisms.insert("UTF8");
   commonInitialisms.insert("VM");
   commonInitialisms.insert("XML");
+  commonInitialisms.insert("XMPP");
   commonInitialisms.insert("XSRF");
   commonInitialisms.insert("XSS");
 

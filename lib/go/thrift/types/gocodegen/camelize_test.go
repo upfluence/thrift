@@ -38,6 +38,16 @@ func TestPublicize(t *testing.T) {
 			want: "ID",
 		},
 		{
+			name: "plural IDs",
+			have: "user_ids",
+			want: "UserIDs",
+		},
+		{
+			name: "revive initialisms",
+			have: "acl_sql_xmpp",
+			want: "ACLSQLXMPP",
+		},
+		{
 			name: "trailing underscore ignored",
 			have: "foo_",
 			want: "Foo",
@@ -106,9 +116,19 @@ func TestPrivatize(t *testing.T) {
 			want: "id",
 		},
 		{
+			name: "plural IDs at start",
+			have: "ids_for_user",
+			want: "idsForUser",
+		},
+		{
 			name: "initialism only in second word",
 			have: "some_id",
 			want: "someID",
+		},
+		{
+			name: "plural IDs in second word",
+			have: "some_ids",
+			want: "someIDs",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -6,9 +6,10 @@ import (
 )
 
 // commonInitialisms is the set of well-known Go initialisms taken from
-// https://github.com/golang/lint/blob/master/lint.go#L692 and mirrored in
+// https://github.com/mgechev/revive/blob/master/internal/rule/name.go and mirrored in
 // compiler/cpp/src/thrift/generate/t_go_generator.cc.
 var commonInitialisms = map[string]struct{}{
+	"ACL":   {},
 	"API":   {},
 	"ASCII": {},
 	"CPU":   {},
@@ -20,6 +21,7 @@ var commonInitialisms = map[string]struct{}{
 	"HTTP":  {},
 	"HTTPS": {},
 	"ID":    {},
+	"IDS":   {},
 	"IP":    {},
 	"JSON":  {},
 	"LHS":   {},
@@ -29,6 +31,7 @@ var commonInitialisms = map[string]struct{}{
 	"RPC":   {},
 	"SLA":   {},
 	"SMTP":  {},
+	"SQL":   {},
 	"SSH":   {},
 	"TCP":   {},
 	"TLS":   {},
@@ -42,6 +45,7 @@ var commonInitialisms = map[string]struct{}{
 	"UTF8":  {},
 	"VM":    {},
 	"XML":   {},
+	"XMPP":  {},
 	"XSRF":  {},
 	"XSS":   {},
 }
@@ -129,6 +133,8 @@ func camelize(s string, public bool) string {
 			if i == 0 && !public {
 				// First word, private: keep fully lowercase.
 				b.WriteString(strings.ToLower(part))
+			} else if upper == "IDS" {
+				b.WriteString("IDs")
 			} else {
 				b.WriteString(upper)
 			}

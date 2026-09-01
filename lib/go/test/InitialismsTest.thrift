@@ -20,5 +20,10 @@
 struct InitialismsTest {
     1: string user_id,
     2: string server_url,
-    3: string id, 
+    3: string id,
+    4: string acl,
+    5: string ids,
+    6: string sql,
+    7: string xmpp,
+    8: string user_ids,
 }

@@ -47,6 +47,26 @@ func TestThatCommonInitialismsAreFixed(t *testing.T) {
 			name:          "ID",
 			haveFieldName: "ID",
 		},
+		{
+			name:          "ACL",
+			haveFieldName: "ACL",
+		},
+		{
+			name:          "IDs",
+			haveFieldName: "IDs",
+		},
+		{
+			name:          "SQL",
+			haveFieldName: "SQL",
+		},
+		{
+			name:          "XMPP",
+			haveFieldName: "XMPP",
+		},
+		{
+			name:          "UserIDs",
+			haveFieldName: "UserIDs",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, ok := st.FieldByName(tc.haveFieldName)
