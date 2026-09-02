@@ -960,11 +960,6 @@ string t_go_generator::go_imports_begin(bool consts) {
   system_packages.push_back("context");
   system_packages.push_back("io");
   system_packages.push_back("reflect");
-  // If not writing constants, and there are enums, need extra imports.
-  if (!consts && get_program()->get_enums().size() > 0) {
-    system_packages.push_back("database/sql/driver");
-    system_packages.push_back("errors");
-  }
   system_packages.push_back("fmt");
   system_packages.push_back(gen_thrift_import_);
   return "import(\n" + render_system_packages(system_packages);
