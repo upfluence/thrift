@@ -1036,7 +1036,7 @@ void t_go_generator::generate_enum(t_enum* tenum) {
   generate_go_docstring(f_types_, tenum);
   f_types_ << "type " << tenum_name << " int64" << endl << "const (" << endl;
 
-  to_string_mapping << indent() << "func (p " << tenum_name << ") String() string {" << endl;
+  to_string_mapping << indent() << "func (p " << tenum_name << ") HumanizedString() string {" << endl;
   to_string_mapping << indent() << "  switch p {" << endl;
 
   from_string_mapping << indent() << "func " << tenum_name << "FromString(s string) (" << tenum_name
@@ -1087,41 +1087,9 @@ void t_go_generator::generate_enum(t_enum* tenum) {
            << " { return &v }" << endl << endl;
 
 
-  f_types_ << "func (p " << tenum_name << ") LegacyString() string {" << endl;
-  f_types_ << "return \"" << tenum_name << "_\" + p.String()" << endl;
+  f_types_ << "func (p " << tenum_name << ") String() string {" << endl;
+  f_types_ << "return \"" << tenum_name << "_\" + p.HumanizedString()" << endl;
   f_types_ << "}" << endl << endl;
-
-  // Generate MarshalText
-  f_types_ << "func (p " << tenum_name << ") MarshalText() ([]byte, error) {" << endl;
-  f_types_ << "return []byte(p.String()), nil" << endl;
-  f_types_ << "}" << endl << endl;
-
-  // Generate UnmarshalText
-  f_types_ << "func (p *" << tenum_name << ") UnmarshalText(text []byte) error {" << endl;
-  f_types_ << "q, err := " << tenum_name << "FromString(string(text))" << endl;
-  f_types_ << "if (err != nil) {" << endl << "return err" << endl << "}" << endl;
-  f_types_ << "*p = q" << endl;
-  f_types_ << "return nil" << endl;
-  f_types_ << "}" << endl << endl;
-
-  // Generate Scan for sql.Scanner interface
-  f_types_ << "func (p *" << tenum_name << ") Scan(value interface{}) error {" <<endl;
-  f_types_ << "v, ok := value.(int64)" <<endl;
-  f_types_ << "if !ok {" <<endl;
-  f_types_ << "return errors.New(\"Scan value is not int64\")" <<endl;
-  f_types_ << "}" <<endl;
-  f_types_ << "*p = " << tenum_name << "(v)" << endl;
-  f_types_ << "return nil" << endl;
-  f_types_ << "}" << endl << endl;
-
-  // Generate Value for driver.Valuer interface
-  f_types_ << "func (p * " << tenum_name << ") Value() (driver.Value, error) {" <<endl;
-  f_types_ << "  if p == nil {" << endl;
-  f_types_ << "    return nil, nil" << endl;
-  f_types_ << "  }" << endl;
-  f_types_ << "return int64(*p), nil" << endl;
-  f_types_ << "}" << endl;
-
 }
 
 /**
