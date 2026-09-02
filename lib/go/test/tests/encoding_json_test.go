@@ -20,38 +20,41 @@
 package tests
 
 import (
-	"encoding"
 	"encoding/json"
 	"testing"
 
 	"github.com/upfluence/thrift/lib/go/test/gen/thrifttest"
 )
 
-func TestEnumIsTextMarshaller(t *testing.T) {
-	one := thrifttest.Numberz_ONE
-	var tm encoding.TextMarshaler = one
-	b, err := tm.MarshalText()
-	if err != nil {
-		t.Fatalf("Unexpected error from MarshalText: %s", err)
-	}
-	if string(b) != one.String() {
-		t.Errorf("MarshalText(%s) = %s, expected = %s", one, b, one)
-	}
-}
+func TestEnumString(t *testing.T) {
+	for _, tt := range []struct {
+		name          string
+		have          thrifttest.Numberz
+		want          string
+		wantHumanized string
+	}{
+		{
+			name:          "known value",
+			have:          thrifttest.Numberz_ONE,
+			want:          "Numberz_ONE",
+			wantHumanized: "ONE",
+		},
+		{
+			name:          "unknown value",
+			have:          thrifttest.Numberz(0),
+			want:          "Numberz_<UNSET>",
+			wantHumanized: "<UNSET>",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.have.String(); got != tt.want {
+				t.Errorf("String() = %q, want %q", got, tt.want)
+			}
 
-func TestEnumIsTextUnmarshaller(t *testing.T) {
-	var tm encoding.TextUnmarshaler = thrifttest.NumberzPtr(thrifttest.Numberz_TWO)
-	err := tm.UnmarshalText([]byte("TWO"))
-	if err != nil {
-		t.Fatalf("Unexpected error from UnmarshalText(TWO): %s", err)
-	}
-	if *(tm.(*thrifttest.Numberz)) != thrifttest.Numberz_TWO {
-		t.Errorf("UnmarshalText(TWO) = %s", tm)
-	}
-
-	err = tm.UnmarshalText([]byte("NAN"))
-	if err == nil {
-		t.Errorf("Error from UnmarshalText(NAN)")
+			if got := tt.have.HumanizedString(); got != tt.wantHumanized {
+				t.Errorf("HumanizedString() = %q, want %q", got, tt.wantHumanized)
+			}
+		})
 	}
 }
 
