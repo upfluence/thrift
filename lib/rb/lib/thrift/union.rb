@@ -75,11 +75,11 @@ module Thrift
       field_info = struct_fields[fid]
       type = field_info[:type]
       if is_container? type
-        oprot.write_field_begin(@setfield, type, fid)
+        oprot.write_field_begin(field_info[:name], type, fid)
         write_container(oprot, @value, field_info)
         oprot.write_field_end
       else
-        oprot.write_field(@setfield, type, fid, @value)
+        oprot.write_field(field_info[:name], type, fid, @value)
       end
 
       oprot.write_field_stop
