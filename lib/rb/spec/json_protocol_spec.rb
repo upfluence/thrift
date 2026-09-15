@@ -33,6 +33,18 @@ describe 'JsonProtocol' do
       @trans.read(@trans.available).should == '{"greeting":"hello world"}'
     end
 
+    it 'should pretty print union' do
+      SpecNamespace::My_union.new(:integer32, 25).write(@prot)
+
+      @trans.read(@trans.available).should == '{"integer32":25}'
+    end
+
+    it 'should pretty print union with a container field' do
+      SpecNamespace::My_union.new(:my_map, { SpecNamespace::SomeEnum::ONE => [] }).write(@prot)
+
+      @trans.read(@trans.available).should == '{"my_map":{"0":[]}}'
+    end
+
     it 'shound not be able to read message' do
       @trans.write('{"greeting":"hello world"}')
       expect {@prot.read_message_begin}.to raise_error(Thrift::ProtocolException)

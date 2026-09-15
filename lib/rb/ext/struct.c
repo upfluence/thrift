@@ -676,8 +676,9 @@ static VALUE rb_thrift_union_write(VALUE self, VALUE protocol) {
 
   VALUE ttype_value = rb_hash_aref(field_info, type_sym);
   int ttype = FIX2INT(ttype_value);
+  VALUE field_name = rb_hash_aref(field_info, name_sym);
 
-  default_write_field_begin(protocol, setfield, ttype_value, field_id);
+  default_write_field_begin(protocol, field_name, ttype_value, field_id);
 
   write_anything(ttype, setvalue, protocol, field_info);
 
