@@ -92,12 +92,12 @@ module Thrift
       end
       @middleware = Middleware.wrap(middlewares)
 
-      # Walk ancestors so services extending another one expose inherited methods.
-      @processors = self.class.ancestors.reverse_each.each_with_object({}) do |klass, acc|
+      # Walk ancestors child first so inherited methods are exposed and overrides win.
+      @processors = self.class.ancestors.each_with_object({}) do |klass, acc|
         next unless klass.const_defined?(:METHODS, false)
 
         klass::METHODS.each do |name, info|
-          acc[name] = build_processor(name, info)
+          acc[name] ||= build_processor(name, info)
         end
       end
     end
