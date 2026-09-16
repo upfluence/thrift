@@ -77,6 +77,20 @@ describe Thrift::Processor do
         result_klass: EmptyResult,
         args:         [],
         exceptions:   {},
+        void_result:  true,
+        oneway:       false
+      }
+    }.freeze
+  end
+
+  class ExtendedProcessor < CurrentProcessor
+    METHODS = {
+      'pong' => {
+        args_klass:   EmptyArgs,
+        result_klass: EmptyResult,
+        args:         [],
+        exceptions:   {},
+        void_result:  true,
         oneway:       false
       }
     }.freeze
@@ -177,6 +191,25 @@ describe Thrift::Processor do
       exception_type: Thrift::ApplicationException::UNKNOWN_METHOD,
       message:        'Unknown function missing'
     )
+  end
+
+  %w[ping pong].each do |name|
+    it "processes #{name} with a processor extending another service" do
+      handler = double('handler', ping: nil, pong: nil)
+      processor = ExtendedProcessor.new(handler)
+      oprot, trans = output_protocol
+
+      expect(processor.process(request_protocol(name), oprot)).to eq(true)
+      expect(oprot.read_message_begin).to eq(
+        [name, Thrift::MessageTypes::REPLY, 17]
+      )
+
+      EmptyResult.new.read(oprot)
+      oprot.read_message_end
+
+      expect(trans.available).to eq(0)
+      expect(handler).to have_received(name)
+    end
   end
 
   it 'writes internal errors raised by a current processor' do
