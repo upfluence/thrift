@@ -10,7 +10,14 @@ module Thrift
     end
 
     def ready
-      Thread.new { read_goaway }
+      Thread.new do
+        read_goaway
+      rescue EOFError, TransportException
+        # The connection ended before the other side answered: read_goaway
+        # closes the stream either way.
+        nil
+      end
+
       super
     end
 
