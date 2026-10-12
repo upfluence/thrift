@@ -1,10 +1,12 @@
 module Thrift
   class TOutboundStream < TBaseStream
-    def initialize(iprot, oprot, name, seqid, klass, message_type, unlock = nil)
+    def initialize(
+      iprot, oprot, name, seqid, klass, message_type, unlock = nil, **timeouts
+    )
       @message_type = message_type
       @klass = klass
       @unlock = unlock
-      super(iprot, oprot, name, seqid)
+      super(iprot, oprot, name, seqid, **timeouts)
     end
 
     def ready
@@ -15,6 +17,7 @@ module Thrift
     def close
       wait_ready
 
+      start_handshake { @closed }
       write_shell @message_type + 1
 
       @mutex.synchronize do

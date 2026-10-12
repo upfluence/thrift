@@ -20,9 +20,16 @@
 
 module Thrift
   module Client
+    # stream_handshake_timeout and stream_idle_timeout are handed to the
+    # streams of the client, see DEFAULT_STREAM_HANDSHAKE_TIMEOUT and
+    # DEFAULT_STREAM_IDLE_TIMEOUT. A value of zero or less disables them.
+    attr_accessor :stream_handshake_timeout, :stream_idle_timeout
+
     def initialize(iprot, oprot = nil)
       @iprot = iprot
       @oprot = oprot || iprot
+      @stream_handshake_timeout = DEFAULT_STREAM_HANDSHAKE_TIMEOUT
+      @stream_idle_timeout = DEFAULT_STREAM_IDLE_TIMEOUT
       @seqid = 0
       @mutex = Mutex.new
       @cond = ConditionVariable.new
@@ -109,7 +116,8 @@ module Thrift
       stream = TOutboundStream.new(
         @iprot, @oprot, name, @seqid, sink_klass,
         MessageTypes::CLIENT_STREAM_MESSAGE,
-        method(:finish_call)
+        method(:finish_call),
+        **stream_timeouts
       )
 
       stream.ready
@@ -122,7 +130,8 @@ module Thrift
       stream = TInboundStream.new(
         @iprot, @oprot, name, @seqid, sink_klass,
         MessageTypes::SERVER_STREAM_MESSAGE,
-        method(:finish_call)
+        method(:finish_call),
+        **stream_timeouts
       )
 
       stream.ready
@@ -137,7 +146,8 @@ module Thrift
         stream_klass, sink_klass,
         MessageTypes::SERVER_STREAM_MESSAGE,
         MessageTypes::CLIENT_STREAM_MESSAGE,
-        method(:finish_call)
+        method(:finish_call),
+        **stream_timeouts
       )
 
       stream.ready
@@ -150,6 +160,13 @@ module Thrift
     end
 
     private
+
+    def stream_timeouts
+      {
+        handshake_timeout: @stream_handshake_timeout,
+        idle_timeout: @stream_idle_timeout
+      }
+    end
 
     def stream_call(name, req, resp_klass)
       @mutex.synchronize do

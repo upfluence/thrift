@@ -28,7 +28,7 @@ module Thrift
   end
 
   class TBidiStream < TBaseStream
-    def initialize(iprot, oprot, name, seqid, inbound_klass, outbound_klass, inbound_message_type, outbound_message_type, unlock = nil)
+    def initialize(iprot, oprot, name, seqid, inbound_klass, outbound_klass, inbound_message_type, outbound_message_type, unlock = nil, **timeouts)
       @inbound_message_type = inbound_message_type
       @outbound_message_type = outbound_message_type
       @inbound_klass = inbound_klass
@@ -39,7 +39,7 @@ module Thrift
       @unlock = unlock
       @closing_inbound = false
       @closing_outbound = false
-      super(iprot, oprot, name, seqid)
+      super(iprot, oprot, name, seqid, **timeouts)
     end
 
     def ready
@@ -51,9 +51,10 @@ module Thrift
       wait_ready
 
       @mutex.synchronize do
-        return if @closed || @inbbound_closed
+        return if @closed || @inbound_closed
 
         @closing_inbound = true
+        start_handshake { @closed || @inbound_closed }
         write_shell_unlocked @inbound_message_type + 1
 
         loop do
@@ -71,6 +72,7 @@ module Thrift
         return if @closed || @outbound_closed
 
         @closing_outbound = true
+        start_handshake { @closed || @outbound_closed }
         write_shell_unlocked @outbound_message_type + 1
 
         loop do
@@ -106,6 +108,12 @@ module Thrift
 
     def close
       mark_as_closed
+    end
+
+    protected
+
+    def on_abort
+      @message_queue.close unless @message_queue.closed?
     end
 
     private
@@ -173,6 +181,7 @@ module Thrift
         end
 
         if @closed
+          wake_watcher
           @unlock&.call
           @cond.broadcast
           return

@@ -1,11 +1,13 @@
 module Thrift
   class TInboundStream < TBaseStream
-    def initialize(iprot, oprot, name, seqid, klass, message_type, unlock = nil)
+    def initialize(
+      iprot, oprot, name, seqid, klass, message_type, unlock = nil, **timeouts
+    )
       @message_type = message_type
       @klass = klass
       @unlock = unlock
       @closing = false
-      super(iprot, oprot, name, seqid)
+      super(iprot, oprot, name, seqid, **timeouts)
     end
 
     def close
@@ -16,6 +18,7 @@ module Thrift
 
         begin
           @closing = true
+          start_handshake { @closed }
           write_shell_unlocked @message_type + 1
 
           loop do
@@ -36,6 +39,9 @@ module Thrift
             end
           end
         ensure
+          @closed = true
+          @cond.broadcast
+          wake_watcher
           @unlock&.call
         end
       end
@@ -57,6 +63,7 @@ module Thrift
           write_shell_unlocked @message_type + 2 unless @closing
           @closed = true
           @cond.broadcast
+          wake_watcher
           @unlock&.call
 
           raise EOFError
