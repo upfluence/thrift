@@ -34,6 +34,14 @@ module Thrift
     end
   end
 
+  # next_message tells the transport of the protocol that a message is about
+  # to be read, if it cares.
+  def self.next_message(prot)
+    trans = prot.trans
+
+    trans.next_message if trans.respond_to?(:next_message)
+  end
+
   module TransportUtils
     # Deprecated: Use Thrift::Bytes instead
     def self.get_string_byte(string, index)
@@ -63,6 +71,11 @@ module Thrift
     end
 
     def set_context(ctx); end
+
+    # Called before a message is read, whether it is a request, a reply or a
+    # message of a stream, by the code reading it. A transport keeping what it
+    # knows of the message it read, such as its headers, forgets it here.
+    def next_message; end
 
     # Returns an unsigned byte as a Fixnum in the range (0..255).
     def read_byte

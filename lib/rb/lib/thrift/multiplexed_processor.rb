@@ -30,6 +30,7 @@ module Thrift
     end
  
     def process(iprot, oprot)
+      Thrift.next_message(iprot)
       name, type, seqid = iprot.read_message_begin
       check_type(type)
       check_separator(name)

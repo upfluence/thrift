@@ -56,6 +56,7 @@ module Thrift
     end
 
     def receive_message(result_klass, name=nil)
+      Thrift.next_message(@iprot)
       fname, mtype, seqid = @iprot.read_message_begin
       handle_exception(mtype)
 

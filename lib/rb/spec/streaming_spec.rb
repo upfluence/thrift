@@ -319,7 +319,11 @@ describe 'Streaming' do
         allow(p).to receive(:trans).and_return(mock_trans)
       end
     end
-    let(:iprot) { double('MockIProt') }
+    let(:iprot) do
+      double('MockIProt').tap do |p|
+        allow(p).to receive(:trans).and_return(double('IProtTransport', next_message: nil))
+      end
+    end
 
     let(:client) { StreamingClientSpec.new(iprot, oprot) }
 

@@ -158,6 +158,7 @@ module Thrift
     end
 
     def read_message_begin
+      Thrift.next_message(@iprot)
       name, mtype, seqid = @iprot.read_message_begin
 
       raise ApplicationException.new(

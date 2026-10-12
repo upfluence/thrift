@@ -142,6 +142,7 @@ describe 'Stream timeouts' do
       allow(resp_klass).to receive(:new).and_return(resp_obj)
       allow(oprot).to receive(:write_message_begin)
       allow(oprot).to receive(:write_message_end)
+      allow(iprot).to receive(:trans).and_return(double('itrans', next_message: nil))
       allow(iprot).to receive(:read_message_begin).and_return(
         ['test', Thrift::MessageTypes::REPLY, 1]
       )

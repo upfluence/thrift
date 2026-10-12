@@ -63,7 +63,29 @@ describe 'Client' do
       @client.send_message('testMessage3', double('args class').as_null_object)
     end
 
+    it 'should tell the transport that a message is about to be read' do
+      trans = double('MockTransport')
+
+      allow(@prot).to receive(:trans).and_return(trans)
+      expect(trans).to receive(:next_message).ordered
+      expect(@prot).to receive(:read_message_begin).ordered.and_return [nil, Thrift::MessageTypes::REPLY, 0]
+      expect(@prot).to receive(:read_message_end)
+      mock_klass = double('#<MockClass:mock>')
+      expect(mock_klass).to receive(:read).with(@prot)
+      @client.receive_message(double('MockClass', new: mock_klass))
+    end
+
+    it 'should read a message from a transport that does not care' do
+      allow(@prot).to receive(:trans).and_return(double('MockTransport'))
+      expect(@prot).to receive(:read_message_begin).and_return [nil, Thrift::MessageTypes::REPLY, 0]
+      expect(@prot).to receive(:read_message_end)
+      mock_klass = double('#<MockClass:mock>')
+      expect(mock_klass).to receive(:read).with(@prot)
+      @client.receive_message(double('MockClass', new: mock_klass))
+    end
+
     it 'should receive a test message' do
+      allow(@prot).to receive(:trans).and_return(double('MockTransport', next_message: nil))
       expect(@prot).to receive(:read_message_begin).and_return [nil, Thrift::MessageTypes::REPLY, 0]
       expect(@prot).to receive(:read_message_end)
       mock_klass = double('#<MockClass:mock>')
@@ -72,6 +94,7 @@ describe 'Client' do
     end
 
     it 'should handle received exceptions' do
+      allow(@prot).to receive(:trans).and_return(double('MockTransport', next_message: nil))
       expect(@prot).to receive(:read_message_begin).and_return [nil, Thrift::MessageTypes::EXCEPTION, 0]
       expect(@prot).to receive(:read_message_end)
       expect(Thrift::ApplicationException).to receive(:new) do
