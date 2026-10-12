@@ -2,12 +2,15 @@ package thrift
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type streamBidiHandler struct {
@@ -191,6 +194,91 @@ func TestStreamClient(t *testing.T) {
 	assert.Equal(t, []string{"bar", "biz"}, h.streamMsgs)
 
 	wg.Wait()
+}
+
+// TestStreamClientConcurrentSend sends on a stream from several goroutines:
+// a message is written as a whole, never in between the ones of another.
+func TestStreamClientConcurrentSend(t *testing.T) {
+	const (
+		senders  = 8
+		messages = 25
+	)
+
+	var (
+		wg sync.WaitGroup
+
+		pr1, pw1 = io.Pipe()
+		pr2, pw2 = io.Pipe()
+
+		ctx = context.Background()
+		pf  = NewTBinaryProtocolFactoryDefault()
+	)
+
+	cl := NewTSyncClient(NewStreamTransport(pr1, pw2), pf)
+
+	h := streamClientHandler{wg: &wg}
+	p := NewTStandardProcessor(nil)
+
+	p.AddProcessor(
+		"stream_client",
+		NewTStreamClientProcessorFunction(
+			p,
+			"stream_client",
+			func() TRequest {
+				var s tstring
+				return &s
+			},
+			&h,
+		),
+	)
+
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		st := NewStreamTransport(pr2, pw1)
+
+		ok, err := p.Process(ctx, pf.GetProtocol(st), pf.GetProtocol(st))
+		assert.NoError(t, err)
+		assert.True(t, ok)
+	}()
+
+	var resp tstring
+
+	ostream, err := cl.StreamClient(ctx, "stream_client", newTString("foo"), &resp)
+	require.NoError(t, err)
+
+	var (
+		sg   sync.WaitGroup
+		want []string
+	)
+
+	for i := range senders {
+		for j := range messages {
+			want = append(want, fmt.Sprintf("sender-%d-message-%d", i, j))
+		}
+
+		sg.Add(1)
+
+		go func() {
+			defer sg.Done()
+
+			for j := range messages {
+				assert.NoError(t, ostream.Send(ctx, newTString(fmt.Sprintf("sender-%d-message-%d", i, j))))
+			}
+		}()
+	}
+
+	sg.Wait()
+
+	require.NoError(t, ostream.Close())
+	wg.Wait()
+
+	sort.Strings(want)
+	sort.Strings(h.streamMsgs)
+
+	assert.Equal(t, want, h.streamMsgs)
 }
 
 func TestStreamServer(t *testing.T) {

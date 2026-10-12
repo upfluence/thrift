@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 )
 
 type tBidiStream struct {
@@ -24,8 +25,8 @@ type tBidiStream struct {
 	outboundGoAwayType    TMessageType
 	outboundGoAwayACKType TMessageType
 
-	closingInbound  bool
-	closingOutbound bool
+	closingInbound  atomic.Bool
+	closingOutbound atomic.Bool
 	receivingc      chan struct{}
 
 	writeMu sync.Mutex
@@ -116,11 +117,10 @@ func (bs *tBidiStream) processMessage(typeID TMessageType, err error) error {
 
 	switch typeID {
 	case bs.inboundGoAwayType:
-		closing := bs.closingInbound
-		bs.closingInbound = true
+		closing := bs.closingInbound.Swap(true)
 		if !closing {
 			if err := bs.writeShell(bs.inboundGoAwayACKType); err != nil {
-				bs.close()
+				bs.abort()
 				return err
 			}
 		}
@@ -129,11 +129,10 @@ func (bs *tBidiStream) processMessage(typeID TMessageType, err error) error {
 	case bs.inboundGoAwayACKType:
 		return bs.closeInbound()
 	case bs.outboundGoAwayType:
-		closing := bs.closingOutbound
-		bs.closingOutbound = true
+		closing := bs.closingOutbound.Swap(true)
 		if !closing {
 			if err := bs.writeShell(bs.outboundGoAwayACKType); err != nil {
-				bs.close()
+				bs.abort()
 				return err
 			}
 		}
@@ -149,10 +148,14 @@ func (bs *tBidiStream) processMessage(typeID TMessageType, err error) error {
 }
 
 func (bs *tBidiStream) receiveOnce() error {
-	typeID, err := bs.readMessageBegin(context.Background())
+	ctx, done := bs.withAbort(context.Background())
+
+	defer done()
+
+	typeID, err := bs.readMessageBegin(ctx)
 
 	if err := bs.processMessage(typeID, err); err != nil && err != io.EOF {
-		bs.close()
+		bs.abort()
 		return err
 	}
 
@@ -198,16 +201,24 @@ func (s *tOutboundBidiStream) Close() error {
 	case <-s.readyc:
 	}
 
-	if s.closingOutbound {
+	// Whoever sets it first closes the half: this side with its go away, or the
+	// receiver acknowledging the one of the other side. A go away sent after
+	// the one of the other side was acknowledged is left on the connection.
+	if s.closingOutbound.Swap(true) {
+		select {
+		case <-s.outboundClosec:
+		case <-s.closec:
+		}
+
 		return nil
 	}
 
+	s.startHandshake(s.outboundClosec)
+
 	go s.receive(s.outboundClosec)
 
-	s.closingOutbound = true
-
-	if err := s.writeShell(s.outboundGoAwayType); err != nil {
-		s.close()
+	if err := s.writeShell(s.outboundGoAwayType); err != nil && err != io.EOF {
+		s.abort()
 		return err
 	}
 
@@ -233,12 +244,12 @@ func (s *tOutboundBidiStream) Send(ctx Context, req TRequest) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	if s.closingOutbound {
+	if s.closingOutbound.Load() {
 		return io.EOF
 	}
 
 	if err := s.write(ctx, s.outboundMessageType, req); err != nil {
-		s.close()
+		s.abort()
 		return parseStreamingError(err)
 	}
 
@@ -258,16 +269,21 @@ func (s *tInboundBidiStream) Close() error {
 	case <-s.readyc:
 	}
 
-	if s.closingInbound {
+	if s.closingInbound.Swap(true) {
+		select {
+		case <-s.inboundClosec:
+		case <-s.closec:
+		}
+
 		return nil
 	}
 
+	s.startHandshake(s.inboundClosec)
+
 	go s.receive(s.inboundClosec)
 
-	s.closingInbound = true
-
 	if err := s.writeShell(s.inboundGoAwayType); err != nil && err != io.EOF {
-		s.close()
+		s.abort()
 		return err
 	}
 
@@ -302,6 +318,10 @@ func (s *tInboundBidiStream) Receive(ctx Context, req TRequest) error {
 
 	defer func() { <-s.receivingc }()
 
+	ctx, done := s.withAbort(ctx)
+
+	defer done()
+
 	for {
 		typeID, err := s.readMessageBegin(ctx)
 
@@ -312,7 +332,7 @@ func (s *tInboundBidiStream) Receive(ctx Context, req TRequest) error {
 
 		if err := s.processMessage(typeID, err); err != nil {
 			if err != io.EOF {
-				s.close()
+				s.abort()
 			}
 			return err
 		}

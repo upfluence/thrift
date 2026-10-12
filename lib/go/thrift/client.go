@@ -3,6 +3,7 @@ package thrift
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type TClientFactory interface {
@@ -41,14 +42,22 @@ type TSyncClient struct {
 	seqID int32
 
 	middleware TStreamingMiddleware
+
+	// StreamHandshakeTimeout and StreamIdleTimeout are handed to the streams
+	// of the client, see DefaultStreamHandshakeTimeout and
+	// DefaultStreamIdleTimeout. A value of zero or less disables them.
+	StreamHandshakeTimeout time.Duration
+	StreamIdleTimeout      time.Duration
 }
 
 func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncClient {
 	return &TSyncClient{
-		trans:      t,
-		in:         f.GetProtocol(t),
-		out:        f.GetProtocol(t),
-		middleware: WrapMiddlewares(ms),
+		trans:                  t,
+		in:                     f.GetProtocol(t),
+		out:                    f.GetProtocol(t),
+		middleware:             WrapMiddlewares(ms),
+		StreamHandshakeTimeout: DefaultStreamHandshakeTimeout,
+		StreamIdleTimeout:      DefaultStreamIdleTimeout,
 	}
 }
 
@@ -206,7 +215,9 @@ func (c *TSyncClient) StreamClient(ctx Context, method string, req TRequest, res
 		},
 	)
 
-	originalStream.ready()
+	if err == nil {
+		originalStream.ready()
+	}
 
 	return wrappedStream, err
 }
@@ -234,7 +245,9 @@ func (c *TSyncClient) StreamServer(ctx Context, method string, req TRequest, res
 		},
 	)
 
-	originalStream.ready()
+	if err == nil {
+		originalStream.ready()
+	}
 
 	return wrappedStream, err
 }
@@ -265,7 +278,9 @@ func (c *TSyncClient) StreamBidi(ctx Context, method string, req TRequest, res T
 		},
 	)
 
-	bidiStream.ready()
+	if err == nil {
+		bidiStream.ready()
+	}
 
 	return inboundStream, outboundStream, err
 }

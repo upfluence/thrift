@@ -264,19 +264,27 @@ func (p *TStreamServerProcessorFunction) Process(ctx Context, seqID int32, in, o
 
 	ok, err := p.writeResponse(out, seqID, res, err)
 
+	// A stream that was refused is not opened: what the other side got is the
+	// exception, and nothing of a stream is to follow it on the connection.
+	if !ok || err != nil {
+		stream.close()
+
+		return ok, err
+	}
+
 	stream.ready()
 
 	defer stream.Close()
 
-	if !ok || err != nil {
-		return ok, err
-	}
-
 	select {
 	case <-ctx.Done():
-		return true, ctx.Err()
+		return false, ctx.Err()
 	case <-stream.closec:
-		return true, nil
+		stream.quiesce()
+
+		// The connection of a stream that was aborted still carries what the
+		// other side sent, or is going to: it is not to be read as a request.
+		return !stream.aborted.Load(), nil
 	}
 }
 
@@ -317,19 +325,27 @@ func (p *TStreamClientProcessorFunction) Process(ctx Context, seqID int32, in, o
 	)
 	ok, err := p.writeResponse(out, seqID, res, err)
 
+	// A stream that was refused is not opened: what the other side got is the
+	// exception, and nothing of a stream is to follow it on the connection.
+	if !ok || err != nil {
+		stream.close()
+
+		return ok, err
+	}
+
 	stream.ready()
 
 	defer stream.Close()
 
-	if !ok || err != nil {
-		return ok, err
-	}
-
 	select {
 	case <-ctx.Done():
-		return true, ctx.Err()
+		return false, ctx.Err()
 	case <-stream.closec:
-		return true, nil
+		stream.quiesce()
+
+		// The connection of a stream that was aborted still carries what the
+		// other side sent, or is going to: it is not to be read as a request.
+		return !stream.aborted.Load(), nil
 	}
 }
 
@@ -371,18 +387,26 @@ func (p *TStreamBidiProcessorFunction) Process(ctx Context, seqID int32, in, out
 	)
 	ok, err := p.writeResponse(out, seqID, res, err)
 
+	// A stream that was refused is not opened: what the other side got is the
+	// exception, and nothing of a stream is to follow it on the connection.
+	if !ok || err != nil {
+		bidiStream.close()
+
+		return ok, err
+	}
+
 	bidiStream.ready()
 
 	defer bidiStream.Close()
 
-	if !ok || err != nil {
-		return ok, err
-	}
-
 	select {
 	case <-ctx.Done():
-		return true, ctx.Err()
+		return false, ctx.Err()
 	case <-bidiStream.closec:
-		return true, nil
+		bidiStream.quiesce()
+
+		// The connection of a stream that was aborted still carries what the
+		// other side sent, or is going to: it is not to be read as a request.
+		return !bidiStream.aborted.Load(), nil
 	}
 }
