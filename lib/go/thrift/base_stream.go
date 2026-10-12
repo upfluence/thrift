@@ -7,6 +7,23 @@ import (
 	"sync"
 )
 
+// ReadContexter is implemented by the transports that are told, before each
+// message of a stream is read, the context of the read: it is a start of a
+// message, so what was left of the previous one is forgotten. It is called
+// instead of WriteContext, which belongs to the writes of a message.
+type ReadContexter interface {
+	ReadContext(ctx Context) error
+}
+
+// ReadContext hands the context of a read to a transport.
+func ReadContext(t TTransport, ctx Context) error {
+	if rc, ok := t.(ReadContexter); ok {
+		return rc.ReadContext(ctx)
+	}
+
+	return t.WriteContext(ctx)
+}
+
 type tBaseStream struct {
 	out TProtocol
 	in  TProtocol
@@ -109,7 +126,7 @@ func (bs *tBaseStream) readMessageBegin(ctx Context) (TMessageType, error) {
 	default:
 	}
 
-	if err := bs.in.Transport().WriteContext(ctx); err != nil {
+	if err := ReadContext(bs.in.Transport(), ctx); err != nil {
 		return 0, err
 	}
 

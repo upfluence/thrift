@@ -74,7 +74,14 @@ func send(ctx Context, oprot TProtocol, seqID int32, method string, args TReques
 	return oprot.Flush()
 }
 
-func recv(iprot TProtocol, seqID int32, method string, result TResponse) error {
+func recv(ctx Context, iprot TProtocol, seqID int32, method string, result TResponse) error {
+	// The reply is the start of a message, like each one of a stream is.
+	if rc, ok := iprot.Transport().(ReadContexter); ok {
+		if err := rc.ReadContext(ctx); err != nil {
+			return err
+		}
+	}
+
 	var rMethod, rTypeID, rSeqID, err = iprot.ReadMessageBegin()
 
 	if err != nil {
@@ -136,7 +143,7 @@ func (c *TSyncClient) CallBinary(ctx Context, method string, req TRequest, res T
 				return nil, err
 			}
 
-			return res, recv(c.out, c.seqID, method, res)
+			return res, recv(ctx, c.out, c.seqID, method, res)
 		},
 	)
 
@@ -167,7 +174,7 @@ func (c *TSyncClient) rpcStream(ctx Context, method string, req TRequest, res TR
 		return err
 	}
 
-	if err := recv(c.out, c.seqID, method, res); err != nil {
+	if err := recv(ctx, c.out, c.seqID, method, res); err != nil {
 		c.mu.Unlock()
 
 		return err
