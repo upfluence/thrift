@@ -433,6 +433,122 @@ describe 'Streaming' do
       end
     end
 
+    describe 'the hooks of a subclass' do
+      class HookedClientSpec < Thrift::BaseClient
+        attr_reader :kinds
+        attr_accessor :streaming
+
+        def initialize(*)
+          super
+
+          @kinds = []
+          @streaming = true
+        end
+
+        protected
+
+        def around_call(kind)
+          @kinds << kind
+
+          yield
+        end
+
+        def ensure_streaming
+          raise 'no streams' unless @streaming
+        end
+      end
+
+      let(:hooked) { HookedClientSpec.new(iprot, oprot) }
+      let(:resp_klass) { double('RespKlass', new: double('resp_obj', read: nil, write: nil)) }
+
+      before do
+        allow(oprot).to receive(:write_message_begin)
+        allow(oprot).to receive(:write_message_end)
+        allow(iprot).to receive(:read_message_begin).and_return(['test', Thrift::MessageTypes::REPLY, 1])
+        allow(iprot).to receive(:read_message_end)
+      end
+
+      it 'wraps the calls' do
+        hooked.call_unary('test', double('req', write: nil))
+
+        allow(iprot).to receive(:read_message_begin).and_return(['test', Thrift::MessageTypes::REPLY, 2])
+
+        hooked.call_binary('test', double('req', write: nil), resp_klass)
+
+        expect(hooked.kinds).to eq(%i[unary binary])
+      end
+
+      it 'wraps the call opening a stream' do
+        allow(Thrift::TInboundStream).to receive(:new).and_return(instance_double(Thrift::TInboundStream, ready: nil))
+
+        hooked.stream_server('test', double('req', write: nil), resp_klass, double('Sink'))
+
+        expect(hooked.kinds).to eq([:stream])
+      end
+
+      it 'refuses a stream before claiming the client' do
+        hooked.streaming = false
+
+        expect { hooked.stream_server('test', double('req', write: nil), resp_klass, double('Sink')) }
+          .to raise_error('no streams')
+
+        expect(hooked.instance_variable_get(:@ready)).to be true
+        expect(hooked.kinds).to be_empty
+      end
+
+      it 'calls the block once the stream is over, after the client was released' do
+        events = []
+        unlock = nil
+
+        allow(Thrift::TInboundStream).to receive(:new) do |*args, **|
+          unlock = args[6]
+
+          instance_double(Thrift::TInboundStream, ready: nil)
+        end
+
+        hooked.stream_server('test', double('req', write: nil), resp_klass, double('Sink')) do
+          events << [:closed, hooked.instance_variable_get(:@ready)]
+        end
+
+        expect(hooked.instance_variable_get(:@ready)).to be false
+
+        unlock.call
+
+        expect(events).to eq([[:closed, true]])
+      end
+
+      context 'when the stream can not be opened' do
+        before do
+          allow(iprot).to receive(:read_message_begin).and_raise(Thrift::TransportException)
+          allow(mock_trans).to receive(:close)
+        end
+
+        it 'releases the client and closes its connection' do
+          expect do
+            hooked.stream_server('test', double('req', write: nil), resp_klass, double('Sink'))
+          end.to raise_error(Thrift::TransportException)
+
+          expect(mock_trans).to have_received(:close)
+          expect(hooked.instance_variable_get(:@ready)).to be true
+        end
+      end
+
+      it 'releases the client and keeps its connection when the server refused the stream' do
+        allow(mock_trans).to receive(:close)
+        allow(iprot).to receive(:read_message_begin).and_return(['test', Thrift::MessageTypes::EXCEPTION, 1])
+        allow(Thrift::ApplicationException).to receive(:new).and_return(
+          Thrift::ApplicationException.allocate.tap { |e| allow(e).to receive(:read) }
+        )
+
+        expect do
+          hooked.stream_server('test', double('req', write: nil), resp_klass, double('Sink'))
+        end.to raise_error(Thrift::ApplicationException)
+
+        expect(mock_trans).not_to have_received(:close)
+        expect(hooked.instance_variable_get(:@ready)).to be true
+      end
+    end
+
     describe 'finish_call' do
       it 'sets @ready back to true and signals the condition variable' do
         # Directly mark the client as not ready (as stream_call would do).

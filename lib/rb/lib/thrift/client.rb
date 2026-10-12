@@ -91,74 +91,86 @@ module Thrift
     end
   end
 
+  # BaseClient serializes the calls of its protocol, and hands it over to a
+  # stream for as long as it lasts: the calls wait for the stream to be over.
+  #
+  # A subclass can wrap what is done for every call by overriding around_call,
+  # and refuse the streams by overriding ensure_streaming. The block given to
+  # the methods opening a stream is called once the stream is over, whether it
+  # ended or failed, after the client was released.
   class BaseClient
     include Client
 
     def call_unary(name, req)
-      @mutex.synchronize do
-        @cond.wait(@mutex) until @ready
-
+      perform(:unary) do
         @seqid += 1
         @oprot.write_message_begin(name, Thrift::MessageTypes::ONEWAY, @seqid)
         send_message_instance(req)
+
+        nil
       end
     end
 
     def call_binary(name, req, resp_klass)
-      @mutex.synchronize do
-        @cond.wait(@mutex) until @ready
+      perform(:binary) { rpc_call(name, req, resp_klass) }
+    end
 
-        rpc_call(name, req, resp_klass)
+    def stream_client(name, req, resp_klass, sink_klass, &on_close)
+      stream_open(name, req, resp_klass, on_close) do |resp, unlock|
+        stream = TOutboundStream.new(
+          @iprot, @oprot, name, @seqid, sink_klass,
+          MessageTypes::CLIENT_STREAM_MESSAGE,
+          unlock,
+          **stream_timeouts
+        )
+
+        [stream, [resp, stream]]
       end
     end
 
-    def stream_client(name, req, resp_klass, sink_klass)
-      resp = stream_call(name, req, resp_klass)
-      stream = TOutboundStream.new(
-        @iprot, @oprot, name, @seqid, sink_klass,
-        MessageTypes::CLIENT_STREAM_MESSAGE,
-        method(:finish_call),
-        **stream_timeouts
-      )
+    def stream_server(name, req, resp_klass, sink_klass, &on_close)
+      stream_open(name, req, resp_klass, on_close) do |resp, unlock|
+        stream = TInboundStream.new(
+          @iprot, @oprot, name, @seqid, sink_klass,
+          MessageTypes::SERVER_STREAM_MESSAGE,
+          unlock,
+          **stream_timeouts
+        )
 
-      stream.ready
-
-      [resp, stream]
+        [stream, [resp, stream]]
+      end
     end
 
-    def stream_server(name, req, resp_klass, sink_klass)
-      resp = stream_call(name, req, resp_klass)
-      stream = TInboundStream.new(
-        @iprot, @oprot, name, @seqid, sink_klass,
-        MessageTypes::SERVER_STREAM_MESSAGE,
-        method(:finish_call),
-        **stream_timeouts
-      )
+    def stream_bidi(name, req, resp_klass, stream_klass, sink_klass, &on_close)
+      stream_open(name, req, resp_klass, on_close) do |resp, unlock|
+        stream = TBidiStream.new(
+          @iprot, @oprot, name, @seqid,
+          stream_klass, sink_klass,
+          MessageTypes::SERVER_STREAM_MESSAGE,
+          MessageTypes::CLIENT_STREAM_MESSAGE,
+          unlock,
+          **stream_timeouts
+        )
 
-      stream.ready
-
-      [resp, stream]
+        [
+          stream,
+          [resp, TBidiInboundStream.new(stream), TBidiOutboundStream.new(stream)]
+        ]
+      end
     end
 
-    def stream_bidi(name, req, resp_klass, stream_klass, sink_klass)
-      resp = stream_call(name, req, resp_klass)
-      stream = TBidiStream.new(
-        @iprot, @oprot, name, @seqid,
-        stream_klass, sink_klass,
-        MessageTypes::SERVER_STREAM_MESSAGE,
-        MessageTypes::CLIENT_STREAM_MESSAGE,
-        method(:finish_call),
-        **stream_timeouts
-      )
+    protected
 
-      stream.ready
-
-      [
-        resp,
-        TBidiInboundStream.new(stream),
-        TBidiOutboundStream.new(stream)
-      ]
+    # around_call wraps every call, and the call opening a stream, whose kind
+    # is :unary, :binary or :stream. It is called with the client claimed,
+    # before the message is written.
+    def around_call(_kind)
+      yield
     end
+
+    # ensure_streaming is called before a stream is opened, and raises if the
+    # client can not carry it.
+    def ensure_streaming; end
 
     private
 
@@ -169,14 +181,58 @@ module Thrift
       }
     end
 
-    def stream_call(name, req, resp_klass)
+    # perform waits for the client, and makes the call while it is held.
+    def perform(kind, &block)
+      @mutex.synchronize do
+        @cond.wait(@mutex) until @ready
+
+        around_call(kind, &block)
+      end
+    end
+
+    # claim takes the client for a stream, which gives it back with finish_call.
+    def claim
       @mutex.synchronize do
         @cond.wait(@mutex) until @ready
 
         @ready = false
       end
+    end
 
-      rpc_call(name, req, resp_klass)
+    # stream_unlock is what the stream calls once it is over.
+    def stream_unlock(on_close)
+      return method(:finish_call) unless on_close
+
+      lambda do
+        finish_call
+        on_close.call
+      end
+    end
+
+    # stream_open claims the client and opens the stream with the call: the
+    # block gets the reply and what to call once the stream is over, builds the
+    # stream and returns it along with what the caller gets.
+    #
+    # The client is released if the stream can not be opened, and its
+    # connection closed unless the server answered, as it could not be told
+    # from one holding the replies of a stream that was half opened.
+    def stream_open(name, req, resp_klass, on_close)
+      ensure_streaming
+      claim
+
+      begin
+        resp = around_call(:stream) { rpc_call(name, req, resp_klass) }
+        stream, res = yield(resp, stream_unlock(on_close))
+
+        stream.ready
+
+        res
+      rescue StandardError => e
+        @oprot.trans.close unless e.is_a?(ApplicationException)
+        finish_call
+
+        raise e
+      end
     end
 
     def rpc_call(name, req, resp_klass)
