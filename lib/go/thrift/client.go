@@ -43,22 +43,58 @@ type TSyncClient struct {
 
 	middleware TStreamingMiddleware
 
-	// StreamHandshakeTimeout and StreamIdleTimeout are handed to the streams
-	// of the client, see DefaultStreamHandshakeTimeout and
-	// DefaultStreamIdleTimeout. A value of zero or less disables them.
-	StreamHandshakeTimeout time.Duration
-	StreamIdleTimeout      time.Duration
+	// handshakeTimeout and idleTimeout are handed to the streams of the
+	// client, see DefaultStreamHandshakeTimeout and DefaultStreamIdleTimeout.
+	// A value of zero or less disables them.
+	handshakeTimeout time.Duration
+	idleTimeout      time.Duration
+}
+
+type TSyncClientOption = func(*TSyncClient)
+
+// WithMiddlewares sets the middlewares of the client, replacing the previous
+// ones.
+func WithMiddlewares(ms ...TMiddleware) TSyncClientOption {
+	return func(c *TSyncClient) {
+		c.middleware = WrapMiddlewares(ms)
+	}
+}
+
+// WithStreamHandshakeTimeout sets how long the streams of the client wait for
+// the answer to their go away, see DefaultStreamHandshakeTimeout.
+func WithStreamHandshakeTimeout(d time.Duration) TSyncClientOption {
+	return func(c *TSyncClient) {
+		c.handshakeTimeout = d
+	}
+}
+
+// WithStreamIdleTimeout sets how long the streams of the client can stay quiet,
+// see DefaultStreamIdleTimeout.
+func WithStreamIdleTimeout(d time.Duration) TSyncClientOption {
+	return func(c *TSyncClient) {
+		c.idleTimeout = d
+	}
 }
 
 func NewTSyncClient(t TTransport, f TProtocolFactory, ms ...TMiddleware) *TSyncClient {
-	return &TSyncClient{
-		trans:                  t,
-		in:                     f.GetProtocol(t),
-		out:                    f.GetProtocol(t),
-		middleware:             WrapMiddlewares(ms),
-		StreamHandshakeTimeout: DefaultStreamHandshakeTimeout,
-		StreamIdleTimeout:      DefaultStreamIdleTimeout,
+	return NewTSyncClientWithOptions(t, f, WithMiddlewares(ms...))
+}
+
+func NewTSyncClientWithOptions(t TTransport, f TProtocolFactory, opts ...TSyncClientOption) *TSyncClient {
+	c := &TSyncClient{
+		trans:            t,
+		in:               f.GetProtocol(t),
+		out:              f.GetProtocol(t),
+		middleware:       WrapMiddlewares(nil),
+		handshakeTimeout: DefaultStreamHandshakeTimeout,
+		idleTimeout:      DefaultStreamIdleTimeout,
 	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
 }
 
 func send(ctx Context, oprot TProtocol, seqID int32, method string, args TRequest, mType TMessageType) error {

@@ -131,8 +131,8 @@ func newTClientBaseStream(name string, seqID int32, in, out TProtocol, goAwayTyp
 		in,
 		out,
 		goAwayType,
-		cl.StreamHandshakeTimeout,
-		cl.StreamIdleTimeout,
+		cl.handshakeTimeout,
+		cl.idleTimeout,
 		func() { in.Transport().Close() },
 		func() { unlockOnce.Do(func() { cl.mu.Unlock() }) },
 	)
