@@ -43,7 +43,7 @@ module Thrift
         end.call(args)
       end
 
-      def handle_bidi_stream(_mth, args, istream, ostream, &block)
+      def handle_bidi_stream(mth, args, istream, ostream, &block)
         @middlewares.reverse.reduce(block) do |acc, m|
           Proc.new do |args, istream, ostream|
             m.handle_bidi_stream(mth, args, istream, ostream) do |args, istream, ostream|
@@ -53,20 +53,20 @@ module Thrift
         end.call(args, istream, ostream)
       end
 
-      def handle_inbound_stream(_mth, args, istream, &block)
+      def handle_inbound_stream(mth, args, istream, &block)
         @middlewares.reverse.reduce(block) do |acc, m|
           Proc.new do |args, istream|
-            m.handle_bidi_stream(mth, args, istream) do |args, istream|
+            m.handle_inbound_stream(mth, args, istream) do |args, istream|
               acc.call(args, istream)
             end
           end
         end.call(args, istream)
       end
 
-      def handle_outbound_stream(_mth, args, ostream, &block)
+      def handle_outbound_stream(mth, args, ostream, &block)
         @middlewares.reverse.reduce(block) do |acc, m|
           Proc.new do |args, ostream|
-            m.handle_bidi_stream(mth, args, ostream) do |args, ostream|
+            m.handle_outbound_stream(mth, args, ostream) do |args, ostream|
               acc.call(args, ostream)
             end
           end
