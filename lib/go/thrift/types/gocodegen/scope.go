@@ -97,7 +97,9 @@ type Scope struct {
 	// Includes holds resolved package info for each direct include of the program.
 	Includes []Include
 
-	reserved []string
+	// Reserved lists the names DedupIncludes keeps away from includes, besides
+	// the thrift package and the Go predeclared identifiers.
+	Reserved []string
 }
 
 // ThriftPkg returns the local package identifier for the thrift runtime import.
@@ -122,50 +124,18 @@ func (gs *Scope) NewIncludeWithPath(namespace, pkgName, goPkgPath string, stdlib
 	}
 }
 
-// DedupIncludes gives each include import path a distinct PkgName, also
-// distinct from the names reserved by this call or a previous one. Includes
-// keep their base name when free, the others get a numeric suffix.
-func (gs *Scope) DedupIncludes(reserved ...string) {
-	gs.reserved = append(gs.reserved, reserved...)
+// DedupIncludes returns the includes of gs with one entry per import path,
+// each with a PkgName distinct from the others, from gs.Reserved, from the
+// thrift package and from the Go predeclared identifiers. gs is left untouched.
+func DedupIncludes(gs *Scope) []Include {
+	used := make(map[string]struct{})
 
-	used := make(map[string]struct{}, len(gs.Includes)+len(gs.reserved))
-	names := make(map[string]string, len(gs.Includes))
-
-	for _, name := range gs.reserved {
-		used[name] = struct{}{}
-	}
-
-	// Base names are claimed first so that a suffixed name never takes one.
-	for _, inc := range gs.Includes {
-		key := inc.dedupKey()
-
-		if _, ok := names[key]; ok {
-			continue
-		}
-
-		if _, ok := used[inc.BaseName()]; !ok {
-			used[inc.BaseName()] = struct{}{}
-			names[key] = inc.BaseName()
-		}
-	}
-
-	for i, inc := range gs.Includes {
-		key := inc.dedupKey()
-		name, ok := names[key]
-
-		if !ok {
-			name = uniqueName(inc.BaseName(), used)
+	for _, names := range [][]string{{gs.ThriftPkg()}, PredeclaredIdentifiers, gs.Reserved} {
+		for _, name := range names {
 			used[name] = struct{}{}
-			names[key] = name
 		}
-
-		gs.Includes[i].baseName = inc.BaseName()
-		gs.Includes[i].PkgName = name
 	}
-}
 
-// Imports returns the includes with one entry per import path.
-func (gs Scope) Imports() []Include {
 	seen := make(map[string]struct{}, len(gs.Includes))
 	res := make([]Include, 0, len(gs.Includes))
 
@@ -177,8 +147,23 @@ func (gs Scope) Imports() []Include {
 		}
 
 		seen[key] = struct{}{}
+		inc.baseName = inc.BaseName()
+		inc.PkgName = ""
+
+		if _, ok := used[inc.baseName]; !ok {
+			used[inc.baseName] = struct{}{}
+			inc.PkgName = inc.baseName
+		}
 
 		res = append(res, inc)
+	}
+
+	// Base names are all claimed above, so a suffixed name never takes one.
+	for i := range res {
+		if res[i].PkgName == "" {
+			res[i].PkgName = uniqueName(res[i].baseName, used)
+			used[res[i].PkgName] = struct{}{}
+		}
 	}
 
 	return res

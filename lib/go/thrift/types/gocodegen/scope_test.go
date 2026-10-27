@@ -21,8 +21,7 @@ func TestDedupIncludes(t *testing.T) {
 					gs.NewInclude("base.post", "post", false),
 				}
 			},
-			reserved: []string{"thrift"},
-			want:     []string{"media", "post"},
+			want: []string{"media", "post"},
 		},
 		{
 			name: "homonymous includes",
@@ -49,20 +48,34 @@ func TestDedupIncludes(t *testing.T) {
 		{
 			name: "reserved name",
 			includes: func(gs *Scope) []Include {
-				return []Include{gs.NewInclude("foo.thrift", "thrift", false)}
+				return []Include{gs.NewInclude("foo.mock", "mock", false)}
 			},
-			reserved: []string{"thrift"},
-			want:     []string{"thrift0"},
+			reserved: []string{"mock"},
+			want:     []string{"mock0"},
 		},
 		{
-			name: "same import path shares one name",
+			name: "thrift package is always reserved",
+			includes: func(gs *Scope) []Include {
+				return []Include{gs.NewInclude("foo.thrift", "thrift", false)}
+			},
+			want: []string{"thrift0"},
+		},
+		{
+			name: "predeclared identifiers are always reserved",
+			includes: func(gs *Scope) []Include {
+				return []Include{gs.NewInclude("foo.error", "error", false)}
+			},
+			want: []string{"error0"},
+		},
+		{
+			name: "same import path is merged",
 			includes: func(gs *Scope) []Include {
 				return []Include{
 					gs.NewInclude("base.post", "post", false),
 					gs.NewIncludeWithPath("other.post", "post", "base/post", false),
 				}
 			},
-			want: []string{"post", "post"},
+			want: []string{"post"},
 		},
 		{
 			name: "stdlib and local package with the same path",
@@ -76,30 +89,45 @@ func TestDedupIncludes(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			var gs Scope
+			gs := Scope{Reserved: tc.reserved}
 
 			gs.Includes = tc.includes(&gs)
-			gs.DedupIncludes(tc.reserved...)
 
-			assert.Equal(t, tc.want, pkgNames(gs.Includes))
+			assert.Equal(t, tc.want, pkgNames(DedupIncludes(&gs)))
 		})
 	}
 }
 
-func TestDedupIncludesKeepsPreviousReservations(t *testing.T) {
+func TestDedupIncludesLeavesScopeUntouched(t *testing.T) {
 	var gs Scope
 
 	gs.Includes = []Include{
 		gs.NewInclude("base.post", "post", false),
 		gs.NewInclude("influencer.post", "post", false),
-		{Namespace: "foo.error", PkgName: "error"},
+		gs.NewIncludeWithPath("other.post", "post", "base/post", false),
 	}
 
-	gs.DedupIncludes("error")
-	gs.DedupIncludes("mock")
+	DedupIncludes(&gs)
 
-	assert.Equal(t, []string{"post", "post0", "error0"}, pkgNames(gs.Includes))
-	assert.Equal(t, "error", gs.Includes[2].BaseName())
+	assert.Equal(t, []string{"post", "post", "post"}, pkgNames(gs.Includes))
+}
+
+func TestDedupIncludesSeesIncludesAddedLater(t *testing.T) {
+	gs := Scope{Reserved: []string{"mock"}}
+
+	gs.Includes = []Include{gs.NewInclude("base.post", "post", false)}
+	assert.Equal(t, []string{"post"}, pkgNames(DedupIncludes(&gs)))
+
+	gs.Includes = append(
+		gs.Includes,
+		gs.NewInclude("influencer.post", "post", false),
+		gs.NewInclude("foo.mock", "mock", false),
+	)
+
+	got := DedupIncludes(&gs)
+
+	assert.Equal(t, []string{"post", "post0", "mock0"}, pkgNames(got))
+	assert.Equal(t, "post", got[1].BaseName())
 }
 
 func TestImportSpec(t *testing.T) {
@@ -109,13 +137,11 @@ func TestImportSpec(t *testing.T) {
 		gs.NewInclude("influencer.types.post.v2.post", "post", false),
 		gs.NewInclude("base.post", "post", false),
 		gs.NewInclude("types.known.timestamp", "timestamp", true),
-		gs.NewIncludeWithPath("other.post", "post", "base/post", false),
 	}
-	gs.DedupIncludes()
 
 	var got []string
 
-	for _, inc := range gs.Imports() {
+	for _, inc := range DedupIncludes(&gs) {
 		got = append(got, inc.ImportSpec())
 	}
 
