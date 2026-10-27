@@ -283,9 +283,6 @@ void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::
       }
       else if((*newStructMemberIt)->get_key() < (*oldStructMemberIt)->get_key())
       {
-         //New Field Id is inserted in between
-         //Adding fields to struct is fine, but adding them in the middle is suspicious. Error!!
-         thrift_audit_failure("Struct field is added in the middle with Id = %d in %s\n",  (*newStructMemberIt)->get_key(),  structName.c_str());
          newStructMemberIt++;
       }
       else if((*newStructMemberIt)->get_key() > (*oldStructMemberIt)->get_key())
@@ -294,7 +291,6 @@ void compare_single_struct(t_struct* newStruct, t_struct* oldStruct, const std::
          thrift_audit_failure("Struct Field removed for Id = %d in %s \n",  (*oldStructMemberIt)->get_key(), structName.c_str());
          oldStructMemberIt++;
       }
-
    }
 }
 
