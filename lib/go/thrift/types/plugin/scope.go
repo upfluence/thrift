@@ -31,6 +31,7 @@ func BuildGoScope(req *GenerateCodeRequest) gocodegen.Scope {
 	}
 
 	gs.Includes = includes
+	gs.DedupIncludes(append([]string{gs.ThriftPkg()}, gocodegen.PredeclaredIdentifiers...)...)
 
 	return gs
 }
