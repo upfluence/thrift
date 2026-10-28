@@ -229,7 +229,7 @@ func goReferenceType(ref *core.Reference, pkgPath string, gs gocodegen.Scope, po
 	name := gocodegen.Publicize(ref.Name)
 
 	if gs.LocalPkg == "" || (ref.IsSetNamespace_() && ref.GetNamespace_() != gs.LocalPkg) {
-		for _, inc := range gs.Includes {
+		for _, inc := range gocodegen.DedupIncludes(&gs) {
 			incPkgPath := inc.GoPkgPath
 
 			if incPkgPath == "" {
