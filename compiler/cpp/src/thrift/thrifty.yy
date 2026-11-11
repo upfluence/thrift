@@ -511,16 +511,20 @@ EnumDefList:
     }
 
 EnumDef:
-  CaptureDocText EnumValue TypeAnnotations CommaOrSemicolonOptional
+  CaptureDocText StructuredAnnotations EnumValue TypeAnnotations CommaOrSemicolonOptional
     {
       pdebug("EnumDef -> EnumValue");
-      $$ = $2;
+      $$ = $3;
       if ($1 != NULL) {
         $$->set_doc($1);
       }
-      if ($3 != NULL) {
-        $$->merge($3);
-        delete $3;
+      if ($4 != NULL) {
+        $$->merge($4);
+        delete $4;
+      }
+      if ($2 != NULL) {
+        $$->merge($2);
+        delete $2;
       }
     }
 

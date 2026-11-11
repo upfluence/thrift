@@ -16,3 +16,15 @@ service Qux {
   void ping()
   Foo get(1: required i32 id)
 }
+
+struct Label {
+  1: required string value
+}
+
+enum Color {
+  Red,
+  // Structured annotations can decorate enum values.
+  @Label{"value": "dark-blue"}
+  Blue = 4,
+  Green
+}
