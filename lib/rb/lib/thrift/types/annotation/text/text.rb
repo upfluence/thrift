@@ -6,6 +6,7 @@ module Thrift
       # Text encodes the structs annotated with Format, and the enums, as
       # their text form, see types/annotation/text.thrift. It accepts and
       # produces exactly the same texts as the text package of the go library.
+      # See JSONSerializable to render a struct as its text form in JSON.
       module Text
         class Error < ArgumentError; end
 
@@ -101,3 +102,4 @@ require 'thrift/types/annotation/text/pattern'
 require 'thrift/types/annotation/text/caser'
 require 'thrift/types/annotation/text/enum_codec'
 require 'thrift/types/annotation/text/struct_codec'
+require 'thrift/types/annotation/text/json_serializable'

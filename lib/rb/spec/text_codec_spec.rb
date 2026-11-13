@@ -95,4 +95,25 @@ describe Thrift::Types::Annotation::Text do
       it_behaves_like 'an invalid type', t
     end
   end
+
+  describe text::JSONSerializable do
+    let(:klass) { Class.new(tt::Ownership) { include Thrift::Types::Annotation::Text::JSONSerializable } }
+    let(:owner) { klass.new(type: tt::Type::Team, entity_id: 3) }
+
+    it 'renders the text form in as_json' do
+      expect(owner.as_json).to eq('team:3')
+    end
+
+    it 'renders the text form in to_json' do
+      expect(JSON.generate(owner: owner)).to eq('{"owner":"team:3"}')
+    end
+
+    it 'leaves the structs without the module unchanged' do
+      expect(tt::Ownership.ancestors).not_to include(text::JSONSerializable)
+    end
+
+    it 'raises when the struct has no text form' do
+      expect { klass.new(type: tt::Type::Team).to_json }.to raise_error(text::InvalidValueError)
+    end
+  end
 end
