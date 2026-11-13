@@ -393,3 +393,31 @@ func TestCompileStruct(t *testing.T) {
 		})
 	}
 }
+
+func TestReferencedFields(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		have    []thrift.RegistrableStruct
+		want    []string
+		wantErr error
+	}{
+		{name: "no Format"},
+		{name: "pattern", have: []thrift.RegistrableStruct{&Format{Pattern: "{a}:{b}"}}, want: []string{"a", "b"}},
+		{
+			name:    "invalid pattern",
+			have:    []thrift.RegistrableStruct{&Format{Pattern: "{a}{b}"}},
+			wantErr: ErrInvalidDefinition,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ReferencedFields(
+				thrift.StructDefinition{
+					AnnotatedDefinition: thrift.AnnotatedDefinition{Name: "S", StructuredAnnotations: tt.have},
+				},
+			)
+
+			require.ErrorIs(t, err, tt.wantErr)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

@@ -74,6 +74,19 @@ func CompileStruct(def thrift.StructDefinition, fields map[string]FieldType) (*S
 	return c, nil
 }
 
+// ReferencedFields returns the names of the fields referenced by the Format
+// pattern of def, nil when def has no Format annotation. Callers of
+// CompileStruct only need to provide the types of these fields.
+func ReferencedFields(def thrift.StructDefinition) ([]string, error) {
+	p, err := formatPattern(def)
+
+	if err != nil || p == nil {
+		return nil, errors.Wrapf(err, "struct %s", def.CanonicalName())
+	}
+
+	return p.Fields(), nil
+}
+
 // formatPattern returns the compiled Format pattern of def, nil when def has
 // no Format annotation.
 func formatPattern(def thrift.StructDefinition) (*fstring.Pattern, error) {
@@ -436,9 +449,9 @@ func compileReflectCodec(t reflect.Type, visiting map[reflect.Type]bool) (*refle
 	}
 
 	def := reflect.New(t).Interface().(thrift.RegistrableStruct).StructDefinition()
-	p, err := formatPattern(def)
+	referenced, err := ReferencedFields(def)
 
-	if err != nil || p == nil {
+	if err != nil || referenced == nil {
 		// CompileStruct reports the error.
 		_, err := CompileStruct(def, nil)
 
@@ -458,7 +471,7 @@ func compileReflectCodec(t reflect.Type, visiting map[reflect.Type]bool) (*refle
 		}
 	}
 
-	for _, name := range p.Fields() {
+	for _, name := range referenced {
 		i, ok := goNames[name]
 
 		if !ok {
