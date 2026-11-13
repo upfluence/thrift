@@ -38,6 +38,24 @@ module Thrift
             @pattern
           end
 
+          # Returns a copy of the pattern where the placeholder of field is
+          # replaced by the segments of inner, whose fields are renamed
+          # "<field>.<name>". The literals surrounding the placeholder are
+          # merged with the ones of inner.
+          def inline(field, inner)
+            segments = []
+
+            @segments.each do |segment|
+              next append_segment(segments, segment) unless segment.field == field
+
+              inner.segments.each do |s|
+                append_segment(segments, s.field? ? Segment.new(nil, "#{field}.#{s.field}") : s)
+              end
+            end
+
+            self.class.allocate.tap { |p| p.send(:assign, @pattern, segments) }
+          end
+
           # Returns the text of every field of text, in pattern order.
           def scan(text)
             values = []
@@ -83,6 +101,20 @@ module Thrift
           end
 
           private
+
+          def assign(pattern, segments)
+            @pattern = pattern
+            @segments = segments.freeze
+            @fields = segments.select(&:field?).map(&:field).freeze
+          end
+
+          def append_segment(segments, segment)
+            if !segment.field? && segments.last && !segments.last.field?
+              segments[-1] = Segment.new(segments.last.literal + segment.literal, nil)
+            else
+              segments << segment
+            end
+          end
 
           def format_field(field, value, next_segment)
             return value if next_segment.nil?

@@ -38,7 +38,15 @@ describe Thrift::Types::Annotation::Text do
     )
   end
 
-  def struct_codec(text, struct_case, enums)
+  # The codecs of the struct cases preceding struct_case, a struct case
+  # without codec having no Format.
+  def preceding_struct_codecs(text, struct_case, enums)
+    TEXT_CASES['structs'].take_while { |c| c != struct_case }.each_with_object({}) do |c, codecs|
+      codecs[c['name']] = struct_codec(text, c, enums, codecs) unless c['error']
+    end
+  end
+
+  def struct_codec(text, struct_case, enums, structs = {})
     bits = { 'i8' => 8, 'i16' => 16, 'i32' => 32, 'i64' => 64 }
     pattern = struct_case['pattern']
     fields = struct_case['fields'].map { |f| { name: f['name'], optional: f['requiredness'] == 'optional' } }
@@ -47,6 +55,7 @@ describe Thrift::Types::Annotation::Text do
         case f['type']
         when 'string' then { kind: :string }
         when 'enum' then { kind: :enum, enum: enums.fetch(f['enum']) }
+        when 'struct' then { kind: :struct, struct: structs[f['struct']] }
         else bits[f['type']] && { kind: :integer, bits: bits[f['type']] }
         end
 
@@ -129,13 +138,14 @@ describe Thrift::Types::Annotation::Text do
     shared_examples 'a struct' do |struct_case|
       it "handles #{struct_case['name']}" do
         enums = TEXT_CASES['enums'].reject { |e| e['error'] }.to_h { |e| [e['id'], enum_codec(text, e)] }
+        structs = preceding_struct_codecs(text, struct_case, enums)
 
         if struct_case['error']
-          expect { struct_codec(text, struct_case, enums) }.to raise_error(text::InvalidDefinitionError)
+          expect { struct_codec(text, struct_case, enums, structs) }.to raise_error(text::InvalidDefinitionError)
           next
         end
 
-        codec = struct_codec(text, struct_case, enums)
+        codec = struct_codec(text, struct_case, enums, structs)
 
         struct_case['formats'].each do |fc|
           if fc['error']

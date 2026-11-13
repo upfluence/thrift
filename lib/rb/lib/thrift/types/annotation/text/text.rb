@@ -29,13 +29,13 @@ module Thrift
           def dump(obj)
             codec = struct_codec(obj.class)
 
-            codec.format(codec.fields.to_h { |f| [f.name, obj.public_send(f.name)] })
+            codec.format(struct_values(codec, obj))
           end
 
           # Returns the instance of klass, a generated struct annotated with
           # Format, of text form text.
           def load(klass, text)
-            klass.new(struct_codec(klass).parse(text))
+            build(klass, struct_codec(klass).parse(text))
           end
 
           # Returns the text form of value, a value of the generated enum
@@ -59,8 +59,8 @@ module Thrift
           end
 
           # @api private
-          def struct_codec(klass)
-            cached(klass) { StructCodec.for_class(klass) }
+          def struct_codec(klass, visiting = [])
+            cached(klass) { StructCodec.for_class(klass, visiting) }
           end
 
           # @api private
@@ -81,6 +81,30 @@ module Thrift
           end
 
           private
+
+          # Returns the values of the fields of the codec read from obj, as a
+          # nested Hash.
+          def struct_values(codec, obj)
+            codec.fields.each_with_object({}) do |f, values|
+              *parents, leaf = f.path
+              holder = parents.reduce(obj) { |o, p| o&.public_send(p) }
+
+              raise InvalidValueError, "#{codec.name}: missing field #{f.name.inspect}" if holder.nil?
+
+              parents.reduce(values) { |h, p| h[p] ||= {} }[leaf] = holder.public_send(leaf)
+            end
+          end
+
+          # Instantiates klass with values, building the nested structs.
+          def build(klass, values)
+            fields = klass::FIELDS.values.to_h { |f| [f[:name], f] }
+
+            klass.new(
+              values.to_h do |k, v|
+                [k, v.is_a?(Hash) ? build(fields.fetch(k)[:class], v) : v]
+              end
+            )
+          end
 
           # Invalid definitions are not cached, they raise on every call.
           def cached(type)
