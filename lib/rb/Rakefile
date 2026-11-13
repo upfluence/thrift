@@ -28,7 +28,7 @@ task :default => [:gem]
 task :spec => [:'gen-rb', :build_ext]
 
 desc 'Compile the .thrift files for the specs'
-task :'gen-rb' => [:'gen-rb:spec', :'gen-rb:namespaced_spec', :'gen-rb:flat_spec', :'gen-rb:benchmark', :'gen-rb:debug_proto']
+task :'gen-rb' => [:'gen-rb:spec', :'gen-rb:namespaced_spec', :'gen-rb:flat_spec', :'gen-rb:text_spec', :'gen-rb:benchmark', :'gen-rb:debug_proto']
 namespace :'gen-rb' do
   task :'spec' do
     dir = File.dirname(__FILE__) + '/spec'
@@ -46,6 +46,14 @@ namespace :'gen-rb' do
     dir = File.dirname(__FILE__) + '/spec'
     sh "mkdir", "-p", "#{dir}/gen-rb/flat"
     sh THRIFT, '--gen', 'rb', '--recurse', '-out', "#{dir}/gen-rb/flat", "#{dir}/ThriftNamespacedSpec.thrift"
+  end
+
+  task :'text_spec' do
+    dir = File.dirname(__FILE__) + '/spec'
+    # The types are resolved from the repository, the generated code requires them from the library.
+    env = { 'THRIFT_TYPES_PATH' => File.expand_path('../..', File.dirname(__FILE__)) }
+    sh "mkdir", "-p", "#{dir}/gen-rb"
+    sh env, THRIFT, '--gen', 'rb:namespaced', '-out', "#{dir}/gen-rb", "../../test/TextTest.thrift"
   end
 
   task :'benchmark' do
