@@ -71,7 +71,7 @@ describe Thrift::Types::Annotation::Text do
 
     shared_examples 'a cased name' do |have, kase, want|
       it "renders #{have} in #{kase}" do
-        caser = text::Caser.new(text::Case.const_get(kase), text::Caser::GO_INITIALISMS)
+        caser = text::Caser.new(text::Case.const_get(kase))
 
         expect(caser.call(have)).to eq(want)
       end

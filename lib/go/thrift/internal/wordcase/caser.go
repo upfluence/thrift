@@ -83,7 +83,8 @@ func (c Caser) camelWord(w string, first bool) string {
 // SplitWords splits the ASCII identifier s in words on underscores, on lower
 // to upper case changes and at the end of acronyms: "PaypalAPI" is "Paypal"
 // and "API", "HTTPServer" is "HTTP" and "Server". Digits stick to the
-// preceding word.
+// preceding word, and the Go initialisms ending in lower case are kept whole:
+// "UserIDs" is "User" and "IDs".
 func SplitWords(s string) []string {
 	var (
 		words []string
@@ -95,7 +96,7 @@ func SplitWords(s string) []string {
 		case s[i] == '_':
 			words = appendWord(words, s[start:i])
 			start = i + 1
-		case i > start && isUpper(s[i]) && isWordStart(s, i):
+		case i > start && isUpper(s[i]) && isWordStart(s, start, i):
 			words = appendWord(words, s[start:i])
 			start = i
 		}
@@ -105,15 +106,28 @@ func SplitWords(s string) []string {
 }
 
 // isWordStart reports whether the upper case byte at i starts a word: it
-// follows a lower case letter or a digit, or it ends an acronym.
-func isWordStart(s string, i int) bool {
+// follows a lower case letter or a digit, or it ends an acronym which is not
+// the start of an initialism such as "IDs".
+func isWordStart(s string, start, i int) bool {
 	prev := s[i-1]
 
 	if isLower(prev) || isDigit(prev) {
 		return true
 	}
 
-	return isUpper(prev) && i+1 < len(s) && isLower(s[i+1])
+	if !isUpper(prev) || i+1 >= len(s) || !isLower(s[i+1]) {
+		return false
+	}
+
+	end := i + 1
+
+	for end < len(s) && isLower(s[end]) {
+		end++
+	}
+
+	initialism, ok := goinitialism.Lookup(s[start:end])
+
+	return !ok || initialism != s[start:end]
 }
 
 func isUpper(b byte) bool { return b >= 'A' && b <= 'Z' }

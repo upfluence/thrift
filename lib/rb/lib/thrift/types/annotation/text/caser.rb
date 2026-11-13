@@ -17,11 +17,14 @@ module Thrift
             URI URL UTF8 VM XML XMPP XSRF XSS
           ].freeze
 
+          INITIALISMS = GO_INITIALISMS.to_h { |i| [i.upcase, i] }.freeze
+
           class << self
             # Splits the ASCII identifier in words on underscores, on lower to
             # upper case changes and at the end of acronyms: "PaypalAPI" is
             # "Paypal" and "API", "HTTPServer" is "HTTP" and "Server". Digits
-            # stick to the preceding word.
+            # stick to the preceding word, and the Go initialisms ending in
+            # lower case are kept whole: "UserIDs" is "User" and "IDs".
             def split_words(str)
               words = []
               start = 0
@@ -30,7 +33,7 @@ module Thrift
                 if c == '_'
                   words << str[start...i] if i > start
                   start = i + 1
-                elsif i > start && upper?(c) && word_start?(str, i)
+                elsif i > start && upper?(c) && word_start?(str, start, i)
                   words << str[start...i]
                   start = i
                 end
@@ -42,14 +45,20 @@ module Thrift
 
             private
 
-            # Reports whether the upper case character at i starts a word: it
-            # follows a lower case letter or a digit, or it ends an acronym.
-            def word_start?(str, index)
+            # Reports whether the upper case character at index starts a word:
+            # it follows a lower case letter or a digit, or it ends an acronym
+            # which is not the start of an initialism such as "IDs".
+            def word_start?(str, start, index)
               prev = str[index - 1]
 
               return true if lower?(prev) || digit?(prev)
+              return false unless upper?(prev) && index + 1 < str.length && lower?(str[index + 1])
 
-              upper?(prev) && index + 1 < str.length && lower?(str[index + 1])
+              finish = index + 1
+              finish += 1 while finish < str.length && lower?(str[finish])
+              word = str[start...finish]
+
+              INITIALISMS[word.upcase] != word
             end
 
             def upper?(char)
@@ -65,11 +74,10 @@ module Thrift
             end
           end
 
-          # Initialisms are rendered as given by CamelCase and PascalCase, e.g.
-          # "API" or "IDs". They are matched case insensitively.
-          def initialize(kase, initialisms = [])
+          # CamelCase and PascalCase render the Go initialisms as such, e.g.
+          # "API" or "IDs".
+          def initialize(kase)
             @case = kase
-            @initialisms = initialisms.to_h { |i| [i.upcase, i] }.freeze
           end
 
           def call(str)
@@ -97,7 +105,7 @@ module Thrift
           def camel_word(word, first)
             return word.downcase if first
 
-            @initialisms.fetch(word.upcase) { word[0].upcase + word[1..].downcase }
+            INITIALISMS.fetch(word.upcase) { word[0].upcase + word[1..].downcase }
           end
         end
       end

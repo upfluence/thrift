@@ -9,7 +9,10 @@
     {"have": "_Leading__Double_", "want": ["Leading", "Double"]},
     {"have": "A0", "want": ["A0"]},
     {"have": "already_snake", "want": ["already", "snake"]},
-    {"have": "UserIDs", "want": ["User", "I", "Ds"]},
+    {"have": "UserIDs", "want": ["User", "IDs"]},
+    {"have": "UserIDsCount", "want": ["User", "IDs", "Count"]},
+    {"have": "IDsx", "want": ["I", "Dsx"]},
+    {"have": "USERIDS", "want": ["USERIDS"]},
     {"have": "", "want": []}
   ],
   "cases": [
@@ -27,7 +30,10 @@
     {"have": "user_id", "case": "PascalCase", "want": "UserID"},
     {"have": "user_id", "case": "CamelCase", "want": "userID"},
     {"have": "WooCommerce", "case": "SnakeCase", "want": "woo_commerce"},
-    {"have": "Type_Company", "case": "KebabCase", "want": "type-company"}
+    {"have": "Type_Company", "case": "KebabCase", "want": "type-company"},
+    {"have": "UserIDs", "case": "SnakeCase", "want": "user_ids"},
+    {"have": "UserIDs", "case": "PascalCase", "want": "UserIDs"},
+    {"have": "user_ids", "case": "CamelCase", "want": "userIDs"}
   ],
   "patterns": [
     {

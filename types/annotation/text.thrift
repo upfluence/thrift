@@ -30,8 +30,9 @@ struct Name {
 
 // Case is the convention used to derive the text form of an enum value from
 // its name. The name is split into words on underscores, on lower to upper
-// case changes and at the end of acronyms: PaypalAPI is "Paypal API",
-// HTTPServer is "HTTP Server".
+// case changes and at the end of acronyms, the Go initialisms ending in lower
+// case being kept whole: PaypalAPI is "Paypal API", HTTPServer is
+// "HTTP Server" and UserIDs is "User IDs".
 enum Case {
   // PaypalAPI is "paypal_api".
   SnakeCase          = 0,

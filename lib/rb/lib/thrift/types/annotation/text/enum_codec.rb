@@ -58,7 +58,7 @@ module Thrift
               raise InvalidDefinitionError, "EnumFormat.format #{format.format.inspect} is unknown"
             end
 
-            caser = Caser.new(format.format, Caser::GO_INITIALISMS)
+            caser = Caser.new(format.format)
             owners = {}
 
             values.each do |v|
