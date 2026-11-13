@@ -1085,6 +1085,33 @@ void t_go_generator::generate_enum(t_enum* tenum) {
   f_types_ << "func (p " << tenum_name << ") String() string {" << endl;
   f_types_ << "return \"" << tenum_name << "_\" + p.HumanizedString()" << endl;
   f_types_ << "}" << endl << endl;
+
+  std::string def_name(privatize(tenum_name + "EnumDefinition"));
+
+  f_types_ << indent() << "var " << def_name << " = thrift.EnumDefinition{" << endl;
+  indent_up();
+  f_types_ << indent() << "Namespace: Namespace," << endl;
+
+  generate_go_annotated_definition(f_types_, tenum);
+
+  f_types_ << indent() << "Values: []thrift.EnumValueDefinition{" << endl;
+  indent_up();
+  for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    f_types_ << indent() << "{" << endl;
+    indent_up();
+    generate_go_annotated_definition(f_types_, *c_iter);
+    f_types_ << indent() << "Value: " << (*c_iter)->get_value() << "," << endl;
+    indent_down();
+    f_types_ << indent() << "}," << endl;
+  }
+  indent_down();
+  f_types_ << indent() << "}," << endl;
+  indent_down();
+  f_types_ << indent() << "}" << endl << endl;
+
+  f_types_ << indent() << "func (" << tenum_name << ") EnumDefinition() thrift.EnumDefinition {" << endl;
+  f_types_ << indent() << "  return " << def_name << endl;
+  f_types_ << indent() << "}" << endl << endl;
 }
 
 /**
@@ -1473,6 +1500,17 @@ void t_go_generator::generate_go_struct_definition(std::ostream& out,
     indent_up();
 
     generate_go_annotated_definition(out, *m_iter);
+
+    switch ((*m_iter)->get_req()) {
+    case t_field::T_REQUIRED:
+      out << indent() << "Requiredness: thrift.RequirednessRequired," << endl;
+      break;
+    case t_field::T_OPTIONAL:
+      out << indent() << "Requiredness: thrift.RequirednessOptional," << endl;
+      break;
+    default:
+      break;
+    }
 
     indent_down();
     out << indent() << "}," << endl << endl;

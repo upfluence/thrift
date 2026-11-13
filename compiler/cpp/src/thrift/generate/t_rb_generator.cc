@@ -432,7 +432,63 @@ void t_rb_generator::generate_enum(t_enum* tenum) {
       f_types_ << ", ";
     f_types_ << capitalize((*c_iter)->get_name());
   }
-  f_types_ << "]).freeze" << endl;
+  f_types_ << "]).freeze" << endl << endl;
+
+  f_types_.indent() << "NAME = '" << tenum->get_name() << "'.freeze" << endl;
+  f_types_.indent() << "NAMESPACE = '" << tenum->get_program()->get_namespace("*") << "'.freeze" << endl << endl;
+
+  // VALUE_MAP holds the capitalized names, THRIFT_NAMES the names as declared.
+  f_types_.indent() << "THRIFT_NAMES = {";
+  for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    if (c_iter != constants.begin())
+      f_types_ << ", ";
+    f_types_ << (*c_iter)->get_value() << " => '" << (*c_iter)->get_name() << "'";
+  }
+  f_types_ << "}.freeze" << endl << endl;
+
+  generate_rb_annotations(f_types_, tenum, "");
+
+  // The annotations of the values, only the annotated values are listed.
+  f_types_.indent() << "VALUE_LEGACY_ANNOTATIONS = {" << endl;
+  f_types_.indent_up();
+  for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    const map<string, string>& annotations = (*c_iter)->legacy_annotations();
+
+    if (annotations.empty()) {
+      continue;
+    }
+
+    f_types_.indent() << capitalize((*c_iter)->get_name()) << " => {" << endl;
+    f_types_.indent_up();
+    for (map<string, string>::const_iterator ns_it = annotations.begin(); ns_it != annotations.end(); ++ns_it) {
+      f_types_.indent() << "%q\"" << escape_string(ns_it->first) << "\" => %q\""
+                        << escape_string(ns_it->second) << "\"," << endl;
+    }
+    f_types_.indent_down();
+    f_types_.indent() << "}.freeze," << endl;
+  }
+  f_types_.indent_down();
+  f_types_.indent() << "}.freeze" << endl << endl;
+
+  f_types_.indent() << "VALUE_STRUCTURED_ANNOTATIONS = {" << endl;
+  f_types_.indent_up();
+  for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
+    vector<t_structured_annotation*> sannotations = (*c_iter)->structured_annotations();
+
+    if (sannotations.empty()) {
+      continue;
+    }
+
+    f_types_.indent() << capitalize((*c_iter)->get_name()) << " => [" << endl;
+    f_types_.indent_up();
+    for (vector<t_structured_annotation*>::const_iterator it = sannotations.begin(); it != sannotations.end(); it++) {
+      render_const_value(f_types_.indent(), (*it)->type_, (*it)->value_) << "," << endl;
+    }
+    f_types_.indent_down();
+    f_types_.indent() << "].freeze," << endl;
+  }
+  f_types_.indent_down();
+  f_types_.indent() << "}.freeze" << endl;
 
   f_types_.indent_down();
   f_types_.indent() << "end" << endl << endl;

@@ -24,6 +24,7 @@
 #include <thrift/types/service_definition_types.h>
 #include <thrift/types/struct_definition_types.h>
 #include <thrift/types/type_definition_types.h>
+#include <thrift/types/value_types.h>
 
 static ::types::core::Reference build_reference(const t_type* type) {
   ::types::core::Reference ref;
@@ -85,11 +86,105 @@ static ::types::type_definition::TypeDefinition build_type(const t_type* type) {
   return t;
 }
 
+static ::types::value::Value build_value(const t_const_value* cv, const t_type* type) {
+  ::types::value::Value out;
+  type = type->get_true_type();
+
+  if (type->is_struct() || type->is_xception()) {
+    const t_struct* ts = static_cast<const t_struct*>(type);
+    std::map<std::string, ::types::value::Value> fields;
+
+    for (const auto& kv : cv->get_map()) {
+      const t_field* field = ts->get_field_by_name(kv.first->get_string());
+
+      if (field != nullptr) {
+        fields[field->get_name()] = build_value(kv.second, field->get_type());
+      }
+    }
+
+    auto sv = std::make_shared<::types::value::StructValue>();
+    sv->__set_fields(fields);
+    out.__set_struct_value(sv);
+  } else if (type->is_map()) {
+    const t_map* tm = static_cast<const t_map*>(type);
+    std::vector<::types::value::MapEntry> entries;
+
+    for (const auto& kv : cv->get_map()) {
+      ::types::value::MapEntry entry;
+      entry.__set_key(std::make_shared<::types::value::Value>(build_value(kv.first, tm->get_key_type())));
+      entry.__set_value(std::make_shared<::types::value::Value>(build_value(kv.second, tm->get_val_type())));
+      entries.push_back(entry);
+    }
+
+    ::types::value::MapValue mv;
+    mv.__set_entries(entries);
+    out.__set_map_value(mv);
+  } else if (type->is_list() || type->is_set()) {
+    const t_type* elem_type = type->is_list()
+        ? static_cast<const t_list*>(type)->get_elem_type()
+        : static_cast<const t_set*>(type)->get_elem_type();
+    std::vector<::types::value::Value> values;
+
+    for (const t_const_value* elem : cv->get_list()) {
+      values.push_back(build_value(elem, elem_type));
+    }
+
+    ::types::value::ListValue lv;
+    lv.__set_values(values);
+    out.__set_list_value(lv);
+  } else if (type->is_enum()) {
+    out.__set_integer_value(cv->get_integer());
+  } else if (type->is_base_type()) {
+    const t_base_type* bt = static_cast<const t_base_type*>(type);
+
+    switch (bt->get_base()) {
+      case t_base_type::TYPE_STRING:
+        if (bt->is_binary()) {
+          out.__set_binary_value(cv->get_string());
+        } else {
+          out.__set_string_value(cv->get_string());
+        }
+        break;
+      case t_base_type::TYPE_BOOL:
+        out.__set_bool_value(cv->get_integer() != 0);
+        break;
+      case t_base_type::TYPE_I8:
+      case t_base_type::TYPE_I16:
+      case t_base_type::TYPE_I32:
+      case t_base_type::TYPE_I64:
+        out.__set_integer_value(cv->get_integer());
+        break;
+      case t_base_type::TYPE_DOUBLE:
+        out.__set_double_value(cv->get_type() == t_const_value::CV_INTEGER
+                                   ? static_cast<double>(cv->get_integer())
+                                   : cv->get_double());
+        break;
+      default:
+        out.__set_null_value(::types::value::NullValue());
+        break;
+    }
+  } else {
+    out.__set_null_value(::types::value::NullValue());
+  }
+
+  return out;
+}
+
 static ::types::annotation_definition::AnnotationDefinition build_annotation(const t_annotated* node) {
   ::types::annotation_definition::AnnotationDefinition ann;
   ann.__set_name(node->get_name());
   ann.__set_legacy_annotations(node->legacy_annotations());
-  ann.__set_structured_annotations({});
+
+  std::vector<::types::annotation_definition::StructuredAnnotationDefinition> structured;
+
+  for (const t_structured_annotation* sa : node->structured_annotations()) {
+    ::types::annotation_definition::StructuredAnnotationDefinition sad;
+    sad.__set_type(build_reference(sa->type_));
+    sad.__set_value(build_value(sa->value_, sa->type_));
+    structured.push_back(sad);
+  }
+
+  ann.__set_structured_annotations(structured);
   return ann;
 }
 

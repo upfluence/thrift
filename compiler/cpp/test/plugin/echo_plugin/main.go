@@ -48,6 +48,28 @@ func (h *handler) GenerateCode(_ thrift.Context, req *plugin.GenerateCodeRequest
 
 	fmt.Fprintf(&buf, "services: %s\n", strings.Join(serviceNames, ", "))
 
+	// Enums — sorted by name, values with their structured annotations
+	enumNames := make([]string, 0, len(req.Program.Enums))
+	for name := range req.Program.Enums {
+		enumNames = append(enumNames, name)
+	}
+
+	sort.Strings(enumNames)
+
+	for _, name := range enumNames {
+		fmt.Fprintf(&buf, "enum %s:\n", name)
+
+		for _, v := range req.Program.Enums[name].Values {
+			fmt.Fprintf(&buf, "  %s = %d", v.Annotation.Name, v.ID)
+
+			for _, sa := range v.Annotation.StructuredAnnotations {
+				fmt.Fprintf(&buf, " @%s(%v)", sa.Type.Name, sa.Value.ToInterface())
+			}
+
+			fmt.Fprintln(&buf)
+		}
+	}
+
 	return &plugin.GenerateCodeResponse{
 		Files: map[string][]byte{
 			"echo.txt": buf.Bytes(),

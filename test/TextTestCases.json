@@ -1,0 +1,533 @@
+{
+  "_comment": "Cases shared by the text codecs of lib/go and lib/rb, so both languages encode and accept exactly the same texts. Errors are only checked for presence, the messages differ. A struct field references an earlier struct case, a struct case without codec having no Format.",
+  "words": [
+    {"have": "PaypalAPI", "want": ["Paypal", "API"]},
+    {"have": "HTTPServer", "want": ["HTTP", "Server"]},
+    {"have": "HTTP2Server", "want": ["HTTP2", "Server"]},
+    {"have": "GoogleOAuth", "want": ["Google", "O", "Auth"]},
+    {"have": "Type_Company", "want": ["Type", "Company"]},
+    {"have": "_Leading__Double_", "want": ["Leading", "Double"]},
+    {"have": "A0", "want": ["A0"]},
+    {"have": "already_snake", "want": ["already", "snake"]},
+    {"have": "UserIDs", "want": ["User", "IDs"]},
+    {"have": "UserIDsCount", "want": ["User", "IDs", "Count"]},
+    {"have": "IDsx", "want": ["I", "Dsx"]},
+    {"have": "USERIDS", "want": ["USERIDS"]},
+    {"have": "", "want": []}
+  ],
+  "cases": [
+    {"have": "PaypalAPI", "case": "SnakeCase", "want": "paypal_api"},
+    {"have": "PaypalAPI", "case": "KebabCase", "want": "paypal-api"},
+    {"have": "PaypalAPI", "case": "ScreamingSnakeCase", "want": "PAYPAL_API"},
+    {"have": "PaypalAPI", "case": "CamelCase", "want": "paypalAPI"},
+    {"have": "PaypalAPI", "case": "PascalCase", "want": "PaypalAPI"},
+    {"have": "PaypalAPI", "case": "LowerCase", "want": "paypalapi"},
+    {"have": "PaypalAPI", "case": "Identity", "want": "PaypalAPI"},
+    {"have": "GoogleOAuth", "case": "SnakeCase", "want": "google_o_auth"},
+    {"have": "GoogleOAuth", "case": "CamelCase", "want": "googleOAuth"},
+    {"have": "HTTPServer", "case": "CamelCase", "want": "httpServer"},
+    {"have": "HTTPServer", "case": "PascalCase", "want": "HTTPServer"},
+    {"have": "user_id", "case": "PascalCase", "want": "UserID"},
+    {"have": "user_id", "case": "CamelCase", "want": "userID"},
+    {"have": "WooCommerce", "case": "SnakeCase", "want": "woo_commerce"},
+    {"have": "Type_Company", "case": "KebabCase", "want": "type-company"},
+    {"have": "UserIDs", "case": "SnakeCase", "want": "user_ids"},
+    {"have": "UserIDs", "case": "PascalCase", "want": "UserIDs"},
+    {"have": "user_ids", "case": "CamelCase", "want": "userIDs"}
+  ],
+  "patterns": [
+    {
+      "pattern": "{type}:{entity_id}",
+      "fields": ["type", "entity_id"],
+      "scans": [
+        {"have": "company:42", "want": ["company", "42"]},
+        {"have": "company:4:2", "want": ["company", "4:2"]},
+        {"have": ":", "want": ["", ""]},
+        {"have": "company", "error": true}
+      ],
+      "formats": [
+        {"have": ["a", "1"], "want": "a:1"},
+        {"have": ["a", "1:2"], "want": "a:1:2"},
+        {"have": ["a:b", "1"], "error": true}
+      ]
+    },
+    {
+      "pattern": "{{{a}}}",
+      "fields": ["a"],
+      "scans": [
+        {"have": "{x}", "want": ["x"]},
+        {"have": "{x}}", "error": true},
+        {"have": "x", "error": true}
+      ],
+      "formats": [
+        {"have": ["y"], "want": "{y}"},
+        {"have": ["}"], "error": true}
+      ]
+    },
+    {
+      "pattern": "pre-{a}",
+      "fields": ["a"],
+      "scans": [
+        {"have": "pre-x", "want": ["x"]},
+        {"have": "pre-", "want": [""]},
+        {"have": "pr-x", "error": true}
+      ],
+      "formats": [
+        {"have": ["pre-"], "want": "pre-pre-"}
+      ]
+    },
+    {
+      "pattern": "",
+      "fields": [],
+      "scans": [
+        {"have": "", "want": []},
+        {"have": "x", "error": true}
+      ],
+      "formats": [
+        {"have": [], "want": ""}
+      ]
+    },
+    {"pattern": "{a}{b}", "error": true},
+    {"pattern": "{a", "error": true},
+    {"pattern": "a}", "error": true},
+    {"pattern": "{a}-{a}", "error": true},
+    {"pattern": "{1a}", "error": true},
+    {"pattern": "{a:x}", "error": true},
+    {"pattern": "{}", "error": true}
+  ],
+  "enums": [
+    {
+      "id": "type",
+      "name": "Type",
+      "format": {"accept_thrift_names": true},
+      "values": [
+        {"name": "Company", "value": 0},
+        {"name": "Team", "value": 1},
+        {"name": "PaypalAPI", "value": 2},
+        {"name": "GoogleOAuth", "value": 3, "text": "gmail"}
+      ],
+      "want": [
+        {"value": 0, "texts": ["company", "Company", "Type_Company"]},
+        {"value": 1, "texts": ["team", "Team", "Type_Team"]},
+        {"value": 2, "texts": ["paypal_api", "PaypalAPI", "Type_PaypalAPI"]},
+        {"value": 3, "texts": ["gmail", "GoogleOAuth", "Type_GoogleOAuth"]}
+      ]
+    },
+    {
+      "id": "environment",
+      "name": "Environment",
+      "format": {"accept_thrift_names": true},
+      "values": [
+        {"name": "Staging", "value": 0},
+        {"name": "Production", "value": 1},
+        {"name": "QA", "value": 2}
+      ],
+      "want": [
+        {"value": 0, "texts": ["staging", "Staging", "Environment_Staging"]},
+        {"value": 1, "texts": ["production", "Production", "Environment_Production"]},
+        {"value": 2, "texts": ["qa", "QA", "Environment_QA"]}
+      ]
+    },
+    {
+      "id": "plain",
+      "name": "Plain",
+      "values": [{"name": "FooBar", "value": 0}],
+      "want": [{"value": 0, "texts": ["foo_bar"]}]
+    },
+    {
+      "id": "media",
+      "name": "MediaType",
+      "format": {
+        "format": "KebabCase",
+        "trim_prefixes": ["Media"],
+        "trim_suffixes": ["Short"]
+      },
+      "values": [
+        {"name": "MediaInstagram", "value": 0},
+        {"name": "MediaYoutubeShort", "value": 1},
+        {"name": "MediaTiktok", "value": 2, "text": "tt"}
+      ],
+      "want": [
+        {"value": 0, "texts": ["instagram"]},
+        {"value": 1, "texts": ["youtube"]},
+        {"value": 2, "texts": ["tt"]}
+      ]
+    },
+    {
+      "id": "first_suffix",
+      "name": "Credential",
+      "format": {"trim_suffixes": ["OAuth", "Auth"]},
+      "values": [{"name": "GoogleOAuth", "value": 0}],
+      "want": [{"value": 0, "texts": ["google"]}]
+    },
+    {
+      "id": "suffix_order",
+      "name": "Credential",
+      "format": {"trim_suffixes": ["Auth", "OAuth"]},
+      "values": [{"name": "GoogleOAuth", "value": 0}],
+      "want": [{"value": 0, "texts": ["google_o"]}]
+    },
+    {
+      "id": "first_prefix",
+      "name": "Kind",
+      "format": {"trim_prefixes": ["Kind", "KindOf"]},
+      "values": [{"name": "KindOfMagic", "value": 0}],
+      "want": [{"value": 0, "texts": ["of_magic"]}]
+    },
+    {
+      "id": "identity",
+      "name": "Type",
+      "format": {"format": "Identity", "accept_thrift_names": true},
+      "values": [{"name": "Company", "value": 0}],
+      "want": [{"value": 0, "texts": ["Company", "Type_Company"]}]
+    },
+    {
+      "id": "screaming",
+      "name": "Type",
+      "format": {"format": "ScreamingSnakeCase"},
+      "values": [{"name": "PaypalAPI", "value": 0}],
+      "want": [{"value": 0, "texts": ["PAYPAL_API"]}]
+    },
+    {
+      "id": "name_matching_thrift_name",
+      "name": "Type",
+      "values": [
+        {"name": "Company", "value": 0, "text": "Team"},
+        {"name": "Team", "value": 1}
+      ],
+      "want": [
+        {"value": 0, "texts": ["Team"]},
+        {"value": 1, "texts": ["team"]}
+      ]
+    },
+    {
+      "id": "name_shadowing_thrift_name",
+      "name": "Type",
+      "format": {"accept_thrift_names": true},
+      "values": [
+        {"name": "Company", "value": 0, "text": "Team"},
+        {"name": "Team", "value": 1}
+      ],
+      "error": true
+    },
+    {
+      "id": "duplicate_text",
+      "name": "Type",
+      "values": [
+        {"name": "Company", "value": 0, "text": "x"},
+        {"name": "Team", "value": 1, "text": "x"}
+      ],
+      "error": true
+    },
+    {
+      "id": "duplicate_value",
+      "name": "Type",
+      "values": [
+        {"name": "Company", "value": 0},
+        {"name": "Team", "value": 0}
+      ],
+      "error": true
+    },
+    {
+      "id": "empty_once_trimmed",
+      "name": "Type",
+      "format": {"trim_prefixes": ["Company"]},
+      "values": [{"name": "Company", "value": 0}],
+      "error": true
+    },
+    {
+      "id": "empty_name",
+      "name": "Type",
+      "values": [{"name": "Company", "value": 0, "text": ""}],
+      "error": true
+    },
+    {
+      "id": "unknown_case",
+      "name": "Type",
+      "format": {"format": 42},
+      "values": [{"name": "Company", "value": 0}],
+      "error": true
+    }
+  ],
+  "structs": [
+    {
+      "name": "Ownership",
+      "pattern": "{type}:{entity_id}",
+      "fields": [
+        {"name": "type", "type": "enum", "enum": "type", "requiredness": "required"},
+        {"name": "entity_id", "type": "i64", "requiredness": "required"}
+      ],
+      "formats": [
+        {"have": {"type": 0, "entity_id": 42}, "want": "company:42"},
+        {"have": {"type": 3, "entity_id": -1}, "want": "gmail:-1"},
+        {"have": {"type": 9, "entity_id": 1}, "error": true}
+      ],
+      "scans": [
+        {"have": "company:42", "want": {"type": 0, "entity_id": 42}},
+        {"have": "Type_Team:7", "want": {"type": 1, "entity_id": 7}},
+        {"have": "Team:+7", "want": {"type": 1, "entity_id": 7}},
+        {"have": "company:4 2", "error": true},
+        {"have": "company:", "error": true},
+        {"have": "company:0x1A", "error": true},
+        {"have": "company:1_000", "error": true},
+        {"have": "nope:1", "error": true},
+        {"have": "company:9223372036854775808", "error": true}
+      ]
+    },
+    {
+      "name": "Handle",
+      "pattern": "{media}/{name}@{{{shard}}}",
+      "fields": [
+        {"name": "media", "type": "enum", "enum": "media", "requiredness": "required"},
+        {"name": "name", "type": "string", "requiredness": "required"},
+        {"name": "shard", "type": "i16", "requiredness": "default"}
+      ],
+      "formats": [
+        {"have": {"media": 1, "name": "bob", "shard": 3}, "want": "youtube/bob@{3}"},
+        {"have": {"media": 1, "name": "a@b", "shard": 3}, "want": "youtube/a@b@{3}"},
+        {"have": {"media": 1, "name": "a@{b", "shard": 3}, "error": true},
+        {"have": {"media": 1, "name": "bob", "shard": 40000}, "error": true}
+      ],
+      "scans": [
+        {"have": "tt/x@{-2}", "want": {"media": 2, "name": "x", "shard": -2}},
+        {"have": "instagram/@{0}", "want": {"media": 0, "name": "", "shard": 0}},
+        {"have": "tt/x@{2", "error": true},
+        {"have": "tt/x@{40000}", "error": true},
+        {"have": "MediaTiktok/x@{2}", "error": true}
+      ]
+    },
+    {
+      "name": "KebabSeparator",
+      "pattern": "{media}-{id}",
+      "fields": [
+        {"name": "media", "type": "enum", "enum": "media", "requiredness": "required"},
+        {"name": "id", "type": "i32", "requiredness": "required"}
+      ],
+      "formats": [
+        {"have": {"media": 0, "id": 1}, "want": "instagram-1"}
+      ],
+      "scans": [
+        {"have": "youtube-2", "want": {"media": 1, "id": 2}}
+      ]
+    },
+    {
+      "name": "OmittedOptional",
+      "pattern": "{type}:{id}",
+      "fields": [
+        {"name": "type", "type": "enum", "enum": "media", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"},
+        {"name": "handle", "type": "string", "requiredness": "optional"}
+      ],
+      "formats": [
+        {"have": {"type": 0, "id": 1}, "want": "instagram:1"},
+        {"have": {"type": 0, "id": 1, "handle": "ignored"}, "want": "instagram:1"}
+      ],
+      "scans": [
+        {"have": "tt:2", "want": {"type": 2, "id": 2}},
+        {"have": "tt:2:bob", "error": true}
+      ]
+    },
+    {
+      "name": "Entity",
+      "pattern": "{environment}:{type}:{id}",
+      "fields": [
+        {"name": "environment", "type": "enum", "enum": "environment", "requiredness": "required"},
+        {"name": "type", "type": "enum", "enum": "type", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"}
+      ],
+      "formats": [
+        {"have": {"environment": 1, "type": 1, "id": 42}, "want": "production:team:42"}
+      ],
+      "scans": [
+        {"have": "qa:paypal_api:7", "want": {"environment": 2, "type": 2, "id": 7}}
+      ]
+    },
+    {
+      "name": "EntitySegment",
+      "pattern": "{entity}:{segment}",
+      "fields": [
+        {"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "required"},
+        {"name": "segment", "type": "string", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"},
+          "want": "production:team:42:selected"
+        },
+        {
+          "have": {"entity": {"environment": 0, "type": 0, "id": 3}, "segment": ""},
+          "want": "staging:company:3:"
+        },
+        {
+          "have": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "a:b"},
+          "want": "production:team:42:a:b"
+        },
+        {"have": {"entity": {"environment": 1, "type": 1}, "segment": "selected"}, "error": true},
+        {"have": {"segment": "selected"}, "error": true}
+      ],
+      "scans": [
+        {
+          "have": "production:team:42:selected",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"}
+        },
+        {
+          "have": "staging:company:3:",
+          "want": {"entity": {"environment": 0, "type": 0, "id": 3}, "segment": ""}
+        },
+        {
+          "have": "Environment_Production:Type_Team:42:selected",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"}
+        },
+        {
+          "have": "production:team:42:a:b",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "a:b"}
+        },
+        {"have": "production:team:x:selected", "error": true},
+        {"have": "production:team:42", "error": true}
+      ]
+    },
+    {
+      "name": "EntityOwnership",
+      "pattern": "{entity}:{segment}:{ownership}",
+      "fields": [
+        {"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "required"},
+        {"name": "segment", "type": "string", "requiredness": "required"},
+        {"name": "ownership", "type": "struct", "struct": "Ownership", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "selected",
+            "ownership": {"type": 0, "entity_id": 12}
+          },
+          "want": "production:team:42:selected:company:12"
+        },
+        {
+          "have": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "a:b",
+            "ownership": {"type": 0, "entity_id": 12}
+          },
+          "error": true
+        }
+      ],
+      "scans": [
+        {
+          "have": "production:team:42:selected:gmail:12",
+          "want": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "selected",
+            "ownership": {"type": 3, "entity_id": 12}
+          }
+        }
+      ]
+    },
+    {
+      "name": "NestedTwice",
+      "pattern": "<{inner}>",
+      "fields": [
+        {"name": "inner", "type": "struct", "struct": "EntitySegment", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {"inner": {"entity": {"environment": 0, "type": 0, "id": 1}, "segment": "s"}},
+          "want": "<staging:company:1:s>"
+        }
+      ],
+      "scans": [
+        {
+          "have": "<qa:team:2:x>",
+          "want": {"inner": {"entity": {"environment": 2, "type": 1, "id": 2}, "segment": "x"}}
+        },
+        {"have": "<qa:team:2:x", "error": true}
+      ]
+    },
+    {
+      "name": "TypeOnly",
+      "pattern": "{type}",
+      "fields": [{"name": "type", "type": "enum", "enum": "type", "requiredness": "required"}],
+      "formats": [{"have": {"type": 0}, "want": "company"}],
+      "scans": [{"have": "Type_Team", "want": {"type": 1}}]
+    },
+    {
+      "name": "NestedSeparatorConflict",
+      "pattern": "{inner}_{id}",
+      "fields": [
+        {"name": "inner", "type": "struct", "struct": "TypeOnly", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"}
+      ],
+      "error": true
+    },
+    {
+      "name": "NestedOptional",
+      "pattern": "{entity}",
+      "fields": [{"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "optional"}],
+      "error": true
+    },
+    {
+      "name": "NestedWithoutFormat",
+      "pattern": "{inner}",
+      "fields": [{"name": "inner", "type": "struct", "struct": "NoFormat", "requiredness": "required"}],
+      "error": true
+    },
+    {
+      "name": "OptionalField",
+      "pattern": "{id}",
+      "fields": [{"name": "id", "type": "i64", "requiredness": "optional"}],
+      "error": true
+    },
+    {
+      "name": "UnknownField",
+      "pattern": "{id}-{other}",
+      "fields": [{"name": "id", "type": "i64", "requiredness": "required"}],
+      "error": true
+    },
+    {
+      "name": "UnreferencedField",
+      "pattern": "{id}",
+      "fields": [
+        {"name": "id", "type": "i64", "requiredness": "required"},
+        {"name": "other", "type": "i64", "requiredness": "required"}
+      ],
+      "error": true
+    },
+    {
+      "name": "UnsupportedType",
+      "pattern": "{flag}",
+      "fields": [{"name": "flag", "type": "bool", "requiredness": "required"}],
+      "error": true
+    },
+    {
+      "name": "Union",
+      "pattern": "{id}",
+      "union": true,
+      "fields": [{"name": "id", "type": "i64", "requiredness": "optional"}],
+      "error": true
+    },
+    {
+      "name": "IntegerSeparator",
+      "pattern": "{id}0x{name}",
+      "fields": [
+        {"name": "id", "type": "i64", "requiredness": "required"},
+        {"name": "name", "type": "string", "requiredness": "required"}
+      ],
+      "error": true
+    },
+    {
+      "name": "EnumSeparator",
+      "pattern": "{type}_{entity_id}",
+      "fields": [
+        {"name": "type", "type": "enum", "enum": "type", "requiredness": "required"},
+        {"name": "entity_id", "type": "i64", "requiredness": "required"}
+      ],
+      "error": true
+    },
+    {
+      "name": "NoFormat",
+      "pattern": null,
+      "fields": [{"name": "id", "type": "i64", "requiredness": "required"}],
+      "error": true
+    }
+  ]
+}
