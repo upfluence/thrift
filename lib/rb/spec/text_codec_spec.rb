@@ -116,4 +116,41 @@ describe Thrift::Types::Annotation::Text do
       expect { klass.new(type: tt::Type::Team).to_json }.to raise_error(text::InvalidValueError)
     end
   end
+
+  describe 'nested structs' do
+    let(:labeled) { tt::Labeled.new(owner: tt::Ownership.new(type: tt::Type::Team, entity_id: 3), label: 'a/b') }
+
+    it 'embeds the text form of the nested struct' do
+      expect(text.dump(labeled)).to eq('team:3/a/b')
+      expect(text.dump(tt::Wrapped.new(inner: labeled))).to eq('<team:3/a/b>')
+    end
+
+    it 'builds the nested structs' do
+      owner = tt::Ownership.new(type: tt::Type::Company, entity_id: 7)
+
+      expect(text.load(tt::Wrapped, '<Type_Company:7/a:b>')).to eq(
+        tt::Wrapped.new(inner: tt::Labeled.new(owner: owner, label: 'a:b'))
+      )
+    end
+
+    it 'rejects a missing nested struct' do
+      expect { text.dump(tt::Labeled.new(label: 'x')) }.to raise_error(text::InvalidValueError)
+    end
+
+    [tt::NestedUnannotated, tt::Loop].each do |klass|
+      it "rejects #{klass}" do
+        expect { text.validate(klass) }.to raise_error(text::InvalidDefinitionError)
+      end
+    end
+  end
+
+  describe 'omitted optional fields' do
+    it 'drops them' do
+      expect(text.dump(tt::WithHandle.new(media: tt::MediaType::MediaTiktok, id: 2, handle: 'bob'))).to eq('tt:2')
+      expect(text.load(tt::WithHandle, 'youtube:3')).to eq(
+        tt::WithHandle.new(media: tt::MediaType::MediaYoutubeShort, id: 3)
+      )
+      expect(text.load(tt::Node, '4')).to eq(tt::Node.new(id: 4))
+    end
+  end
 end

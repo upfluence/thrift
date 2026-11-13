@@ -62,3 +62,38 @@ struct SeparatorConflict {
   1: required Type type;
   2: required i64  entity_id;
 }
+
+@text.Format{"pattern": "{owner}/{label}"}
+struct Labeled {
+  1: required Ownership owner;
+  2: required string    label;
+}
+
+@text.Format{"pattern": "<{inner}>"}
+struct Wrapped {
+  1: required Labeled inner;
+}
+
+@text.Format{"pattern": "{media}:{id}"}
+struct WithHandle {
+  1: required MediaType media;
+  2: required i64       id;
+  3: optional string    handle;
+}
+
+@text.Format{"pattern": "{id}"}
+struct Node {
+  1: required i64  id;
+  2: optional Node child;
+}
+
+@text.Format{"pattern": "{id}:{child}"}
+struct Loop {
+  1: required i64  id;
+  2: required Loop child;
+}
+
+@text.Format{"pattern": "{plain}"}
+struct NestedUnannotated {
+  1: required Unannotated plain;
+}

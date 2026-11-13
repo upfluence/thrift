@@ -217,3 +217,88 @@ func TestTextValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestTextNestedStruct(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		have    thrift.RegistrableStruct
+		want    string
+		wantErr error
+	}{
+		{
+			name: "embedded struct",
+			have: &texttest.Labeled{
+				Owner: &texttest.Ownership{Type: texttest.Type_Team, EntityID: 3},
+				Label: "a/b",
+			},
+			want: "team:3/a/b",
+		},
+		{
+			name: "embedded twice",
+			have: &texttest.Wrapped{
+				Inner: &texttest.Labeled{
+					Owner: &texttest.Ownership{Type: texttest.Type_GoogleOAuth, EntityID: 1},
+					Label: "x",
+				},
+			},
+			want: "<gmail:1/x>",
+		},
+		{
+			name:    "missing embedded struct",
+			have:    &texttest.Labeled{Label: "x"},
+			wantErr: text.ErrInvalidValue,
+		},
+		{
+			name:    "embedded struct without Format",
+			have:    &texttest.NestedUnannotated{},
+			wantErr: text.ErrInvalidDefinition,
+		},
+		{
+			name:    "struct embedding itself",
+			have:    &texttest.Loop{},
+			wantErr: text.ErrInvalidDefinition,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := text.MarshalStruct(tt.have)
+
+			require.ErrorIs(t, err, tt.wantErr)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+
+	got, err := text.UnmarshalStruct[texttest.Wrapped]("<Type_Company:7/a:b>")
+
+	require.NoError(t, err)
+	assert.Equal(
+		t,
+		&texttest.Wrapped{
+			Inner: &texttest.Labeled{
+				Owner: &texttest.Ownership{Type: texttest.Type_Company, EntityID: 7},
+				Label: "a:b",
+			},
+		},
+		got,
+	)
+}
+
+func TestTextOmittedOptionalField(t *testing.T) {
+	handle := "bob"
+
+	s, err := text.MarshalStruct(
+		&texttest.WithHandle{Media: texttest.MediaType_MediaTiktok, ID: 2, Handle: &handle},
+	)
+
+	require.NoError(t, err)
+	assert.Equal(t, "tt:2", s)
+
+	got, err := text.UnmarshalStruct[texttest.WithHandle]("youtube:3")
+
+	require.NoError(t, err)
+	assert.Equal(t, &texttest.WithHandle{Media: texttest.MediaType_MediaYoutubeShort, ID: 3}, got)
+
+	node, err := text.UnmarshalStruct[texttest.Node]("4")
+
+	require.NoError(t, err)
+	assert.Equal(t, &texttest.Node{ID: 4}, node)
+}
