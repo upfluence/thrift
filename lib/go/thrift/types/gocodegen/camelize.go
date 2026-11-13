@@ -3,52 +3,9 @@ package gocodegen
 import (
 	"strings"
 	"unicode"
-)
 
-// commonInitialisms is the set of well-known Go initialisms taken from
-// https://github.com/mgechev/revive/blob/master/internal/rule/name.go and mirrored in
-// compiler/cpp/src/thrift/generate/t_go_generator.cc.
-var commonInitialisms = map[string]struct{}{
-	"ACL":   {},
-	"API":   {},
-	"ASCII": {},
-	"CPU":   {},
-	"CSS":   {},
-	"DNS":   {},
-	"EOF":   {},
-	"GUID":  {},
-	"HTML":  {},
-	"HTTP":  {},
-	"HTTPS": {},
-	"ID":    {},
-	"IDS":   {},
-	"IP":    {},
-	"JSON":  {},
-	"LHS":   {},
-	"QPS":   {},
-	"RAM":   {},
-	"RHS":   {},
-	"RPC":   {},
-	"SLA":   {},
-	"SMTP":  {},
-	"SQL":   {},
-	"SSH":   {},
-	"TCP":   {},
-	"TLS":   {},
-	"TTL":   {},
-	"UDP":   {},
-	"UI":    {},
-	"UID":   {},
-	"UUID":  {},
-	"URI":   {},
-	"URL":   {},
-	"UTF8":  {},
-	"VM":    {},
-	"XML":   {},
-	"XMPP":  {},
-	"XSRF":  {},
-	"XSS":   {},
-}
+	"github.com/upfluence/thrift/lib/go/thrift/internal/goinitialism"
+)
 
 var goKeywords = map[string]struct{}{
 	"break": {}, "case": {}, "chan": {}, "const": {}, "continue": {},
@@ -127,16 +84,12 @@ func camelize(s string, public bool) string {
 			continue
 		}
 
-		upper := strings.ToUpper(part)
-
-		if _, ok := commonInitialisms[upper]; ok {
+		if initialism, ok := goinitialism.Lookup(part); ok {
 			if i == 0 && !public {
 				// First word, private: keep fully lowercase.
 				b.WriteString(strings.ToLower(part))
-			} else if upper == "IDS" {
-				b.WriteString("IDs")
 			} else {
-				b.WriteString(upper)
+				b.WriteString(initialism)
 			}
 
 			continue

@@ -1,6 +1,10 @@
 package wordcase
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/upfluence/thrift/lib/go/thrift/internal/goinitialism"
+)
 
 // Case is a naming convention.
 type Case int
@@ -24,33 +28,16 @@ const (
 	IdentityCase
 )
 
-// GoInitialisms are the common initialisms of Go identifiers, as listed by
-// revive.
-var GoInitialisms = []string{
-	"ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP",
-	"HTTPS", "ID", "IDs", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC",
-	"SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID",
-	"UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS",
-}
-
 // Caser renders ASCII identifiers in a naming convention: the identifier is
 // split in words, see SplitWords, each word is cased then the words are
-// joined. A Caser is safe for concurrent use.
+// joined. CamelCase and PascalCase render the Go initialisms as such, e.g.
+// "API" or "IDs". A Caser is safe for concurrent use.
 type Caser struct {
-	c           Case
-	initialisms map[string]string
+	c Case
 }
 
-// NewCaser returns a Caser rendering the initialisms as given in CamelCase
-// and PascalCase, e.g. "API" or "IDs". They are matched case insensitively.
-func NewCaser(c Case, initialisms ...string) Caser {
-	caser := Caser{c: c, initialisms: make(map[string]string, len(initialisms))}
-
-	for _, i := range initialisms {
-		caser.initialisms[strings.ToUpper(i)] = i
-	}
-
-	return caser
+func NewCaser(c Case) Caser {
+	return Caser{c: c}
 }
 
 func (c Caser) String(s string) string {
@@ -86,7 +73,7 @@ func (c Caser) camelWord(w string, first bool) string {
 		return strings.ToLower(w)
 	}
 
-	if i, ok := c.initialisms[strings.ToUpper(w)]; ok {
+	if i, ok := goinitialism.Lookup(w); ok {
 		return i
 	}
 

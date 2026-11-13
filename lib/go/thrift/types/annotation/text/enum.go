@@ -68,7 +68,7 @@ func compileEnum(def thrift.EnumDefinition) (*EnumCodec, error) {
 	}
 
 	var (
-		caser = wordcase.NewCaser(c, wordcase.GoInitialisms...)
+		caser = wordcase.NewCaser(c)
 		codec = EnumCodec{
 			name:      def.Name,
 			texts:     make(map[int64]string, len(def.Values)),

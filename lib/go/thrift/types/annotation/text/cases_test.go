@@ -129,7 +129,7 @@ func TestCaser(t *testing.T) {
 			c, err := CaseFromString(tt.Case)
 			require.NoError(t, err)
 
-			caser := wordcase.NewCaser(caseFormats[c], wordcase.GoInitialisms...)
+			caser := wordcase.NewCaser(caseFormats[c])
 
 			assert.Equal(t, tt.Want, caser.String(tt.Have))
 		})
