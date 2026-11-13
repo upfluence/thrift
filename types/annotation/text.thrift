@@ -10,8 +10,15 @@ namespace * types.annotation.text
 // field of the struct exactly once, and two placeholders must be separated by
 // a literal. A field is decoded up to the first occurrence of the literal
 // following it, so encoding a string value containing that literal fails.
-// Fields must not be optional, and must be typed as an enum, an integer or a
-// string.
+//
+// The referenced fields must not be optional, and must be typed as an enum,
+// an integer, a string or a struct annotated with Format. The pattern of a
+// struct field is inlined in place of its placeholder: with Entity formatted
+// as "{environment}:{type}:{id}", "{entity}:{segment}" reads as
+// "{entity.environment}:{entity.type}:{entity.id}:{segment}".
+//
+// Optional fields can be left out of the pattern: they are not encoded, and
+// left unset when decoding.
 //
 // Placement:
 //   - On a struct only.

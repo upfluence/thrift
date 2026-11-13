@@ -75,6 +75,7 @@ type structCase struct {
 		Name         string `json:"name"`
 		Type         string `json:"type"`
 		Enum         string `json:"enum"`
+		Struct       string `json:"struct"`
 		Requiredness string `json:"requiredness"`
 	} `json:"fields"`
 	Formats []struct {
@@ -264,7 +265,7 @@ func TestCompileEnum(t *testing.T) {
 
 var integerBits = map[string]int{"i8": 8, "i16": 16, "i32": 32, "i64": 64}
 
-func (sc structCase) build(t *testing.T, enums map[string]*EnumCodec) (thrift.StructDefinition, map[string]FieldType) {
+func (sc structCase) build(t *testing.T, enums map[string]*EnumCodec, structs map[string]*StructCodec) (thrift.StructDefinition, map[string]FieldType) {
 	t.Helper()
 
 	var (
@@ -298,6 +299,8 @@ func (sc structCase) build(t *testing.T, enums map[string]*EnumCodec) (thrift.St
 		case f.Type == "enum":
 			require.Contains(t, enums, f.Enum)
 			fields[f.Name] = FieldType{Kind: EnumField, Enum: enums[f.Enum]}
+		case f.Type == "struct":
+			fields[f.Name] = FieldType{Kind: StructField, Struct: structs[f.Struct]}
 		case integerBits[f.Type] > 0:
 			fields[f.Name] = FieldType{Kind: IntegerField, Bits: integerBits[f.Type]}
 		}
@@ -306,22 +309,25 @@ func (sc structCase) build(t *testing.T, enums map[string]*EnumCodec) (thrift.St
 	return def, fields
 }
 
-func (sc structCase) values(t *testing.T, fields map[string]FieldType, vs map[string]any) map[string]any {
+func values(t *testing.T, vs map[string]any) map[string]any {
 	t.Helper()
 
 	res := make(map[string]any, len(vs))
 
 	for k, v := range vs {
-		if fields[k].Kind == StringField {
-			res[k] = v
+		switch vv := v.(type) {
+		case string:
+			res[k] = vv
+		case json.Number:
+			i, err := vv.Int64()
+			require.NoError(t, err)
 
-			continue
+			res[k] = i
+		case map[string]any:
+			res[k] = values(t, vv)
+		default:
+			require.Failf(t, "unexpected value", "%T", v)
 		}
-
-		i, err := v.(json.Number).Int64()
-		require.NoError(t, err)
-
-		res[k] = i
 	}
 
 	return res
@@ -342,9 +348,11 @@ func TestCompileStruct(t *testing.T) {
 		}
 	}
 
+	structs := make(map[string]*StructCodec)
+
 	for _, tt := range tc.Structs {
 		t.Run(tt.Name, func(t *testing.T) {
-			def, fields := tt.build(t, enums)
+			def, fields := tt.build(t, enums, structs)
 			c, err := CompileStruct(def, fields)
 
 			if tt.Error {
@@ -355,8 +363,10 @@ func TestCompileStruct(t *testing.T) {
 
 			require.NoError(t, err)
 
+			structs[tt.Name] = c
+
 			for _, fc := range tt.Formats {
-				got, err := c.Format(tt.values(t, fields, fc.Have))
+				got, err := c.Format(values(t, fc.Have))
 
 				if fc.Error {
 					require.ErrorIs(t, err, ErrInvalidValue, fc.Have)
@@ -378,7 +388,7 @@ func TestCompileStruct(t *testing.T) {
 				}
 
 				require.NoError(t, err, sc.Have)
-				assert.Equal(t, tt.values(t, fields, sc.Want), got, sc.Have)
+				assert.Equal(t, values(t, sc.Want), got, sc.Have)
 			}
 		})
 	}

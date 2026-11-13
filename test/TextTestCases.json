@@ -1,5 +1,5 @@
 {
-  "_comment": "Cases shared by the text codecs of lib/go and lib/rb, so both languages encode and accept exactly the same texts. Errors are only checked for presence, the messages differ.",
+  "_comment": "Cases shared by the text codecs of lib/go and lib/rb, so both languages encode and accept exactly the same texts. Errors are only checked for presence, the messages differ. A struct field references an earlier struct case, a struct case without codec having no Format.",
   "words": [
     {"have": "PaypalAPI", "want": ["Paypal", "API"]},
     {"have": "HTTPServer", "want": ["HTTP", "Server"]},
@@ -111,6 +111,21 @@
         {"value": 1, "texts": ["team", "Team", "Type_Team"]},
         {"value": 2, "texts": ["paypal_api", "PaypalAPI", "Type_PaypalAPI"]},
         {"value": 3, "texts": ["gmail", "GoogleOAuth", "Type_GoogleOAuth"]}
+      ]
+    },
+    {
+      "id": "environment",
+      "name": "Environment",
+      "format": {"accept_thrift_names": true},
+      "values": [
+        {"name": "Staging", "value": 0},
+        {"name": "Production", "value": 1},
+        {"name": "QA", "value": 2}
+      ],
+      "want": [
+        {"value": 0, "texts": ["staging", "Staging", "Environment_Staging"]},
+        {"value": 1, "texts": ["production", "Production", "Environment_Production"]},
+        {"value": 2, "texts": ["qa", "QA", "Environment_QA"]}
       ]
     },
     {
@@ -294,6 +309,167 @@
       "scans": [
         {"have": "youtube-2", "want": {"media": 1, "id": 2}}
       ]
+    },
+    {
+      "name": "OmittedOptional",
+      "pattern": "{type}:{id}",
+      "fields": [
+        {"name": "type", "type": "enum", "enum": "media", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"},
+        {"name": "handle", "type": "string", "requiredness": "optional"}
+      ],
+      "formats": [
+        {"have": {"type": 0, "id": 1}, "want": "instagram:1"},
+        {"have": {"type": 0, "id": 1, "handle": "ignored"}, "want": "instagram:1"}
+      ],
+      "scans": [
+        {"have": "tt:2", "want": {"type": 2, "id": 2}},
+        {"have": "tt:2:bob", "error": true}
+      ]
+    },
+    {
+      "name": "Entity",
+      "pattern": "{environment}:{type}:{id}",
+      "fields": [
+        {"name": "environment", "type": "enum", "enum": "environment", "requiredness": "required"},
+        {"name": "type", "type": "enum", "enum": "type", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"}
+      ],
+      "formats": [
+        {"have": {"environment": 1, "type": 1, "id": 42}, "want": "production:team:42"}
+      ],
+      "scans": [
+        {"have": "qa:paypal_api:7", "want": {"environment": 2, "type": 2, "id": 7}}
+      ]
+    },
+    {
+      "name": "EntitySegment",
+      "pattern": "{entity}:{segment}",
+      "fields": [
+        {"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "required"},
+        {"name": "segment", "type": "string", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"},
+          "want": "production:team:42:selected"
+        },
+        {
+          "have": {"entity": {"environment": 0, "type": 0, "id": 3}, "segment": ""},
+          "want": "staging:company:3:"
+        },
+        {
+          "have": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "a:b"},
+          "want": "production:team:42:a:b"
+        },
+        {"have": {"entity": {"environment": 1, "type": 1}, "segment": "selected"}, "error": true},
+        {"have": {"segment": "selected"}, "error": true}
+      ],
+      "scans": [
+        {
+          "have": "production:team:42:selected",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"}
+        },
+        {
+          "have": "staging:company:3:",
+          "want": {"entity": {"environment": 0, "type": 0, "id": 3}, "segment": ""}
+        },
+        {
+          "have": "Environment_Production:Type_Team:42:selected",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "selected"}
+        },
+        {
+          "have": "production:team:42:a:b",
+          "want": {"entity": {"environment": 1, "type": 1, "id": 42}, "segment": "a:b"}
+        },
+        {"have": "production:team:x:selected", "error": true},
+        {"have": "production:team:42", "error": true}
+      ]
+    },
+    {
+      "name": "EntityOwnership",
+      "pattern": "{entity}:{segment}:{ownership}",
+      "fields": [
+        {"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "required"},
+        {"name": "segment", "type": "string", "requiredness": "required"},
+        {"name": "ownership", "type": "struct", "struct": "Ownership", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "selected",
+            "ownership": {"type": 0, "entity_id": 12}
+          },
+          "want": "production:team:42:selected:company:12"
+        },
+        {
+          "have": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "a:b",
+            "ownership": {"type": 0, "entity_id": 12}
+          },
+          "error": true
+        }
+      ],
+      "scans": [
+        {
+          "have": "production:team:42:selected:gmail:12",
+          "want": {
+            "entity": {"environment": 1, "type": 1, "id": 42},
+            "segment": "selected",
+            "ownership": {"type": 3, "entity_id": 12}
+          }
+        }
+      ]
+    },
+    {
+      "name": "NestedTwice",
+      "pattern": "<{inner}>",
+      "fields": [
+        {"name": "inner", "type": "struct", "struct": "EntitySegment", "requiredness": "required"}
+      ],
+      "formats": [
+        {
+          "have": {"inner": {"entity": {"environment": 0, "type": 0, "id": 1}, "segment": "s"}},
+          "want": "<staging:company:1:s>"
+        }
+      ],
+      "scans": [
+        {
+          "have": "<qa:team:2:x>",
+          "want": {"inner": {"entity": {"environment": 2, "type": 1, "id": 2}, "segment": "x"}}
+        },
+        {"have": "<qa:team:2:x", "error": true}
+      ]
+    },
+    {
+      "name": "TypeOnly",
+      "pattern": "{type}",
+      "fields": [{"name": "type", "type": "enum", "enum": "type", "requiredness": "required"}],
+      "formats": [{"have": {"type": 0}, "want": "company"}],
+      "scans": [{"have": "Type_Team", "want": {"type": 1}}]
+    },
+    {
+      "name": "NestedSeparatorConflict",
+      "pattern": "{inner}_{id}",
+      "fields": [
+        {"name": "inner", "type": "struct", "struct": "TypeOnly", "requiredness": "required"},
+        {"name": "id", "type": "i64", "requiredness": "required"}
+      ],
+      "error": true
+    },
+    {
+      "name": "NestedOptional",
+      "pattern": "{entity}",
+      "fields": [{"name": "entity", "type": "struct", "struct": "Entity", "requiredness": "optional"}],
+      "error": true
+    },
+    {
+      "name": "NestedWithoutFormat",
+      "pattern": "{inner}",
+      "fields": [{"name": "inner", "type": "struct", "struct": "NoFormat", "requiredness": "required"}],
+      "error": true
     },
     {
       "name": "OptionalField",

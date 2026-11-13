@@ -1,6 +1,7 @@
 package fstring
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -237,4 +238,50 @@ func (p *Pattern) Append(b []byte, values []string) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+// Inline returns a copy of p where the placeholder of field is replaced by
+// the segments of inner, whose fields are renamed "<field>.<name>". The
+// literals surrounding the placeholder are merged with the ones of inner.
+func (p *Pattern) Inline(field string, inner *Pattern) (*Pattern, error) {
+	if !slices.Contains(p.fields, field) {
+		return nil, errors.Newf("fstring: %q has no field %q", p.pattern, field)
+	}
+
+	res := Pattern{pattern: p.pattern}
+
+	appendSegment := func(s Segment) {
+		if s.Field != "" {
+			res.segments = append(res.segments, s)
+			res.fields = append(res.fields, s.Field)
+
+			return
+		}
+
+		if n := len(res.segments); n > 0 && res.segments[n-1].Field == "" {
+			res.segments[n-1].Literal += s.Literal
+
+			return
+		}
+
+		res.segments = append(res.segments, s)
+	}
+
+	for _, s := range p.segments {
+		if s.Field != field {
+			appendSegment(s)
+
+			continue
+		}
+
+		for _, is := range inner.segments {
+			if is.Field != "" {
+				is.Field = field + "." + is.Field
+			}
+
+			appendSegment(is)
+		}
+	}
+
+	return &res, nil
 }
