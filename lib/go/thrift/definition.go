@@ -8,7 +8,16 @@ import (
 
 type AnnotatedDefinition = reflection.AnnotatedDefinition
 type FieldDefinition = reflection.FieldDefinition
+type Requiredness = reflection.Requiredness
 type StructDefinition = reflection.StructDefinition
+type EnumValueDefinition = reflection.EnumValueDefinition
+type EnumDefinition = reflection.EnumDefinition
+
+const (
+	RequirednessDefault  = reflection.RequirednessDefault
+	RequirednessRequired = reflection.RequirednessRequired
+	RequirednessOptional = reflection.RequirednessOptional
+)
 type FunctionDefinition = reflection.FunctionDefinition
 type ServiceDefinition = reflection.ServiceDefinition
 type RegistrableStruct = reflection.RegistrableStruct
