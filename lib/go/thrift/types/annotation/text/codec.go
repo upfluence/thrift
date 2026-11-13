@@ -30,29 +30,19 @@ func invalidDefinition(msg string, args ...any) error {
 // findAnnotation returns the structured annotation of type T of def, nil if
 // def has none.
 func findAnnotation[T thrift.RegistrableStruct](def thrift.AnnotatedDefinition) (T, error) {
-	var (
-		res   T
-		found bool
-	)
+	var zero T
 
-	for _, a := range def.StructuredAnnotations {
-		v, ok := a.(T)
-
-		if !ok {
-			continue
-		}
-
-		if found {
-			return res, invalidDefinition(
-				"%s is set twice",
-				v.StructDefinition().CanonicalName(),
-			)
-		}
-
-		res, found = v, true
+	switch as := thrift.FindAnnotations[T](def); len(as) {
+	case 0:
+		return zero, nil
+	case 1:
+		return as[0], nil
+	default:
+		return zero, invalidDefinition(
+			"%s is set twice",
+			as[0].StructDefinition().CanonicalName(),
+		)
 	}
-
-	return res, nil
 }
 
 type cacheEntry[T any] struct {
