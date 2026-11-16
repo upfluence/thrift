@@ -132,6 +132,49 @@ func TestGoPackagePath(t *testing.T) {
 	}
 }
 
+func TestGoImportPath(t *testing.T) {
+	gs := gocodegen.Scope{
+		ThriftImportPath: "github.com/upfluence/thrift/lib/go/thrift",
+		ImportPkgPrefix:  "github.com/upfluence/",
+		ImportRewrites: map[string]string{
+			"github.com/upfluence/identity": "github.com/upfluence/identity/v2",
+		},
+	}
+
+	for _, tt := range []struct {
+		name        string
+		haveProgram *ProgramDefinition
+		want        string
+	}{
+		{
+			name: "rewritten program",
+			haveProgram: &ProgramDefinition{
+				Namespaces: map[string]string{"*": "identity.types.scope.v1.scope"},
+			},
+			want: "github.com/upfluence/identity/v2/types/scope/v1/scope",
+		},
+		{
+			name: "program without matching rule",
+			haveProgram: &ProgramDefinition{
+				Namespaces: map[string]string{"*": "identityutil.types.util"},
+			},
+			want: "github.com/upfluence/identityutil/types/util",
+		},
+		{
+			name: "stdlib program",
+			haveProgram: &ProgramDefinition{
+				Namespaces: map[string]string{"*": "types.known.timestamp"},
+				Stdlib:     true,
+			},
+			want: "github.com/upfluence/thrift/lib/go/thrift/types/known/timestamp",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, GoImportPath(tt.haveProgram, gs))
+		})
+	}
+}
+
 func scalarTypeDef(s type_definition.ScalarType) *type_definition.TypeDefinition {
 	return &type_definition.TypeDefinition{ScalarType: &s}
 }

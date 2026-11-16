@@ -156,6 +156,111 @@ func TestImportSpec(t *testing.T) {
 	)
 }
 
+const (
+	identityModule   = "github.com/upfluence/identity"
+	identityV2Module = "github.com/upfluence/identity/v2"
+)
+
+func TestScopeImportPath(t *testing.T) {
+	const scopePkgPath = "identity/types/scope/v1/scope"
+
+	identityRewrites := map[string]string{identityModule: identityV2Module}
+
+	for _, tt := range []struct {
+		name         string
+		haveRewrites map[string]string
+		havePkgPath  string
+		haveStdlib   bool
+		want         string
+	}{
+		{
+			name:        "no rewrites",
+			havePkgPath: scopePkgPath,
+			want:        "github.com/upfluence/identity/types/scope/v1/scope",
+		},
+		{
+			name:         "sub path",
+			haveRewrites: identityRewrites,
+			havePkgPath:  scopePkgPath,
+			want:         "github.com/upfluence/identity/v2/types/scope/v1/scope",
+		},
+		{
+			name:         "exact match",
+			haveRewrites: identityRewrites,
+			havePkgPath:  "identity",
+			want:         identityV2Module,
+		},
+		{
+			name:         "sibling prefix does not match",
+			haveRewrites: identityRewrites,
+			havePkgPath:  "identityutil/types/util",
+			want:         "github.com/upfluence/identityutil/types/util",
+		},
+		{
+			name: "longest match wins",
+			haveRewrites: map[string]string{
+				identityModule: identityV2Module,
+				"github.com/upfluence/identity/types/scope": "github.com/upfluence/scope/v3",
+				"github.com/upfluence":                      "example.com",
+			},
+			havePkgPath: scopePkgPath,
+			want:        "github.com/upfluence/scope/v3/v1/scope",
+		},
+		{
+			name:         "stdlib without matching rule",
+			haveRewrites: identityRewrites,
+			havePkgPath:  "types/known/timestamp",
+			haveStdlib:   true,
+			want:         "github.com/upfluence/thrift/lib/go/thrift/types/known/timestamp",
+		},
+		{
+			name: "stdlib with matching rule",
+			haveRewrites: map[string]string{
+				"github.com/upfluence/thrift": "github.com/upfluence/thrift/v2",
+			},
+			havePkgPath: "types/known/timestamp",
+			haveStdlib:  true,
+			want:        "github.com/upfluence/thrift/v2/lib/go/thrift/types/known/timestamp",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			gs := Scope{
+				ImportPkgPrefix: "github.com/upfluence/",
+				ImportRewrites:  tt.haveRewrites,
+			}
+
+			assert.Equal(t, tt.want, gs.ImportPath(tt.havePkgPath, tt.haveStdlib))
+		})
+	}
+}
+
+func TestIncludePkgPathAppliesImportRewrites(t *testing.T) {
+	gs := Scope{
+		ImportPkgPrefix: "github.com/upfluence/",
+		ImportRewrites:  map[string]string{identityModule: identityV2Module},
+	}
+
+	gs.Includes = []Include{
+		gs.NewInclude("identity.types.scope.v1.scope", "scope", false),
+		gs.NewInclude("identityutil.types.util", "util", false),
+	}
+
+	var got []string
+
+	for _, inc := range DedupIncludes(&gs) {
+		got = append(got, inc.ImportSpec())
+	}
+
+	assert.Equal(
+		t,
+		[]string{
+			`"github.com/upfluence/identity/v2/types/scope/v1/scope"`,
+			`"github.com/upfluence/identityutil/types/util"`,
+		},
+		got,
+	)
+}
+
 func pkgNames(incs []Include) []string {
 	res := make([]string, 0, len(incs))
 

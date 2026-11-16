@@ -54,11 +54,7 @@ func (inc Include) BaseName() string {
 
 // PkgPath returns the fully-qualified Go import path for this include.
 func (inc Include) PkgPath() string {
-	if inc.Stdlib {
-		return inc.scope.ThriftImport() + "/" + inc.goPkgPath()
-	}
-
-	return inc.scope.ImportPkgPrefix + inc.goPkgPath()
+	return inc.scope.ImportPath(inc.goPkgPath(), inc.Stdlib)
 }
 
 func (inc Include) goPkgPath() string {
@@ -91,6 +87,11 @@ type Scope struct {
 	// import paths for generated packages, e.g. "github.com/upfluence/".
 	ImportPkgPrefix string
 
+	// ImportRewrites maps an import path prefix to its replacement, e.g.
+	// "github.com/upfluence/identity" to "github.com/upfluence/identity/v2".
+	// It applies to import paths equal to or under the prefix.
+	ImportRewrites map[string]string
+
 	// LocalPkg is the namespace of the program being compiled,
 	LocalPkg string
 
@@ -100,6 +101,36 @@ type Scope struct {
 	// Reserved lists the names DedupIncludes keeps away from includes, besides
 	// the thrift package and the Go predeclared identifiers.
 	Reserved []string
+}
+
+// ImportPath returns the fully-qualified Go import path of the generated
+// package at pkgPath, prefixed by ImportPkgPrefix, or by the thrift runtime
+// import for stdlib packages, then rewritten by the longest matching
+// ImportRewrites prefix.
+func (gs Scope) ImportPath(pkgPath string, stdlib bool) string {
+	p := gs.ImportPkgPrefix + pkgPath
+
+	if stdlib {
+		p = gs.ThriftImport() + "/" + pkgPath
+	}
+
+	var from string
+
+	for prefix := range gs.ImportRewrites {
+		if len(prefix) <= len(from) {
+			continue
+		}
+
+		if p == prefix || strings.HasPrefix(p, prefix+"/") {
+			from = prefix
+		}
+	}
+
+	if from == "" {
+		return p
+	}
+
+	return gs.ImportRewrites[from] + strings.TrimPrefix(p, from)
 }
 
 // ThriftPkg returns the local package identifier for the thrift runtime import.

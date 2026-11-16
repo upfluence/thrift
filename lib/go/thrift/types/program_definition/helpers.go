@@ -53,11 +53,7 @@ func goParseValue(p *ProgramDefinition, fn func(key string) string) string {
 // GoImportPath returns the fully-qualified Go import path for a program,
 // using gs to determine the correct prefix.
 func GoImportPath(p *ProgramDefinition, gs gocodegen.Scope) string {
-	if p.Stdlib {
-		return gs.ThriftImport() + "/" + GoPackagePath(p)
-	}
-
-	return gs.ImportPkgPrefix + GoPackagePath(p)
+	return gs.ImportPath(GoPackagePath(p), p.Stdlib)
 }
 
 // GoZeroValue returns the Go zero value expression for a TypeDefinition.
