@@ -90,6 +90,8 @@ public:
         gen_package_prefix_ = (iter->second);
       } else if( iter->first.rfind("package_prefix:", 0) == 0) {
         gen_package_prefix_rules_.add_path(iter->first.substr(strlen("package_prefix:")), iter->second);
+      } else if( iter->first.rfind("import_rewrite:", 0) == 0) {
+        gen_import_rewrites_.add(iter->first.substr(strlen("import_rewrite:")), iter->second);
       } else if( iter->first.compare("thrift_import") == 0) {
         gen_thrift_import_ = (iter->second);
       } else if( iter->first.compare("package") == 0) {
@@ -307,6 +309,8 @@ private:
 
     return gen_package_prefix_rules_.lookup(p->get_path(), gen_package_prefix_);
   }
+
+  t_path_rules gen_import_rewrites_;
 
   std::string gen_thrift_import_;
   bool read_write_private_;
@@ -875,7 +879,7 @@ string t_go_generator::render_program_import(const t_program* program, string& u
     go_path = go_path.substr(1);
   }
 
-  string import_path = package_prefix_for(program) + go_path;
+  string import_path = gen_import_rewrites_.rewrite(package_prefix_for(program) + go_path);
 
   result += "\"" + import_path + "\"\n";
   unused_protection += "var _ = " + package_identifier + ".GoUnusedProtection__\n";
@@ -3749,6 +3753,10 @@ bool format_go_output(const string& file_path) {
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=          Package prefix for generated files.\n" \
                           "    package_prefix:<path>=   Package prefix override for includes under <path>, longest <path> wins.\n" \
+                          "    import_rewrite:<from>=<to>\n" \
+                          "                     Rewrite import paths equal to or under <from> by replacing\n" \
+                          "                     the <from> prefix with <to> (e.g. to add a /v2 module suffix).\n" \
+                          "                     Applied after package_prefix; the longest matching <from> wins.\n" \
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"
