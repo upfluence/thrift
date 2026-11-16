@@ -41,6 +41,7 @@
 #include "thrift/platform.h"
 #include "thrift/version.h"
 #include "thrift/generate/t_generator.h"
+#include "thrift/generate/t_path_rules.h"
 
 using std::map;
 using std::ostream;
@@ -88,10 +89,7 @@ public:
       if( iter->first.compare("package_prefix") == 0) {
         gen_package_prefix_ = (iter->second);
       } else if( iter->first.rfind("package_prefix:", 0) == 0) {
-        std::string raw = iter->first.substr(strlen("package_prefix:"));
-        char rp[THRIFT_PATH_MAX];
-        std::string resolved = (realpath(raw.c_str(), rp) != NULL) ? rp : raw;
-        gen_package_prefix_rules_.push_back({resolved, iter->second});
+        gen_package_prefix_rules_.add_path(iter->first.substr(strlen("package_prefix:")), iter->second);
       } else if( iter->first.compare("thrift_import") == 0) {
         gen_thrift_import_ = (iter->second);
       } else if( iter->first.compare("package") == 0) {
@@ -300,19 +298,14 @@ public:
 private:
   std::string gen_package_prefix_;
 
-  std::vector<std::pair<std::string, std::string>> gen_package_prefix_rules_;
+  t_path_rules gen_package_prefix_rules_;
 
   std::string package_prefix_for(const t_program* p) const {
     if (p->is_std_path()) {
       return gen_thrift_import_ + "/";
     }
 
-    for (const auto& rule : gen_package_prefix_rules_) {
-      if (p->get_path().rfind(rule.first + "/", 0) == 0) {
-        return rule.second;
-      }
-    }
-    return gen_package_prefix_;
+    return gen_package_prefix_rules_.lookup(p->get_path(), gen_package_prefix_);
   }
 
   std::string gen_thrift_import_;
@@ -3755,7 +3748,7 @@ bool format_go_output(const string& file_path) {
 
 THRIFT_REGISTER_GENERATOR(go, "Go",
                           "    package_prefix=          Package prefix for generated files.\n" \
-                          "    package_prefix:<path>=   Package prefix override for includes under <path>.\n" \
+                          "    package_prefix:<path>=   Package prefix override for includes under <path>, longest <path> wins.\n" \
                           "    thrift_import=   Override thrift package import path (default:" + default_thrift_import + ")\n" \
                           "    package=         Package name (default: inferred from thrift file name)\n" \
                           "    ignore_initialisms\n"

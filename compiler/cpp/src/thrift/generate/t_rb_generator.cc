@@ -35,6 +35,7 @@
 #include "thrift/platform.h"
 #include "thrift/version.h"
 #include "thrift/generate/t_oop_generator.h"
+#include "thrift/generate/t_path_rules.h"
 
 using std::map;
 using std::ofstream;
@@ -93,10 +94,7 @@ public:
       } else if (kv.first.compare("namespace_wrapper") == 0) {
         namespace_wrapper_ = kv.second;
       } else if (kv.first.rfind("namespace_wrapper:", 0) == 0) {
-        std::string raw = kv.first.substr(strlen("namespace_wrapper:"));
-        char rp[THRIFT_PATH_MAX];
-        std::string resolved = (realpath(raw.c_str(), rp) != NULL) ? rp : raw;
-        namespace_wrapper_rules_.push_back({resolved, kv.second});
+        namespace_wrapper_rules_.add_path(kv.first.substr(strlen("namespace_wrapper:")), kv.second);
       } else {
         throw "unknown option rb:" + kv.first;
       }
@@ -271,15 +269,10 @@ private:
 
   std::string namespace_wrapper_;
 
-  std::vector<std::pair<std::string, std::string>> namespace_wrapper_rules_;
+  t_path_rules namespace_wrapper_rules_;
 
   std::string namespace_wrapper_for(const t_program* p) const {
-    for (const auto& rule : namespace_wrapper_rules_) {
-      if (p->get_path().rfind(rule.first + "/", 0) == 0) {
-        return rule.second;
-      }
-    }
-    return namespace_wrapper_;
+    return namespace_wrapper_rules_.lookup(p->get_path(), namespace_wrapper_);
   }
 };
 
@@ -1457,4 +1450,4 @@ THRIFT_REGISTER_GENERATOR(
     "    rubygems:                  Add a \"require 'rubygems'\" line to the top of each generated file.\n" \
     "    namespaced:                Generate files in idiomatic namespaced directories.\n" \
     "    namespace_wrapper=         Add a top-level namespace around namespace defined in the idl.\n" \
-    "    namespace_wrapper:<path>=  Namespace wrapper override for includes resolved under <path>.\n")
+    "    namespace_wrapper:<path>=  Namespace wrapper override for includes resolved under <path>, longest <path> wins.\n")

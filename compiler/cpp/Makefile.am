@@ -43,6 +43,7 @@ thrift_SOURCES = src/thrift/audit/t_audit.cpp \
                  src/thrift/generate/t_generator_registry.h \
                  src/thrift/generate/t_html_generator.h \
                  src/thrift/generate/t_oop_generator.h \
+                 src/thrift/generate/t_path_rules.h \
                  src/thrift/globals.h \
                  src/thrift/logging.h \
                  src/thrift/main.cc \
