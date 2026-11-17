@@ -134,8 +134,39 @@ type AnnotatedDefinition struct {
 	StructuredAnnotations []RegistrableStruct
 }
 
+// Requiredness is the requiredness of a struct field.
+type Requiredness int
+
+const (
+	// RequirednessDefault is the requiredness of a field declared without the
+	// required or optional keyword.
+	RequirednessDefault Requiredness = iota
+	RequirednessRequired
+	RequirednessOptional
+)
+
 type FieldDefinition struct {
 	AnnotatedDefinition
+
+	Requiredness Requiredness
+}
+
+type EnumValueDefinition struct {
+	AnnotatedDefinition
+
+	Value int64
+}
+
+type EnumDefinition struct {
+	AnnotatedDefinition
+
+	Namespace string
+
+	Values []EnumValueDefinition
+}
+
+func (ed EnumDefinition) CanonicalName() string {
+	return fmt.Sprintf("%s.%s", ed.Namespace, ed.Name)
 }
 
 type StructDefinition struct {

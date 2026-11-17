@@ -1,3 +1,7 @@
 namespace go: test.plugin
-structs: Bar, Baz, Foo
+structs: Bar, Baz, Foo, Label
 services: Qux
+enum Color:
+  Red = 0
+  Blue = 4 @Label(map[value:dark-blue])
+  Green = 5

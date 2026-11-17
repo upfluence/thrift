@@ -125,6 +125,7 @@ private:
 
   void generate_constant(t_const* con);
   void generate_annotated_fields(t_annotated* tannot);
+  void generate_annotations(t_annotated* tannot);
 
   void write_type_spec_entry(const char* name, t_type* ttype);
   void write_type_spec_object(const char* name, t_type* ttype);
@@ -582,6 +583,7 @@ void t_json_generator::generate_enum(t_enum* tenum) {
     if (val->has_doc()) {
       write_key_and_string("doc", val->get_doc());
     }
+    generate_annotations(val);
     end_object();
     indicate_comma_needed();
   }
@@ -706,6 +708,10 @@ void t_json_generator::generate_annotated_fields(t_annotated* tannot) {
     write_key_and_string("doc", tannot->get_doc());
   }
 
+  generate_annotations(tannot);
+}
+
+void t_json_generator::generate_annotations(t_annotated* tannot) {
   write_key_and("legacy_annotations");
   start_object();
   const map<string, string>& annotations = tannot->legacy_annotations();

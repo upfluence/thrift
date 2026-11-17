@@ -170,6 +170,8 @@ EXTRA_DIST = \
 	ReuseObjects.thrift \
 	SmallTest.thrift \
 	StressTest.thrift \
+	TextTest.thrift \
+	TextTestCases.json \
 	ThriftTest.thrift \
 	TypedefTest.thrift \
 	UnsafeTypes.thrift \

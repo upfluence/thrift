@@ -19,9 +19,10 @@
 
 THRIFTARGS = -out gen --gen go:package_prefix=github.com/upfluence/thrift/lib/go/test/gen/$(COMPILER_EXTRAFLAG)
 THRIFTTEST = $(top_srcdir)/test/ThriftTest.thrift
+TEXTTEST = $(top_srcdir)/test/TextTest.thrift
 
 # Thrift for GO has problems with complex map keys: THRIFT-2063
-gopath.stamp: $(THRIFT) $(THRIFTTEST) \
+gopath.stamp: $(THRIFT) $(THRIFTTEST) $(TEXTTEST) \
 			IncludesTest.thrift \
 			NamespacedTest.thrift \
 			MultiplexedProtocolTest.thrift \
@@ -70,6 +71,7 @@ gopath.stamp: $(THRIFT) $(THRIFTTEST) \
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceTestD.thrift
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceTestSuperThing.thrift
 	$(THRIFT) $(THRIFTARGS) ConflictNamespaceServiceTest.thrift
+	THRIFT_TYPES_PATH=$(abs_top_srcdir) $(THRIFT) $(THRIFTARGS) $(TEXTTEST)
 	cp -r dontexportrwtest gen/
 	test -f $(top_srcdir)/go.mod || printf 'module github.com/upfluence/thrift\n\ngo $(golang_version)\n' > $(top_srcdir)/go.mod
 	$(GO) mod tidy
