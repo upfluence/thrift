@@ -92,6 +92,7 @@ module Thrift
           ].freeze
 
           THRIFT_FIELD_INDEX_VALUE = 1
+          THRIFT_FIELD_INDEX_ACCEPTED = 2
 
           THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS = {
           }.freeze
@@ -99,8 +100,15 @@ module Thrift
           THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS = [
           ].freeze
 
+          THRIFT_FIELD_ACCEPTED_LEGACY_ANNOTATIONS = {
+          }.freeze
+
+          THRIFT_FIELD_ACCEPTED_STRUCTURED_ANNOTATIONS = [
+          ].freeze
+
           FIELDS = {
-            THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRING, name: 'value', legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS}
+            THRIFT_FIELD_INDEX_VALUE => {type: ::Thrift::Types::STRING, name: 'value', legacy_annotations: THRIFT_FIELD_VALUE_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_VALUE_STRUCTURED_ANNOTATIONS},
+            THRIFT_FIELD_INDEX_ACCEPTED => {type: ::Thrift::Types::LIST, name: 'accepted', element: {type: ::Thrift::Types::STRING}, optional: true, legacy_annotations: THRIFT_FIELD_ACCEPTED_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ACCEPTED_STRUCTURED_ANNOTATIONS}
           }.freeze
 
           def struct_fields; FIELDS; end
@@ -128,7 +136,6 @@ module Thrift
           THRIFT_FIELD_INDEX_FORMAT = 1
           THRIFT_FIELD_INDEX_TRIM_PREFIXES = 2
           THRIFT_FIELD_INDEX_TRIM_SUFFIXES = 3
-          THRIFT_FIELD_INDEX_ACCEPT_THRIFT_NAMES = 4
 
           THRIFT_FIELD_FORMAT_LEGACY_ANNOTATIONS = {
           }.freeze
@@ -148,17 +155,10 @@ module Thrift
           THRIFT_FIELD_TRIM_SUFFIXES_STRUCTURED_ANNOTATIONS = [
           ].freeze
 
-          THRIFT_FIELD_ACCEPT_THRIFT_NAMES_LEGACY_ANNOTATIONS = {
-          }.freeze
-
-          THRIFT_FIELD_ACCEPT_THRIFT_NAMES_STRUCTURED_ANNOTATIONS = [
-          ].freeze
-
           FIELDS = {
             THRIFT_FIELD_INDEX_FORMAT => {type: ::Thrift::Types::I32, name: 'format', default:             0, optional: true, enum_class: ::Thrift::Types::Annotation::Text::Case, legacy_annotations: THRIFT_FIELD_FORMAT_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_FORMAT_STRUCTURED_ANNOTATIONS},
             THRIFT_FIELD_INDEX_TRIM_PREFIXES => {type: ::Thrift::Types::LIST, name: 'trim_prefixes', element: {type: ::Thrift::Types::STRING}, optional: true, legacy_annotations: THRIFT_FIELD_TRIM_PREFIXES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TRIM_PREFIXES_STRUCTURED_ANNOTATIONS},
-            THRIFT_FIELD_INDEX_TRIM_SUFFIXES => {type: ::Thrift::Types::LIST, name: 'trim_suffixes', element: {type: ::Thrift::Types::STRING}, optional: true, legacy_annotations: THRIFT_FIELD_TRIM_SUFFIXES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TRIM_SUFFIXES_STRUCTURED_ANNOTATIONS},
-            THRIFT_FIELD_INDEX_ACCEPT_THRIFT_NAMES => {type: ::Thrift::Types::BOOL, name: 'accept_thrift_names', optional: true, legacy_annotations: THRIFT_FIELD_ACCEPT_THRIFT_NAMES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_ACCEPT_THRIFT_NAMES_STRUCTURED_ANNOTATIONS}
+            THRIFT_FIELD_INDEX_TRIM_SUFFIXES => {type: ::Thrift::Types::LIST, name: 'trim_suffixes', element: {type: ::Thrift::Types::STRING}, optional: true, legacy_annotations: THRIFT_FIELD_TRIM_SUFFIXES_LEGACY_ANNOTATIONS, structured_annotations: THRIFT_FIELD_TRIM_SUFFIXES_STRUCTURED_ANNOTATIONS}
           }.freeze
 
           def struct_fields; FIELDS; end

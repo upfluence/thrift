@@ -99,33 +99,31 @@
     {
       "id": "type",
       "name": "Type",
-      "format": {"accept_thrift_names": true},
       "values": [
-        {"name": "Company", "value": 0},
-        {"name": "Team", "value": 1},
+        {"name": "Company", "value": 0, "text": "company", "accepted": ["Type_Company"]},
+        {"name": "Team", "value": 1, "text": "team", "accepted": ["Team", "Type_Team"]},
         {"name": "PaypalAPI", "value": 2},
-        {"name": "GoogleOAuth", "value": 3, "text": "gmail"}
+        {"name": "GoogleOAuth", "value": 3, "text": "gmail", "accepted": ["google"]}
       ],
       "want": [
-        {"value": 0, "texts": ["company", "Company", "Type_Company"]},
+        {"value": 0, "texts": ["company", "Type_Company"]},
         {"value": 1, "texts": ["team", "Team", "Type_Team"]},
-        {"value": 2, "texts": ["paypal_api", "PaypalAPI", "Type_PaypalAPI"]},
-        {"value": 3, "texts": ["gmail", "GoogleOAuth", "Type_GoogleOAuth"]}
+        {"value": 2, "texts": ["paypal_api"]},
+        {"value": 3, "texts": ["gmail", "google"]}
       ]
     },
     {
       "id": "environment",
       "name": "Environment",
-      "format": {"accept_thrift_names": true},
       "values": [
         {"name": "Staging", "value": 0},
-        {"name": "Production", "value": 1},
+        {"name": "Production", "value": 1, "text": "production", "accepted": ["Environment_Production"]},
         {"name": "QA", "value": 2}
       ],
       "want": [
-        {"value": 0, "texts": ["staging", "Staging", "Environment_Staging"]},
-        {"value": 1, "texts": ["production", "Production", "Environment_Production"]},
-        {"value": 2, "texts": ["qa", "QA", "Environment_QA"]}
+        {"value": 0, "texts": ["staging"]},
+        {"value": 1, "texts": ["production", "Environment_Production"]},
+        {"value": 2, "texts": ["qa"]}
       ]
     },
     {
@@ -177,9 +175,9 @@
     {
       "id": "identity",
       "name": "Type",
-      "format": {"format": "Identity", "accept_thrift_names": true},
+      "format": {"format": "Identity"},
       "values": [{"name": "Company", "value": 0}],
-      "want": [{"value": 0, "texts": ["Company", "Type_Company"]}]
+      "want": [{"value": 0, "texts": ["Company"]}]
     },
     {
       "id": "screaming",
@@ -201,13 +199,33 @@
       ]
     },
     {
-      "id": "name_shadowing_thrift_name",
+      "id": "accepted_matching_own_text",
       "name": "Type",
-      "format": {"accept_thrift_names": true},
+      "values": [{"name": "Company", "value": 0, "text": "company", "accepted": ["company", "Company", "Company"]}],
+      "want": [{"value": 0, "texts": ["company", "Company"]}]
+    },
+    {
+      "id": "accepted_shadowing_text",
+      "name": "Type",
       "values": [
-        {"name": "Company", "value": 0, "text": "Team"},
+        {"name": "Company", "value": 0, "text": "company", "accepted": ["team"]},
         {"name": "Team", "value": 1}
       ],
+      "error": true
+    },
+    {
+      "id": "duplicate_accepted",
+      "name": "Type",
+      "values": [
+        {"name": "Company", "value": 0, "text": "company", "accepted": ["x"]},
+        {"name": "Team", "value": 1, "text": "team", "accepted": ["x"]}
+      ],
+      "error": true
+    },
+    {
+      "id": "empty_accepted",
+      "name": "Type",
+      "values": [{"name": "Company", "value": 0, "text": "company", "accepted": [""]}],
       "error": true
     },
     {

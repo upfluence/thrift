@@ -87,70 +87,74 @@ func compileEnum(def thrift.EnumDefinition) (*EnumCodec, error) {
 			)
 		}
 
-		text, err := valueText(v, format, caser)
+		texts, err := valueTexts(v, format, caser)
 
 		if err != nil {
 			return nil, err
 		}
 
-		if other, ok := owners[text]; ok {
-			return nil, invalidDefinition(
-				"values %s and %s share the text %q",
-				other,
-				v.Name,
-				text,
-			)
+		for _, text := range texts {
+			if other, ok := owners[text]; ok {
+				return nil, invalidDefinition(
+					"values %s and %s share the text %q",
+					other,
+					v.Name,
+					text,
+				)
+			}
+
+			owners[text] = v.Name
+			codec.fromTexts[text] = v.Value
 		}
 
-		owners[text] = v.Name
-		codec.texts[v.Value] = text
+		codec.texts[v.Value] = texts[0]
 		codec.values = append(
 			codec.values,
-			enumValue{name: v.Name, value: v.Value, texts: []string{text}},
+			enumValue{name: v.Name, value: v.Value, texts: texts},
 		)
-	}
-
-	for i, v := range codec.values {
-		if format.GetAcceptThriftNames() {
-			for _, alias := range []string{v.name, def.Name + "_" + v.name} {
-				if other, ok := owners[alias]; ok && other != v.name {
-					return nil, invalidDefinition(
-						"the text %q of value %s is the name of value %s",
-						alias,
-						other,
-						v.name,
-					)
-				}
-
-				if !slices.Contains(v.texts, alias) {
-					codec.values[i].texts = append(codec.values[i].texts, alias)
-				}
-			}
-		}
-
-		for _, t := range codec.values[i].texts {
-			codec.fromTexts[t] = v.value
-		}
 	}
 
 	return &codec, nil
 }
 
-func valueText(v thrift.EnumValueDefinition, format *EnumFormat, caser wordcase.Caser) (string, error) {
+// valueTexts returns the text forms of the value v, the canonical one first.
+func valueTexts(v thrift.EnumValueDefinition, format *EnumFormat, caser wordcase.Caser) ([]string, error) {
 	name, err := findAnnotation[*Name](v.AnnotatedDefinition)
 
 	if err != nil {
-		return "", errors.Wrapf(err, "value %s", v.Name)
+		return nil, errors.Wrapf(err, "value %s", v.Name)
 	}
 
-	if name != nil {
-		if name.Value == "" {
-			return "", invalidDefinition("value %s has an empty text", v.Name)
+	if name == nil {
+		text, err := derivedText(v, format, caser)
+
+		if err != nil {
+			return nil, err
 		}
 
-		return name.Value, nil
+		return []string{text}, nil
 	}
 
+	if name.Value == "" {
+		return nil, invalidDefinition("value %s has an empty text", v.Name)
+	}
+
+	texts := []string{name.Value}
+
+	for _, a := range name.Accepted {
+		if a == "" {
+			return nil, invalidDefinition("value %s has an empty accepted text", v.Name)
+		}
+
+		if !slices.Contains(texts, a) {
+			texts = append(texts, a)
+		}
+	}
+
+	return texts, nil
+}
+
+func derivedText(v thrift.EnumValueDefinition, format *EnumFormat, caser wordcase.Caser) (string, error) {
 	trimmed := v.Name
 
 	for _, p := range format.TrimPrefixes {

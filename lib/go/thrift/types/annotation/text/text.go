@@ -286,8 +286,10 @@ func (p *Format) String() string {
 
 // Attributes:
 //   - Value
+//   - Accepted
 type Name struct {
-	Value string `thrift:"value,1,required" db:"value" json:"value"`
+	Value    string   `thrift:"value,1,required" db:"value" json:"value"`
+	Accepted []string `thrift:"accepted,2" db:"accepted" json:"accepted,omitempty"`
 }
 
 func NewName() *Name {
@@ -310,6 +312,15 @@ var nameStructDefinition = thrift.StructDefinition{
 			},
 			Requiredness: thrift.RequirednessRequired,
 		},
+
+		{
+			AnnotatedDefinition: thrift.AnnotatedDefinition{
+				Name:                  "accepted",
+				LegacyAnnotations:     map[string]string{},
+				StructuredAnnotations: []thrift.RegistrableStruct{},
+			},
+			Requiredness: thrift.RequirednessOptional,
+		},
 	},
 }
 
@@ -324,6 +335,20 @@ func (p *Name) GetValue() string {
 func (p *Name) SetValue(v string) {
 	p.Value = v
 }
+
+var Name_Accepted_DEFAULT []string
+
+func (p *Name) GetAccepted() []string {
+	return p.Accepted
+}
+
+func (p *Name) SetAccepted(v []string) {
+	p.Accepted = v
+}
+func (p *Name) IsSetAccepted() bool {
+	return p.Accepted != nil
+}
+
 func (p *Name) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -346,6 +371,16 @@ func (p *Name) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 				issetValue = true
+			} else {
+				if err := iprot.Skip(fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 2:
+			if fieldTypeId == thrift.LIST {
+				if err := p.ReadField2(iprot); err != nil {
+					return err
+				}
 			} else {
 				if err := iprot.Skip(fieldTypeId); err != nil {
 					return err
@@ -378,12 +413,37 @@ func (p *Name) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *Name) ReadField2(iprot thrift.TProtocol) error {
+	_, size, err := iprot.ReadListBegin()
+	if err != nil {
+		return thrift.PrependError("error reading list begin: ", err)
+	}
+	tSlice := make([]string, 0, size)
+	p.Accepted = tSlice
+	for i := 0; i < size; i++ {
+		var _elem0 string
+		if v, err := iprot.ReadString(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_elem0 = v
+		}
+		p.Accepted = append(p.Accepted, _elem0)
+	}
+	if err := iprot.ReadListEnd(); err != nil {
+		return thrift.PrependError("error reading list end: ", err)
+	}
+	return nil
+}
+
 func (p *Name) Write(oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin("Name"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if p != nil {
 		if err := p.writeField1(oprot); err != nil {
+			return err
+		}
+		if err := p.writeField2(oprot); err != nil {
 			return err
 		}
 	}
@@ -409,13 +469,37 @@ func (p *Name) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *Name) writeField2(oprot thrift.TProtocol) (err error) {
+	if p.IsSetAccepted() {
+		if err := oprot.WriteFieldBegin("accepted", thrift.LIST, 2); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:accepted: ", p), err)
+		}
+		if err := oprot.WriteListBegin(thrift.STRING, len(p.Accepted)); err != nil {
+			return thrift.PrependError("error writing list begin: ", err)
+		}
+		for _, v := range p.Accepted {
+			if err := oprot.WriteString(string(v)); err != nil {
+				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+			}
+		}
+		if err := oprot.WriteListEnd(); err != nil {
+			return thrift.PrependError("error writing list end: ", err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 2:accepted: ", p), err)
+		}
+	}
+	return err
+}
+
 func (p *Name) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"Name({value: %v})",
+		"Name({value: %v, accepted: %v})",
 		p.GetValue(),
+		p.GetAccepted(),
 	)
 }
 
@@ -423,12 +507,10 @@ func (p *Name) String() string {
 //   - Format
 //   - TrimPrefixes
 //   - TrimSuffixes
-//   - AcceptThriftNames
 type EnumFormat struct {
-	Format            Case     `thrift:"format,1" db:"format" json:"format"`
-	TrimPrefixes      []string `thrift:"trim_prefixes,2" db:"trim_prefixes" json:"trim_prefixes,omitempty"`
-	TrimSuffixes      []string `thrift:"trim_suffixes,3" db:"trim_suffixes" json:"trim_suffixes,omitempty"`
-	AcceptThriftNames *bool    `thrift:"accept_thrift_names,4" db:"accept_thrift_names" json:"accept_thrift_names,omitempty"`
+	Format       Case     `thrift:"format,1" db:"format" json:"format"`
+	TrimPrefixes []string `thrift:"trim_prefixes,2" db:"trim_prefixes" json:"trim_prefixes,omitempty"`
+	TrimSuffixes []string `thrift:"trim_suffixes,3" db:"trim_suffixes" json:"trim_suffixes,omitempty"`
 }
 
 func NewEnumFormat() *EnumFormat {
@@ -471,15 +553,6 @@ var enumFormatStructDefinition = thrift.StructDefinition{
 			},
 			Requiredness: thrift.RequirednessOptional,
 		},
-
-		{
-			AnnotatedDefinition: thrift.AnnotatedDefinition{
-				Name:                  "accept_thrift_names",
-				LegacyAnnotations:     map[string]string{},
-				StructuredAnnotations: []thrift.RegistrableStruct{},
-			},
-			Requiredness: thrift.RequirednessOptional,
-		},
 	},
 }
 
@@ -516,19 +589,6 @@ func (p *EnumFormat) GetTrimSuffixes() []string {
 func (p *EnumFormat) SetTrimSuffixes(v []string) {
 	p.TrimSuffixes = v
 }
-
-var EnumFormat_AcceptThriftNames_DEFAULT bool
-
-func (p *EnumFormat) GetAcceptThriftNames() bool {
-	if !p.IsSetAcceptThriftNames() {
-		return EnumFormat_AcceptThriftNames_DEFAULT
-	}
-	return *p.AcceptThriftNames
-}
-
-func (p *EnumFormat) SetAcceptThriftNames(v bool) {
-	p.AcceptThriftNames = &v
-}
 func (p *EnumFormat) IsSetFormat() bool {
 	return p.Format != EnumFormat_Format_DEFAULT
 }
@@ -539,10 +599,6 @@ func (p *EnumFormat) IsSetTrimPrefixes() bool {
 
 func (p *EnumFormat) IsSetTrimSuffixes() bool {
 	return p.TrimSuffixes != nil
-}
-
-func (p *EnumFormat) IsSetAcceptThriftNames() bool {
-	return p.AcceptThriftNames != nil
 }
 
 func (p *EnumFormat) Read(iprot thrift.TProtocol) error {
@@ -589,16 +645,6 @@ func (p *EnumFormat) Read(iprot thrift.TProtocol) error {
 					return err
 				}
 			}
-		case 4:
-			if fieldTypeId == thrift.BOOL {
-				if err := p.ReadField4(iprot); err != nil {
-					return err
-				}
-			} else {
-				if err := iprot.Skip(fieldTypeId); err != nil {
-					return err
-				}
-			}
 		default:
 			if err := iprot.Skip(fieldTypeId); err != nil {
 				return err
@@ -632,13 +678,13 @@ func (p *EnumFormat) ReadField2(iprot thrift.TProtocol) error {
 	tSlice := make([]string, 0, size)
 	p.TrimPrefixes = tSlice
 	for i := 0; i < size; i++ {
-		var _elem0 string
+		var _elem1 string
 		if v, err := iprot.ReadString(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem0 = v
+			_elem1 = v
 		}
-		p.TrimPrefixes = append(p.TrimPrefixes, _elem0)
+		p.TrimPrefixes = append(p.TrimPrefixes, _elem1)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -654,25 +700,16 @@ func (p *EnumFormat) ReadField3(iprot thrift.TProtocol) error {
 	tSlice := make([]string, 0, size)
 	p.TrimSuffixes = tSlice
 	for i := 0; i < size; i++ {
-		var _elem1 string
+		var _elem2 string
 		if v, err := iprot.ReadString(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem1 = v
+			_elem2 = v
 		}
-		p.TrimSuffixes = append(p.TrimSuffixes, _elem1)
+		p.TrimSuffixes = append(p.TrimSuffixes, _elem2)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *EnumFormat) ReadField4(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBool(); err != nil {
-		return thrift.PrependError("error reading field 4: ", err)
-	} else {
-		p.AcceptThriftNames = &v
 	}
 	return nil
 }
@@ -689,9 +726,6 @@ func (p *EnumFormat) Write(oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField3(oprot); err != nil {
-			return err
-		}
-		if err := p.writeField4(oprot); err != nil {
 			return err
 		}
 	}
@@ -765,30 +799,14 @@ func (p *EnumFormat) writeField3(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *EnumFormat) writeField4(oprot thrift.TProtocol) (err error) {
-	if p.IsSetAcceptThriftNames() {
-		if err := oprot.WriteFieldBegin("accept_thrift_names", thrift.BOOL, 4); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:accept_thrift_names: ", p), err)
-		}
-		if err := oprot.WriteBool(bool(*p.AcceptThriftNames)); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T.accept_thrift_names (4) field write error: ", p), err)
-		}
-		if err := oprot.WriteFieldEnd(); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T write field end error 4:accept_thrift_names: ", p), err)
-		}
-	}
-	return err
-}
-
 func (p *EnumFormat) String() string {
 	if p == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"EnumFormat({format: %v, trim_prefixes: %v, trim_suffixes: %v, accept_thrift_names: %v})",
+		"EnumFormat({format: %v, trim_prefixes: %v, trim_suffixes: %v})",
 		p.GetFormat(),
 		p.GetTrimPrefixes(),
 		p.GetTrimSuffixes(),
-		p.GetAcceptThriftNames(),
 	)
 }

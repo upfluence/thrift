@@ -152,6 +152,11 @@ Name::~Name() noexcept {
 void Name::__set_value(const std::string& val) {
   this->value = val;
 }
+
+void Name::__set_accepted(const std::vector<std::string> & val) {
+  this->accepted = val;
+__isset.accepted = true;
+}
 std::ostream& operator<<(std::ostream& out, const Name& obj)
 {
   obj.printTo(out);
@@ -189,6 +194,26 @@ uint32_t Name::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->accepted.clear();
+            uint32_t _size2;
+            ::apache::thrift::protocol::TType _etype5;
+            xfer += iprot->readListBegin(_etype5, _size2);
+            this->accepted.resize(_size2);
+            uint32_t _i6;
+            for (_i6 = 0; _i6 < _size2; ++_i6)
+            {
+              xfer += iprot->readString(this->accepted[_i6]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.accepted = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -212,6 +237,19 @@ uint32_t Name::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeString(this->value);
   xfer += oprot->writeFieldEnd();
 
+  if (this->__isset.accepted) {
+    xfer += oprot->writeFieldBegin("accepted", ::apache::thrift::protocol::T_LIST, 2);
+    {
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->accepted.size()));
+      std::vector<std::string> ::const_iterator _iter7;
+      for (_iter7 = this->accepted.begin(); _iter7 != this->accepted.end(); ++_iter7)
+      {
+        xfer += oprot->writeString((*_iter7));
+      }
+      xfer += oprot->writeListEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -220,19 +258,26 @@ uint32_t Name::write(::apache::thrift::protocol::TProtocol* oprot) const {
 void swap(Name &a, Name &b) {
   using ::std::swap;
   swap(a.value, b.value);
+  swap(a.accepted, b.accepted);
+  swap(a.__isset, b.__isset);
 }
 
-Name::Name(const Name& other2) {
-  value = other2.value;
+Name::Name(const Name& other8) {
+  value = other8.value;
+  accepted = other8.accepted;
+  __isset = other8.__isset;
 }
-Name& Name::operator=(const Name& other3) {
-  value = other3.value;
+Name& Name::operator=(const Name& other9) {
+  value = other9.value;
+  accepted = other9.accepted;
+  __isset = other9.__isset;
   return *this;
 }
 void Name::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "Name(";
   out << "value=" << to_string(value);
+  out << ", " << "accepted="; (__isset.accepted ? (out << to_string(accepted)) : (out << "<null>"));
   out << ")";
 }
 
@@ -254,11 +299,6 @@ __isset.trim_prefixes = true;
 void EnumFormat::__set_trim_suffixes(const std::vector<std::string> & val) {
   this->trim_suffixes = val;
 __isset.trim_suffixes = true;
-}
-
-void EnumFormat::__set_accept_thrift_names(const bool val) {
-  this->accept_thrift_names = val;
-__isset.accept_thrift_names = true;
 }
 std::ostream& operator<<(std::ostream& out, const EnumFormat& obj)
 {
@@ -290,9 +330,9 @@ uint32_t EnumFormat::read(::apache::thrift::protocol::TProtocol* iprot) {
     {
       case 1:
         if (ftype == ::apache::thrift::protocol::T_I32) {
-          int32_t ecast4;
-          xfer += iprot->readI32(ecast4);
-          this->format = (Case::type)ecast4;
+          int32_t ecast10;
+          xfer += iprot->readI32(ecast10);
+          this->format = (Case::type)ecast10;
           this->__isset.format = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -302,14 +342,14 @@ uint32_t EnumFormat::read(::apache::thrift::protocol::TProtocol* iprot) {
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->trim_prefixes.clear();
-            uint32_t _size5;
-            ::apache::thrift::protocol::TType _etype8;
-            xfer += iprot->readListBegin(_etype8, _size5);
-            this->trim_prefixes.resize(_size5);
-            uint32_t _i9;
-            for (_i9 = 0; _i9 < _size5; ++_i9)
+            uint32_t _size11;
+            ::apache::thrift::protocol::TType _etype14;
+            xfer += iprot->readListBegin(_etype14, _size11);
+            this->trim_prefixes.resize(_size11);
+            uint32_t _i15;
+            for (_i15 = 0; _i15 < _size11; ++_i15)
             {
-              xfer += iprot->readString(this->trim_prefixes[_i9]);
+              xfer += iprot->readString(this->trim_prefixes[_i15]);
             }
             xfer += iprot->readListEnd();
           }
@@ -322,26 +362,18 @@ uint32_t EnumFormat::read(::apache::thrift::protocol::TProtocol* iprot) {
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->trim_suffixes.clear();
-            uint32_t _size10;
-            ::apache::thrift::protocol::TType _etype13;
-            xfer += iprot->readListBegin(_etype13, _size10);
-            this->trim_suffixes.resize(_size10);
-            uint32_t _i14;
-            for (_i14 = 0; _i14 < _size10; ++_i14)
+            uint32_t _size16;
+            ::apache::thrift::protocol::TType _etype19;
+            xfer += iprot->readListBegin(_etype19, _size16);
+            this->trim_suffixes.resize(_size16);
+            uint32_t _i20;
+            for (_i20 = 0; _i20 < _size16; ++_i20)
             {
-              xfer += iprot->readString(this->trim_suffixes[_i14]);
+              xfer += iprot->readString(this->trim_suffixes[_i20]);
             }
             xfer += iprot->readListEnd();
           }
           this->__isset.trim_suffixes = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 4:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->accept_thrift_names);
-          this->__isset.accept_thrift_names = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -372,10 +404,10 @@ uint32_t EnumFormat::write(::apache::thrift::protocol::TProtocol* oprot) const {
     xfer += oprot->writeFieldBegin("trim_prefixes", ::apache::thrift::protocol::T_LIST, 2);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->trim_prefixes.size()));
-      std::vector<std::string> ::const_iterator _iter15;
-      for (_iter15 = this->trim_prefixes.begin(); _iter15 != this->trim_prefixes.end(); ++_iter15)
+      std::vector<std::string> ::const_iterator _iter21;
+      for (_iter21 = this->trim_prefixes.begin(); _iter21 != this->trim_prefixes.end(); ++_iter21)
       {
-        xfer += oprot->writeString((*_iter15));
+        xfer += oprot->writeString((*_iter21));
       }
       xfer += oprot->writeListEnd();
     }
@@ -385,18 +417,13 @@ uint32_t EnumFormat::write(::apache::thrift::protocol::TProtocol* oprot) const {
     xfer += oprot->writeFieldBegin("trim_suffixes", ::apache::thrift::protocol::T_LIST, 3);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->trim_suffixes.size()));
-      std::vector<std::string> ::const_iterator _iter16;
-      for (_iter16 = this->trim_suffixes.begin(); _iter16 != this->trim_suffixes.end(); ++_iter16)
+      std::vector<std::string> ::const_iterator _iter22;
+      for (_iter22 = this->trim_suffixes.begin(); _iter22 != this->trim_suffixes.end(); ++_iter22)
       {
-        xfer += oprot->writeString((*_iter16));
+        xfer += oprot->writeString((*_iter22));
       }
       xfer += oprot->writeListEnd();
     }
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.accept_thrift_names) {
-    xfer += oprot->writeFieldBegin("accept_thrift_names", ::apache::thrift::protocol::T_BOOL, 4);
-    xfer += oprot->writeBool(this->accept_thrift_names);
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldStop();
@@ -409,23 +436,20 @@ void swap(EnumFormat &a, EnumFormat &b) {
   swap(a.format, b.format);
   swap(a.trim_prefixes, b.trim_prefixes);
   swap(a.trim_suffixes, b.trim_suffixes);
-  swap(a.accept_thrift_names, b.accept_thrift_names);
   swap(a.__isset, b.__isset);
 }
 
-EnumFormat::EnumFormat(const EnumFormat& other17) {
-  format = other17.format;
-  trim_prefixes = other17.trim_prefixes;
-  trim_suffixes = other17.trim_suffixes;
-  accept_thrift_names = other17.accept_thrift_names;
-  __isset = other17.__isset;
+EnumFormat::EnumFormat(const EnumFormat& other23) {
+  format = other23.format;
+  trim_prefixes = other23.trim_prefixes;
+  trim_suffixes = other23.trim_suffixes;
+  __isset = other23.__isset;
 }
-EnumFormat& EnumFormat::operator=(const EnumFormat& other18) {
-  format = other18.format;
-  trim_prefixes = other18.trim_prefixes;
-  trim_suffixes = other18.trim_suffixes;
-  accept_thrift_names = other18.accept_thrift_names;
-  __isset = other18.__isset;
+EnumFormat& EnumFormat::operator=(const EnumFormat& other24) {
+  format = other24.format;
+  trim_prefixes = other24.trim_prefixes;
+  trim_suffixes = other24.trim_suffixes;
+  __isset = other24.__isset;
   return *this;
 }
 void EnumFormat::printTo(std::ostream& out) const {
@@ -434,7 +458,6 @@ void EnumFormat::printTo(std::ostream& out) const {
   out << "format="; (__isset.format ? (out << to_string(format)) : (out << "<null>"));
   out << ", " << "trim_prefixes="; (__isset.trim_prefixes ? (out << to_string(trim_prefixes)) : (out << "<null>"));
   out << ", " << "trim_suffixes="; (__isset.trim_suffixes ? (out << to_string(trim_suffixes)) : (out << "<null>"));
-  out << ", " << "accept_thrift_names="; (__isset.accept_thrift_names ? (out << to_string(accept_thrift_names)) : (out << "<null>"));
   out << ")";
 }
 

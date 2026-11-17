@@ -40,9 +40,8 @@ func TestRuntime(t *testing.T) {
 						text.Namespace,
 						"EnumFormat",
 						map[string]*value.Value{
-							"format":              value.EncodeIntegerValue(int64(text.Case_KebabCase)),
-							"trim_prefixes":       {ListValue: &value.ListValue{Values: []*value.Value{value.EncodeStringValue("Media")}}},
-							"accept_thrift_names": value.EncodeIntegerValue(1),
+							"format":        value.EncodeIntegerValue(int64(text.Case_KebabCase)),
+							"trim_prefixes": {ListValue: &value.ListValue{Values: []*value.Value{value.EncodeStringValue("Media")}}},
 						},
 					),
 					structuredAnnotation("unknown.namespace", "Foo", nil),
@@ -53,9 +52,8 @@ func TestRuntime(t *testing.T) {
 				LegacyAnnotations: map[string]string{"go.tag": "x"},
 				StructuredAnnotations: []thrift.RegistrableStruct{
 					&text.EnumFormat{
-						Format:            text.Case_KebabCase,
-						TrimPrefixes:      []string{"Media"},
-						AcceptThriftNames: thrift.BoolPtr(true),
+						Format:       text.Case_KebabCase,
+						TrimPrefixes: []string{"Media"},
 					},
 				},
 			},

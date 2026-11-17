@@ -50,15 +50,15 @@ type enumCase struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Format *struct {
-		Format            json.RawMessage `json:"format"`
-		TrimPrefixes      []string        `json:"trim_prefixes"`
-		TrimSuffixes      []string        `json:"trim_suffixes"`
-		AcceptThriftNames bool            `json:"accept_thrift_names"`
+		Format       json.RawMessage `json:"format"`
+		TrimPrefixes []string        `json:"trim_prefixes"`
+		TrimSuffixes []string        `json:"trim_suffixes"`
 	} `json:"format"`
 	Values []struct {
-		Name  string  `json:"name"`
-		Value int64   `json:"value"`
-		Text  *string `json:"text"`
+		Name     string   `json:"name"`
+		Value    int64    `json:"value"`
+		Text     *string  `json:"text"`
+		Accepted []string `json:"accepted"`
 	} `json:"values"`
 	Want []struct {
 		Value int64    `json:"value"`
@@ -189,11 +189,7 @@ func (ec enumCase) definition(t *testing.T) thrift.EnumDefinition {
 	}
 
 	if f := ec.Format; f != nil {
-		ef := EnumFormat{
-			TrimPrefixes:      f.TrimPrefixes,
-			TrimSuffixes:      f.TrimSuffixes,
-			AcceptThriftNames: thrift.BoolPtr(f.AcceptThriftNames),
-		}
+		ef := EnumFormat{TrimPrefixes: f.TrimPrefixes, TrimSuffixes: f.TrimSuffixes}
 
 		if len(f.Format) > 0 {
 			var name string
@@ -218,7 +214,7 @@ func (ec enumCase) definition(t *testing.T) thrift.EnumDefinition {
 		}
 
 		if v.Text != nil {
-			vd.StructuredAnnotations = []thrift.RegistrableStruct{&Name{Value: *v.Text}}
+			vd.StructuredAnnotations = []thrift.RegistrableStruct{&Name{Value: *v.Text, Accepted: v.Accepted}}
 		}
 
 		def.Values = append(def.Values, vd)

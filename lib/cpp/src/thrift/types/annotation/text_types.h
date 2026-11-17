@@ -81,6 +81,10 @@ void swap(Format &a, Format &b);
 
 std::ostream& operator<<(std::ostream& out, const Format& obj);
 
+typedef struct _Name__isset {
+  _Name__isset() : accepted(false) {}
+  bool accepted :1;
+} _Name__isset;
 
 class Name : public virtual ::apache::thrift::TBase {
  public:
@@ -92,12 +96,21 @@ class Name : public virtual ::apache::thrift::TBase {
 
   virtual ~Name() noexcept;
   std::string value;
+  std::vector<std::string>  accepted;
+
+  _Name__isset __isset;
 
   void __set_value(const std::string& val);
+
+  void __set_accepted(const std::vector<std::string> & val);
 
   bool operator == (const Name & rhs) const
   {
     if (!(value == rhs.value))
+      return false;
+    if (__isset.accepted != rhs.__isset.accepted)
+      return false;
+    else if (__isset.accepted && !(accepted == rhs.accepted))
       return false;
     return true;
   }
@@ -118,11 +131,10 @@ void swap(Name &a, Name &b);
 std::ostream& operator<<(std::ostream& out, const Name& obj);
 
 typedef struct _EnumFormat__isset {
-  _EnumFormat__isset() : format(true), trim_prefixes(false), trim_suffixes(false), accept_thrift_names(false) {}
+  _EnumFormat__isset() : format(true), trim_prefixes(false), trim_suffixes(false) {}
   bool format :1;
   bool trim_prefixes :1;
   bool trim_suffixes :1;
-  bool accept_thrift_names :1;
 } _EnumFormat__isset;
 
 class EnumFormat : public virtual ::apache::thrift::TBase {
@@ -130,7 +142,7 @@ class EnumFormat : public virtual ::apache::thrift::TBase {
 
   EnumFormat(const EnumFormat&);
   EnumFormat& operator=(const EnumFormat&);
-  EnumFormat() : format((Case::type)0), accept_thrift_names(0) {
+  EnumFormat() : format((Case::type)0) {
     format = (Case::type)0;
 
   }
@@ -139,7 +151,6 @@ class EnumFormat : public virtual ::apache::thrift::TBase {
   Case::type format;
   std::vector<std::string>  trim_prefixes;
   std::vector<std::string>  trim_suffixes;
-  bool accept_thrift_names;
 
   _EnumFormat__isset __isset;
 
@@ -148,8 +159,6 @@ class EnumFormat : public virtual ::apache::thrift::TBase {
   void __set_trim_prefixes(const std::vector<std::string> & val);
 
   void __set_trim_suffixes(const std::vector<std::string> & val);
-
-  void __set_accept_thrift_names(const bool val);
 
   bool operator == (const EnumFormat & rhs) const
   {
@@ -164,10 +173,6 @@ class EnumFormat : public virtual ::apache::thrift::TBase {
     if (__isset.trim_suffixes != rhs.__isset.trim_suffixes)
       return false;
     else if (__isset.trim_suffixes && !(trim_suffixes == rhs.trim_suffixes))
-      return false;
-    if (__isset.accept_thrift_names != rhs.__isset.accept_thrift_names)
-      return false;
-    else if (__isset.accept_thrift_names && !(accept_thrift_names == rhs.accept_thrift_names))
       return false;
     return true;
   }

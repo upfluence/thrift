@@ -29,10 +29,15 @@ struct Format {
 // Name overrides the text form of an enum value. By default, the text form
 // of a value is derived from its name, see EnumFormat.
 //
+// Only the text form of a value is encoded, but the strings of accepted are
+// decoded as the value as well, e.g. to read data written before the enum
+// was annotated or the value renamed.
+//
 // Placement:
 //   - On an enum value only.
 struct Name {
-  1: required string value;
+  1: required string       value;
+  2: optional list<string> accepted;
 }
 
 // Case is the convention used to derive the text form of an enum value from
@@ -63,16 +68,10 @@ enum Case {
 // name are trimmed, in list order, then the case is applied. Without
 // EnumFormat, the text form of a value is the snake case of its name.
 //
-// Only the text form of a value is decoded, unless accept_thrift_names is
-// set: the thrift names of the value ("Company" and "Type_Company" for the
-// Company value of the Type enum) are decoded as well, e.g. to read data
-// written before the enum was annotated.
-//
 // Placement:
 //   - On an enum only.
 struct EnumFormat {
   1: optional Case         format = Case.SnakeCase;
   2: optional list<string> trim_prefixes;
   3: optional list<string> trim_suffixes;
-  4: optional bool         accept_thrift_names;
 }

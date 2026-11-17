@@ -5,9 +5,10 @@ include "types/annotation/text.thrift"
 
 namespace * texttest
 
-@text.EnumFormat{"accept_thrift_names": true}
 enum Type {
+  @text.Name{"value": "company", "accepted": ["Company", "Type_Company"]}
   Company     = 0,
+  @text.Name{"value": "team", "accepted": ["Team", "Type_Team"]}
   Team        = 1,
   PaypalAPI   = 2,
   @text.Name{"value": "gmail"}

@@ -62,19 +62,13 @@ module Thrift
             owners = {}
 
             values.each do |v|
-              add_value(v, value_text(v, format, caser), owners)
-            end
-
-            @values.each do |v|
-              add_thrift_names(v, owners) if format.accept_thrift_names
-
-              v.texts.each { |t| @from_texts[t] = v.value }
+              add_value(v, value_texts(v, format, caser), owners)
             end
 
             @values.freeze
           end
 
-          def add_value(definition, text, owners)
+          def add_value(definition, texts, owners)
             if @texts.key?(definition[:value])
               other = owners[@texts[definition[:value]]]
 
@@ -82,40 +76,40 @@ module Thrift
                     "values #{other} and #{definition[:name]} share the id #{definition[:value]}"
             end
 
+            texts.each { |text| add_text(definition, text, owners) }
+
+            @texts[definition[:value]] = texts.first
+            @values << Value.new(definition[:name], definition[:value], texts)
+          end
+
+          def add_text(definition, text, owners)
             if owners.key?(text)
               raise InvalidDefinitionError,
                     "values #{owners[text]} and #{definition[:name]} share the text #{text.inspect}"
             end
 
             owners[text] = definition[:name]
-            @texts[definition[:value]] = text
-            @values << Value.new(definition[:name], definition[:value], [text])
+            @from_texts[text] = definition[:value]
           end
 
-          def add_thrift_names(value, owners)
-            [value.name, "#{name}_#{value.name}"].each do |alias_text|
-              other = owners[alias_text]
-
-              if other && other != value.name
-                raise InvalidDefinitionError,
-                      "the text #{alias_text.inspect} of value #{other} is the name of value #{value.name}"
-              end
-
-              value.texts << alias_text unless value.texts.include?(alias_text)
-            end
-          end
-
-          def value_text(definition, format, caser)
+          # Returns the text forms of the value, the canonical one first.
+          def value_texts(definition, format, caser)
             text_name = Text.find_annotation(definition[:structured_annotations], Name)
 
-            unless text_name.nil?
-              if text_name.value.to_s.empty?
-                raise InvalidDefinitionError, "value #{definition[:name]} has an empty text"
+            return [derived_text(definition, format, caser)] if text_name.nil?
+
+            raise InvalidDefinitionError, "value #{definition[:name]} has an empty text" if text_name.value.to_s.empty?
+
+            (text_name.accepted || []).each_with_object([text_name.value]) do |accepted, texts|
+              if accepted.to_s.empty?
+                raise InvalidDefinitionError, "value #{definition[:name]} has an empty accepted text"
               end
 
-              return text_name.value
+              texts << accepted unless texts.include?(accepted)
             end
+          end
 
+          def derived_text(definition, format, caser)
             trimmed = trim(definition[:name], format)
 
             raise InvalidDefinitionError, "value #{definition[:name]} is empty once trimmed" if trimmed.empty?

@@ -17,10 +17,9 @@ describe Thrift::Types::Annotation::Text do
 
       annotations << text::EnumFormat.new(
         {
-          'format'              => kase,
-          'trim_prefixes'       => format['trim_prefixes'],
-          'trim_suffixes'       => format['trim_suffixes'],
-          'accept_thrift_names' => format['accept_thrift_names']
+          'format'        => kase,
+          'trim_prefixes' => format['trim_prefixes'],
+          'trim_suffixes' => format['trim_suffixes']
         }.compact
       )
     end
@@ -29,13 +28,15 @@ describe Thrift::Types::Annotation::Text do
       name:                   enum_case['name'],
       structured_annotations: annotations,
       values:                 enum_case['values'].map do |v|
-        {
-          name:                   v['name'],
-          value:                  v['value'],
-          structured_annotations: v.key?('text') ? [text::Name.new(value: v['text'])] : []
-        }
+        { name: v['name'], value: v['value'], structured_annotations: value_annotations(text, v) }
       end
     )
+  end
+
+  def value_annotations(text, value)
+    return [] unless value.key?('text')
+
+    [text::Name.new({ value: value['text'], accepted: value['accepted'] }.compact)]
   end
 
   # The codecs of the struct cases preceding struct_case, a struct case

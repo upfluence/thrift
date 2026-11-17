@@ -70,7 +70,7 @@ describe Thrift::Types::Annotation::Text do
       expect(text.dump_enum(tt::Plain, tt::Plain::FooBar)).to eq('foo_bar')
     end
 
-    it 'rejects the thrift names unless accepted' do
+    it 'rejects the thrift names unless listed as accepted' do
       expect { text.load_enum(tt::MediaType, 'MediaTiktok') }.to raise_error(text::InvalidFormatError)
       expect(text.load_enum(tt::Type, 'Type_Company')).to eq(tt::Type::Company)
     end

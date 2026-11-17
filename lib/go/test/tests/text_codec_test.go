@@ -74,7 +74,7 @@ func TestTextUnmarshalStruct(t *testing.T) {
 			want: &texttest.Ownership{Type: texttest.Type_GoogleOAuth, EntityID: 7},
 		},
 		{
-			name: "thrift name",
+			name: "accepted text",
 			have: "Type_Team:-1",
 			want: &texttest.Ownership{Type: texttest.Type_Team, EntityID: -1},
 		},
